@@ -1,0 +1,35 @@
+# dependencies
+node_modules
+
+# build output
+dist
+dist-ssr
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# OS
+.DS_Store
+
+*.local
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Personal/family photos — used locally as playable characters, intentionally kept out of
+# this public repo. The app still imports these paths (src/shared/profile/characters.ts),
+# so a fresh clone needs its own copies of these 3 files locally for `npm run build` to
+# fully succeed; everything else (including the "upload your own photo" feature) works
+# without them.
+public/1.jpg
+public/2.jpg
+public/3.jpg
+src/shared/assets/1.jpg
+src/shared/assets/2.jpg
+src/shared/assets/3.jpg
