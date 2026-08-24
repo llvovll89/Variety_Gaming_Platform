@@ -3,10 +3,19 @@ import HachupingSliderApp from "../games/hachuping-slither/HachupingSliderApp";
 import HachupingJumpApp from "../games/hachuping-jump/HachupingJumpApp";
 import HachupingDodgeApp from "../games/hachuping-dodge/HachupingDodgeApp";
 import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp";
+import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: "hachuping-memory",
+    title: "동물 친구 기억력",
+    description: "패턴을 보고 따라하는 7세 두뇌 발달 게임",
+    thumbnail: hachupingThumb,
+    accentColor: "#ff6fa5",
+    Component: HachupingMemoryApp,
+  },
   {
     id: "hachuping-slither",
     title: "슬리더",
