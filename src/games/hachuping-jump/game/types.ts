@@ -10,6 +10,7 @@ export interface Obstacle {
   gapHeight: number;
   passed: boolean;
   star: BonusStar | null;
+  hue: number; // per-obstacle color, so a run of pillars doesn't look monotone
 }
 
 export interface PlayerState {

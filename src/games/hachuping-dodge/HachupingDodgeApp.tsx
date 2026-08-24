@@ -2,27 +2,28 @@ import { useCallback, useState } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
-import Leaderboard from "./components/Leaderboard";
-import Minimap from "./components/Minimap";
 import StartMenu from "./components/StartMenu";
 import GameOverScreen from "../../shared/components/GameOverScreen";
 import PauseButton from "../../shared/components/PauseButton";
 import PauseOverlay from "../../shared/components/PauseOverlay";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
+import { useHighScore } from "../../shared/hooks/useHighScore";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
-import type { GameEngine } from "./game/engine";
+import type { DodgeEngine } from "./game/engine";
 
 type Screen = "menu" | "playing" | "dead";
 
-const ACCENT_COLOR = "#ec4899";
+const GAME_ID = "hachuping-dodge";
+const ACCENT_COLOR = "#c084fc";
 const FALLBACK_SNAPSHOT = emptySnapshot();
 
-export default function HachupingSliderApp({ onExit, profile }: GameProps) {
+export default function HachupingDodgeApp({ onExit, profile }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
   const [playKey, setPlayKey] = useState(0);
   const [finalScore, setFinalScore] = useState<number | null>(null);
-  const [engine, setEngine] = useState<GameEngine | null>(null);
+  const [engine, setEngine] = useState<DodgeEngine | null>(null);
+  const { highScore, submitScore } = useHighScore(GAME_ID);
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
@@ -32,10 +33,14 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
     setPlayKey((k) => k + 1);
   }, []);
 
-  const handleDeath = useCallback((score: number) => {
-    setFinalScore(score);
-    setScreen("dead");
-  }, []);
+  const handleDeath = useCallback(
+    (score: number) => {
+      setFinalScore(score);
+      submitScore(score);
+      setScreen("dead");
+    },
+    [submitScore],
+  );
 
   const handleRestart = useCallback(() => {
     setFinalScore(null);
@@ -60,8 +65,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {gameActive && (
         <GameCanvas
           key={playKey}
-          playerName={profile.name}
           characterImageUrl={profile.characterImage}
+          bestScore={highScore}
           onDeath={handleDeath}
           onReady={setEngine}
         />
@@ -69,8 +74,6 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {gameActive && engine && (
         <>
           <HUD snapshot={snapshot} />
-          <Leaderboard entries={snapshot.leaderboard} />
-          <Minimap minimap={snapshot.minimap} />
           {(snapshot.status === "playing" || snapshot.status === "paused") && (
             <PauseButton paused={isPaused} onClick={handleTogglePause} />
           )}
@@ -85,7 +88,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
           </button>
-          <StartMenu profile={profile} onStart={handleStart} />
+          <StartMenu profile={profile} bestScore={highScore} onStart={handleStart} />
         </>
       )}
       {isPaused && (
@@ -99,6 +102,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {screen === "dead" && finalScore !== null && (
         <GameOverScreen
           finalScore={finalScore}
+          bestScore={highScore}
           accentColor={ACCENT_COLOR}
           onRestart={handleRestart}
           onMainMenu={handleMainMenu}
