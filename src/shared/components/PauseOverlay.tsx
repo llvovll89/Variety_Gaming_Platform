@@ -12,31 +12,88 @@ export default function PauseOverlay({
   onMainMenu,
 }: PauseOverlayProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/65 px-4">
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      {/* Animated gradient accent */}
       <div
-        className="motion-safe:animate-panel-in flex w-full max-w-xs flex-col items-center gap-4 rounded-3xl bg-[#14141c] p-7 text-center text-white shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10"
-        style={{ boxShadow: `0 0 40px -12px ${accentColor}66, 0 24px 60px -12px rgba(0,0,0,0.6)` }}
+        className="absolute pointer-events-none opacity-30 blur-3xl"
+        style={{
+          width: "300px",
+          height: "300px",
+          background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)`,
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          animation: "pulse 3s ease-in-out infinite"
+        }}
+      />
+      
+      <div
+        className="motion-safe:animate-panel-in flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl bg-gradient-to-br from-[#1a1f2e] to-[#0f1419] p-8 text-center text-white shadow-2xl ring-1 ring-white/10 relative z-10 backdrop-blur-xl"
+        style={{ 
+          boxShadow: `0 0 60px -20px ${accentColor}40, 0 20px 60px -12px rgba(0,0,0,0.5)` 
+        }}
       >
-        <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: accentColor }}>
-          일시정지
-        </h2>
-        <p className="text-white/75">
-          현재 점수 <span className="text-xl font-bold text-white">{score}</span>
-        </p>
-        <button
-          onClick={onResume}
-          style={{ backgroundColor: accentColor }}
-          className="w-full rounded-full px-6 py-3 text-base font-bold text-[#1a1a1a] transition hover:brightness-105 active:scale-95"
-        >
-          계속하기
-        </button>
-        <button
-          onClick={onMainMenu}
-          className="w-full rounded-full bg-white/10 px-6 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/20 active:scale-95"
-        >
-          메인 메뉴
-        </button>
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="text-5xl drop-shadow-lg">⏸️</div>
+          <h2 
+            className="text-3xl font-extrabold tracking-tight" 
+            style={{ color: accentColor }}
+          >
+            일시정지됨
+          </h2>
+        </div>
+
+        {/* Score Display */}
+        <div className="w-full bg-white/5 rounded-2xl p-4 border border-white/10">
+          <p className="text-xs font-medium text-white/70 uppercase tracking-wider mb-2">현재 점수</p>
+          <p 
+            className="text-4xl font-extrabold font-mono"
+            style={{ 
+              color: accentColor,
+              textShadow: `0 0 20px ${accentColor}40`
+            }}
+          >
+            {score}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col w-full gap-3 pt-2">
+          <button
+            onClick={onResume}
+            className="relative px-8 py-4 rounded-xl font-bold text-white transition-all duration-300 active:scale-95 overflow-hidden group hover:shadow-lg"
+            style={{
+              background: `linear-gradient(135deg, ${accentColor} 0%, ${accentColor}dd 100%)`,
+              boxShadow: `0 8px 20px ${accentColor}40`
+            }}
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              계속 진행하기
+              <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
+          </button>
+          
+          <button
+            onClick={onMainMenu}
+            className="px-8 py-3 rounded-xl font-bold text-white transition-all duration-300 active:scale-95 hover:shadow-lg"
+            style={{
+              background: "rgba(255, 255, 255, 0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+            }}
+          >
+            🏠 메인 메뉴
+          </button>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -8,57 +8,114 @@ interface HubProps {
 
 export default function Hub({ games, onSelect }: HubProps) {
   return (
-    <div className="absolute inset-0 overflow-y-auto bg-[#050506] px-4 py-10 text-white select-none">
+    <div className="absolute inset-0 overflow-y-auto bg-[#0f1419] px-4 py-12 text-white select-none">
+      {/* Premium ambient gradient */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none fixed inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(60% 40% at 50% 0%, rgba(255,255,255,0.06), transparent 70%)",
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.04), transparent 60%)",
         }}
       />
-      <div className="relative mx-auto flex max-w-3xl flex-col items-center gap-8">
-        <div className="motion-safe:animate-card-in text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            종합 게임 플랫폼 GH
+      
+      <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12">
+        {/* Header Section */}
+        <div className="motion-safe:animate-card-in text-center space-y-2">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl bg-clip-text bg-gradient-to-b from-white to-white/80">
+            종합 게임 플랫폼
           </h1>
-          <div className="mx-auto mt-3 h-px w-16 bg-white/25" />
-          <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-white/40">
-            플레이할 게임을 골라보세요
+          <div className="flex items-center justify-center gap-2">
+            <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
+            <span className="text-lg font-semibold text-white/80">GH</span>
+            <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/40" />
+          </div>
+          <p className="text-sm font-medium text-white/50 mt-4">
+            재미있는 게임들을 즐겨보세요
           </p>
         </div>
 
-        <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2">
+        {/* Game Grid */}
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((game, i) => (
             <button
               key={game.id}
               onClick={() => onSelect(game.id)}
-              style={{ animationDelay: `${i * 60}ms` }}
-              className="motion-safe:animate-card-in group flex items-center gap-4 rounded-3xl border border-white/10 bg-white/4 p-4 text-left transition hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/7 hover:shadow-[0_0_28px_-8px_rgba(255,255,255,0.35)] active:scale-[0.98]"
+              style={{ animationDelay: `${i * 50}ms` }}
+              className="motion-safe:animate-card-in group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_48px_-12px] active:scale-95"
             >
-              <img
-                src={game.thumbnail}
-                alt={game.title}
-                className="h-16 w-16 shrink-0 rounded-2xl object-cover object-top ring-1 ring-white/15"
+              {/* Card Background */}
+              <div className="absolute inset-0" style={{
+                background: `linear-gradient(135deg, rgba(${parseInt(game.accentColor.slice(1,3), 16)},${parseInt(game.accentColor.slice(3,5), 16)},${parseInt(game.accentColor.slice(5,7), 16)}, 0.08) 0%, rgba(255,255,255,0.02) 100%)`
+              }} />
+              
+              {/* Accent Border */}
+              <div
+                className="absolute inset-0 rounded-2xl pointer-events-none transition-all duration-300 group-hover:opacity-100"
+                style={{
+                  border: `2px solid ${game.accentColor}33`,
+                  boxShadow: `inset 0 0 20px ${game.accentColor}11, 0 0 20px ${game.accentColor}22`,
+                  opacity: 0.7
+                }}
               />
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: game.accentColor }}
+
+              {/* Content */}
+              <div className="relative z-10 flex flex-col gap-3 p-5">
+                {/* Image */}
+                <div className="relative h-40 overflow-hidden rounded-xl">
+                  <img
+                    src={game.thumbnail}
+                    alt={game.title}
+                    className="h-full w-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
                   />
-                  <span className="truncate text-lg font-bold text-white">{game.title}</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  
+                  {/* Game badge */}
+                  <div
+                    className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold text-white transform group-hover:scale-110 transition-transform duration-300"
+                    style={{ backgroundColor: `${game.accentColor}dd` }}
+                  >
+                    {game.id === "hachuping-memory" && "기억력"}
+                    {game.id === "hachuping-whack-a-mole" && "반응속도"}
+                    {game.id === "hachuping-slither" && "성장"}
+                    {game.id === "hachuping-jump" && "점프"}
+                    {game.id === "hachuping-dodge" && "회피"}
+                    {game.id === "hachuping-balloon" && "터치"}
+                  </div>
                 </div>
-                <div className="truncate text-sm text-white/45">{game.description}</div>
+
+                {/* Text Content */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-2 w-2 rounded-full transform group-hover:scale-150 transition-transform duration-300"
+                      style={{ backgroundColor: game.accentColor }}
+                    />
+                    <h3 className="text-base font-bold text-white truncate">{game.title}</h3>
+                  </div>
+                  <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
+                    {game.description}
+                  </p>
+                </div>
+
+                {/* CTA */}
+                <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-white/70 group-hover:text-white transition">
+                  지금 시작하기
+                  <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+                </div>
               </div>
             </button>
           ))}
 
+          {/* Coming Soon */}
           <div
-            style={{ animationDelay: `${games.length * 60}ms` }}
-            className="motion-safe:animate-card-in flex flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-white/15 p-4 text-center text-white/30"
+            style={{ animationDelay: `${games.length * 50}ms` }}
+            className="motion-safe:animate-card-in flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 p-8 text-center text-white/40 hover:border-white/20 hover:text-white/50 transition"
           >
-            <PlusIcon size={22} />
-            <span className="text-xs">다음 게임 준비 중</span>
+            <PlusIcon size={28} weight="bold" />
+            <div>
+              <div className="text-sm font-semibold">새로운 게임</div>
+              <div className="text-xs">준비 중입니다</div>
+            </div>
           </div>
         </div>
       </div>

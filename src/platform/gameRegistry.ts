@@ -4,6 +4,7 @@ import HachupingJumpApp from "../games/hachuping-jump/HachupingJumpApp";
 import HachupingDodgeApp from "../games/hachuping-dodge/HachupingDodgeApp";
 import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp";
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
+import HachupingWhackAMoleApp from "../games/hachuping-whack-a-mole/HachupingWhackAMoleApp";
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
@@ -15,6 +16,14 @@ export const GAMES: GameDefinition[] = [
     thumbnail: hachupingThumb,
     accentColor: "#ff6fa5",
     Component: HachupingMemoryApp,
+  },
+  {
+    id: "hachuping-whack-a-mole",
+    title: "두더지 잡기",
+    description: "떠오르는 두더지를 탭해서 잡는 반응속도 게임",
+    thumbnail: hachupingThumb,
+    accentColor: "#ff9020",
+    Component: HachupingWhackAMoleApp,
   },
   {
     id: "hachuping-slither",

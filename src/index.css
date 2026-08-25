@@ -1,6 +1,55 @@
 @import "tailwindcss";
 @import "pretendard/dist/web/static/pretendard.css";
 
+:root {
+  /* Design System: Premium Playful */
+  /* Primary colors per game */
+  --game-whack-primary: #ff9020;
+  --game-whack-light: #ffd699;
+  --game-whack-dark: #cc6c14;
+  
+  --game-memory-primary: #ff6fa5;
+  --game-memory-light: #ffb3d9;
+  --game-memory-dark: #e63384;
+  
+  --game-slither-primary: #6ee7b7;
+  --game-slither-light: #a8f5e0;
+  --game-slither-dark: #059669;
+  
+  --game-jump-primary: #4fd8ff;
+  --game-jump-light: #a5f3ff;
+  --game-jump-dark: #06b6d4;
+  
+  --game-dodge-primary: #c084fc;
+  --game-dodge-light: #e9d5ff;
+  --game-dodge-dark: #a855f7;
+  
+  --game-balloon-primary: #ffb020;
+  --game-balloon-light: #ffd699;
+  --game-balloon-dark: #d97706;
+  
+  /* Neutral palette */
+  --bg-dark: #0f1419;
+  --bg-card: #1a1f2e;
+  --bg-hover: #252d3d;
+  --bg-overlay: rgba(15, 20, 25, 0.9);
+  
+  --text-primary: #ffffff;
+  --text-secondary: #b3bcc9;
+  --text-tertiary: #8a93a4;
+  
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-normal: rgba(255, 255, 255, 0.12);
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.35);
+  
+  /* Gradient accents */
+  --gradient-premium: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
 html,
 body,
 #root {
@@ -10,16 +59,20 @@ body,
 }
 
 body {
-  background: #0b0e1a;
-  color: #fff;
+  background: var(--bg-dark);
+  color: var(--text-primary);
   font-family:
     Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
     "Segoe UI", "Malgun Gothic", Roboto, sans-serif;
   overflow: hidden;
 }
 
-/* Shared entrance motion for menu/overlay panels — a small rise + fade, not a "look at me"
-   flourish. Respects prefers-reduced-motion via the motion-safe: Tailwind variant at call sites. */
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Shared entrance motion for menu/overlay panels */
 @keyframes panel-in {
   from {
     opacity: 0;
