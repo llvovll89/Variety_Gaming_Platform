@@ -1,4 +1,5 @@
-import { PauseIcon, PlayIcon } from "@phosphor-icons/react";
+import { PauseIcon } from "@phosphor-icons/react/dist/icons/Pause";
+import { PlayIcon } from "@phosphor-icons/react/dist/icons/Play";
 
 interface PauseButtonProps {
   paused: boolean;

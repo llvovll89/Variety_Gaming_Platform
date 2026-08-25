@@ -1,4 +1,4 @@
-import { LightningIcon } from "@phosphor-icons/react";
+import { LightningIcon } from "@phosphor-icons/react/dist/icons/Lightning";
 import type { UISnapshot } from "../game/types";
 
 interface HUDProps {

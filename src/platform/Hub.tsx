@@ -1,4 +1,4 @@
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react/dist/icons/Plus";
 import type { GameDefinition } from "./types";
 
 interface HubProps {

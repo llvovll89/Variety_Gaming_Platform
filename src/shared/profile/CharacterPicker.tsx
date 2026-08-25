@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react/dist/icons/Plus";
 import { CHARACTERS } from "./characters";
 import { CUSTOM_CHARACTER_ID } from "./useProfile";
 

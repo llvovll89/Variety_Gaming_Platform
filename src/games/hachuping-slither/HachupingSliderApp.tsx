@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ArrowLeftIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import Leaderboard from "./components/Leaderboard";
