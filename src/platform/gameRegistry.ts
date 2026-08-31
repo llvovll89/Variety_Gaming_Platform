@@ -5,6 +5,7 @@ import HachupingDodgeApp from "../games/hachuping-dodge/HachupingDodgeApp";
 import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp";
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingWhackAMoleApp from "../games/hachuping-whack-a-mole/HachupingWhackAMoleApp";
+import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
@@ -50,6 +51,14 @@ export const GAMES: GameDefinition[] = [
     thumbnail: hachupingThumb,
     accentColor: "#c084fc",
     Component: HachupingDodgeApp,
+  },
+  {
+    id: "hachuping-color-match",
+    title: "색깔 맞추기",
+    description: "화면에 뜬 색과 같은 색을 빠르게 찾는 반응속도 게임",
+    thumbnail: hachupingThumb,
+    accentColor: "#22c55e",
+    Component: HachupingColorMatchApp,
   },
   {
     id: "hachuping-balloon",
