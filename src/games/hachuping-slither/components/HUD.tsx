@@ -7,7 +7,7 @@ interface HUDProps {
 
 export default function HUD({ snapshot }: HUDProps) {
   return (
-    <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5 text-white sm:left-4 sm:top-4">
+    <div className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col gap-1.5 text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]">
       <div className="rounded-xl border border-pink-400/30 bg-black/70 px-3 py-1.5 shadow-[0_0_16px_rgba(236,72,153,0.25)] backdrop-blur-sm sm:px-4 sm:py-2">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-pink-200/80 sm:text-xs">
           점수

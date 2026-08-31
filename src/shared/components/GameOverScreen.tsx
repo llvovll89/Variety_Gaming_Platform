@@ -14,7 +14,7 @@ export default function GameOverScreen({
   onMainMenu,
 }: GameOverScreenProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/65 px-4">
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-black/65 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div
         className="motion-safe:animate-panel-in flex w-full max-w-xs flex-col items-center gap-4 rounded-3xl bg-[#14141c] p-7 text-center text-white shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10"
         style={{ boxShadow: `0 0 40px -12px ${accentColor}66, 0 24px 60px -12px rgba(0,0,0,0.6)` }}

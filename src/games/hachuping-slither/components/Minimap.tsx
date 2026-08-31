@@ -22,7 +22,7 @@ export default function Minimap({ minimap }: MinimapProps) {
       ref={canvasRef}
       width={SIZE}
       height={SIZE}
-      className="pointer-events-none absolute bottom-3 right-3 rounded-lg shadow-lg sm:bottom-4 sm:right-4"
+      className="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] rounded-lg shadow-lg sm:bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1rem,env(safe-area-inset-right))]"
       style={{ width: SIZE, height: SIZE }}
     />
   );

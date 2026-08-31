@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
+import GameOverScreen from "../../shared/components/GameOverScreen";
 import PauseButton from "../../shared/components/PauseButton";
 import PauseOverlay from "../../shared/components/PauseOverlay";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
@@ -47,6 +48,7 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
 
   const gameActive = screen === "playing";
   const isPaused = snapshot.status === "paused";
+  const isGameOver = snapshot.status === "gameover";
 
   return (
     <div className="relative h-full w-full">
@@ -56,14 +58,16 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
       {gameActive && engine && (
         <>
           <HUD snapshot={snapshot} />
-          <PauseButton paused={isPaused} onClick={handleTogglePause} />
+          {(snapshot.status === "playing" || snapshot.status === "paused") && (
+            <PauseButton paused={isPaused} onClick={handleTogglePause} />
+          )}
         </>
       )}
       {screen === "menu" && (
         <>
           <button
             onClick={onExit}
-            className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50 sm:left-4 sm:top-4"
+            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/30 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/50 sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
           >
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
@@ -76,6 +80,15 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
           score={snapshot.score}
           accentColor={ACCENT_COLOR}
           onResume={handleTogglePause}
+          onMainMenu={handleMainMenu}
+        />
+      )}
+      {isGameOver && snapshot.finalScore !== null && (
+        <GameOverScreen
+          finalScore={snapshot.finalScore}
+          bestScore={highScore}
+          accentColor={ACCENT_COLOR}
+          onRestart={handleStart}
           onMainMenu={handleMainMenu}
         />
       )}

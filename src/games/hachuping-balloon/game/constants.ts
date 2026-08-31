@@ -53,3 +53,6 @@ export const MAX_DT = 1 / 30;
 
 // UI
 export const UI_PUBLISH_INTERVAL = 0.12;
+
+// Session length — was endless with no way to finish; a fixed round gives it a clear end.
+export const GAME_DURATION_SECONDS = 60;

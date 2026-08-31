@@ -23,6 +23,7 @@ export function createSnake(
   y: number,
   hue: number,
   startScore: number,
+  bodyPalette: string[] = [],
 ): Snake {
   const heading = Math.random() * Math.PI * 2;
   return {
@@ -39,6 +40,7 @@ export function createSnake(
     radius: radiusForScore(startScore),
     pathHistory: [{ x, y }],
     hue,
+    bodyPalette,
     boostTrailTimer: BOOST_TRAIL_INTERVAL,
     aiState: "WANDER",
     aiThinkTimer: 0,

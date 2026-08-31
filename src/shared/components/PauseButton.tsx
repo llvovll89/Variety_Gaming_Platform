@@ -11,7 +11,7 @@ export default function PauseButton({ paused, onClick }: PauseButtonProps) {
     <button
       onClick={onClick}
       aria-label={paused ? "계속하기" : "일시정지"}
-      className="absolute left-1/2 top-4 -translate-x-1/2 flex items-center justify-center transition-all duration-300 active:scale-95 group"
+      className="absolute left-1/2 top-[max(1rem,env(safe-area-inset-top))] -translate-x-1/2 flex items-center justify-center transition-all duration-300 active:scale-95 group"
       style={{
         width: "48px",
         height: "48px",

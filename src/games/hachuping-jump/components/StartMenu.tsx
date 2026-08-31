@@ -9,7 +9,7 @@ interface StartMenuProps {
 
 export default function StartMenu({ profile, bestScore, onStart }: StartMenuProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-[#0e1a33] to-[#0b0e1a] px-4">
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-linear-to-b from-[#0e1a33] to-[#0b0e1a] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="motion-safe:animate-panel-in flex w-full max-w-md flex-col items-center gap-4 rounded-3xl border border-[#4fd8ff]/20 bg-black/40 p-7 text-center text-white shadow-[0_0_40px_-12px_rgba(79,216,255,0.4)] backdrop-blur-sm">
         <h1 className="text-2xl font-extrabold tracking-tight text-[#4fd8ff]">점프</h1>
         <p className="text-sm text-white/70">

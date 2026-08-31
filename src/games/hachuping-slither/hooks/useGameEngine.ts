@@ -5,6 +5,7 @@ export function useGameEngine(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   playerName: string,
   characterImageUrl: string,
+  bodyPaletteColors: string[],
   onDeath: (finalScore: number) => void,
   onReady: (engine: GameEngine) => void,
 ): void {
@@ -12,7 +13,7 @@ export function useGameEngine(
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const engine = new GameEngine(canvas, playerName, characterImageUrl, onDeath);
+    const engine = new GameEngine(canvas, playerName, characterImageUrl, onDeath, bodyPaletteColors);
     onReady(engine);
 
     const resize = (): void => {

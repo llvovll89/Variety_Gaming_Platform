@@ -9,10 +9,10 @@ interface StartMenuProps {
 
 export default function StartMenu({ profile, bestScore, onStart }: StartMenuProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-linear-to-b from-[#bfe6ff] to-[#eaf7ff] px-4">
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-linear-to-b from-[#bfe6ff] to-[#eaf7ff] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="motion-safe:animate-panel-in flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-white/85 p-7 text-center shadow-[0_24px_60px_-12px_rgba(217,119,6,0.25)] backdrop-blur-sm">
         <h1 className="text-2xl font-extrabold tracking-tight text-[#d97706]">풍선 터뜨리기</h1>
-        <p className="text-sm text-[#5b4630]">떠오르는 풍선을 톡톡 터치해서 터뜨려보아요!</p>
+        <p className="text-sm text-[#5b4630]">60초 동안 떠오르는 풍선을 톡톡 터치해서 최대한 많이 터뜨려보아요!</p>
         {bestScore > 0 && <p className="-mt-2 text-xs text-[#8a7256]">최고 기록 {bestScore}</p>}
 
         <CharacterPicker

@@ -12,6 +12,7 @@ import {
   ORB_SPEED_MAX,
   ORB_DODGE_BONUS,
   PLAYER_HITBOX_RADIUS,
+  POINTER_ARRIVE_DEADZONE,
   RAMP_INTERVAL_MAX,
   RAMP_INTERVAL_MIN,
   RAMP_TICKS_PER_WAVE_BUMP,
@@ -27,7 +28,6 @@ import {
   STAR_SPAWN_INTERVAL_MAX,
   STAR_SPAWN_INTERVAL_MIN,
   UI_PUBLISH_INTERVAL,
-  JOYSTICK_MAX_RADIUS,
 } from "./constants";
 import { hitsOrb } from "./collision";
 import { DodgeInputController } from "./input";
@@ -169,8 +169,7 @@ export class DodgeEngine {
       this.star,
       this.player,
       this.playerImage,
-      this.input.getJoystickVisual(),
-      JOYSTICK_MAX_RADIUS,
+      this.input.getPointerTarget(),
       this.decorTime,
     );
 
@@ -182,7 +181,7 @@ export class DodgeEngine {
   }
 
   private stepPhysics(dt: number): void {
-    const moveDir = this.input.getMoveVector();
+    const moveDir = this.computeMoveDir();
     const targetVx = moveDir.x * MOVE_MAX_SPEED;
     const targetVy = moveDir.y * MOVE_MAX_SPEED;
     const smoothing = 1 - Math.exp(-MOVE_ACCEL_RATE * dt);
@@ -198,6 +197,21 @@ export class DodgeEngine {
       PLAYER_HITBOX_RADIUS,
       LOGICAL_HEIGHT - PLAYER_HITBOX_RADIUS,
     );
+  }
+
+  /** Touch/mouse steer toward the pointer's world position (converted via the current
+   * letterbox transform); keyboard is used only while no pointer is held. */
+  private computeMoveDir(): { x: number; y: number } {
+    const pointerTarget = this.input.getPointerTarget();
+    if (!pointerTarget) return this.input.getKeyboardVector();
+
+    const worldX = (pointerTarget.x - this.transform.offsetX) / this.transform.scale;
+    const worldY = (pointerTarget.y - this.transform.offsetY) / this.transform.scale;
+    const dx = worldX - this.player.x;
+    const dy = worldY - this.player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist <= POINTER_ARRIVE_DEADZONE) return { x: 0, y: 0 };
+    return { x: dx / dist, y: dy / dist };
   }
 
   private stepWorld(dt: number): void {

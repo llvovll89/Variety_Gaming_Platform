@@ -83,7 +83,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
         <>
           <button
             onClick={onExit}
-            className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-4 sm:top-4"
+            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
           >
             <ArrowLeftIcon size={14} weight="bold" />
             허브로

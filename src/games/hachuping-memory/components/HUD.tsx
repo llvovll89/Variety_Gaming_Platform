@@ -14,7 +14,14 @@ export default function HUD({ snapshot, onPause }: HUDProps) {
   }
 
   return (
-    <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 50 }}>
+    <div
+      style={{
+        position: "absolute",
+        top: "max(16px, env(safe-area-inset-top))",
+        right: "max(16px, env(safe-area-inset-right))",
+        zIndex: 50,
+      }}
+    >
       <button
         onClick={onPause}
         onMouseEnter={() => setHovered(true)}

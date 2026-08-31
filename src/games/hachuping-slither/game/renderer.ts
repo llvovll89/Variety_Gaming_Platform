@@ -1,10 +1,11 @@
 import type { Camera } from "./camera";
-import { HEX_TILE_SIZE, WORLD_HALF } from "./constants";
+import { HEX_TILE_SIZE, PLAYER_HEAD_IMAGE_SCALE, WORLD_HALF } from "./constants";
 import { getSegmentsFromNeck } from "./snake";
 import type { Snake, Star } from "./types";
 import type { World } from "./world";
 import { lerp } from "../../../utils/math";
 import { drawImageTopCrop } from "../../../shared/canvasImage";
+import { resolveSegmentColors } from "./bodyPalettes";
 
 const RENDER_MARGIN = 160;
 const HEX_COL_WIDTH = Math.sqrt(3) * HEX_TILE_SIZE;
@@ -165,6 +166,49 @@ function drawTailTaper(
   }
 }
 
+/** Per-segment stroke pass, cycling through the resolved palette — the multi-color
+ * counterpart to the single-hue rim/base strokes below. `widthFactor`/`colorKey` pick which
+ * pass (blurred darker rim vs. flat base) this call renders. */
+function drawSegmentedPass(
+  ctx: CanvasRenderingContext2D,
+  points: Point[],
+  diameter: number,
+  widthFactor: number,
+  resolved: { base: string; rim: string }[],
+  colorKey: "base" | "rim",
+): void {
+  const n = points.length;
+  ctx.lineWidth = diameter * widthFactor;
+  for (let i = 0; i < n - 1; i++) {
+    ctx.strokeStyle = resolved[i % resolved.length][colorKey];
+    ctx.beginPath();
+    ctx.moveTo(points[i].x, points[i].y);
+    ctx.lineTo(points[i + 1].x, points[i + 1].y);
+    ctx.stroke();
+  }
+}
+
+function drawTailTaperGeneric(
+  ctx: CanvasRenderingContext2D,
+  points: Point[],
+  diameter: number,
+  color: string,
+): void {
+  const n = points.length;
+  const taperCount = Math.min(6, Math.max(2, Math.floor(n * 0.25)));
+  const startIdx = n - taperCount;
+  if (startIdx < 1) return;
+  ctx.strokeStyle = color;
+  for (let i = startIdx; i < n - 1; i++) {
+    const t = (i - startIdx) / (taperCount - 1);
+    ctx.lineWidth = Math.max(1, diameter * lerp(0.85, 0.16, t));
+    ctx.beginPath();
+    ctx.moveTo(points[i].x, points[i].y);
+    ctx.lineTo(points[i + 1].x, points[i + 1].y);
+    ctx.stroke();
+  }
+}
+
 /** Draws the body as a smooth stroked tube (glow + rim + base + segment bands + glossy
  * core + tapered tail) instead of stamped circles — cheaper than per-segment fills and
  * reads as a segmented worm rather than a plain capsule. */
@@ -184,32 +228,53 @@ function drawSnakeBody(ctx: CanvasRenderingContext2D, camera: Camera, snake: Sna
 
   const screenPoints = worldPoints.map((p) => camera.worldToScreen(p));
   const baseLightness = snake.isPlayer ? 68 : 58;
+  const palette = snake.isPlayer ? snake.bodyPalette : [];
 
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  ctx.save();
-  ctx.shadowColor = hsl(snake.hue, 75, 60, 0.55);
-  ctx.shadowBlur = diameter * 0.45;
-  tracePath(ctx, screenPoints);
-  ctx.strokeStyle = hsl(snake.hue, 55, baseLightness - 24);
-  ctx.lineWidth = diameter * 1.06;
-  ctx.stroke();
-  ctx.restore();
+  if (palette.length > 1) {
+    const resolved = resolveSegmentColors(palette);
 
-  tracePath(ctx, screenPoints);
-  ctx.strokeStyle = hsl(snake.hue, 70, baseLightness);
-  ctx.lineWidth = diameter * 0.9;
-  ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = diameter * 0.45;
+    drawSegmentedPass(ctx, screenPoints, diameter, 1.06, resolved, "rim");
+    ctx.restore();
 
-  drawSegmentBands(ctx, screenPoints, diameter, snake.hue, baseLightness);
+    drawSegmentedPass(ctx, screenPoints, diameter, 0.9, resolved, "base");
 
-  tracePath(ctx, screenPoints);
-  ctx.strokeStyle = hsl(snake.hue, 55, Math.min(96, baseLightness + 22), 0.45);
-  ctx.lineWidth = diameter * 0.36;
-  ctx.stroke();
+    tracePath(ctx, screenPoints);
+    ctx.strokeStyle = "rgba(255,255,255,0.4)";
+    ctx.lineWidth = diameter * 0.36;
+    ctx.stroke();
 
-  drawTailTaper(ctx, screenPoints, diameter, snake.hue, baseLightness);
+    const tailColor = resolved[(screenPoints.length - 2) % resolved.length]?.rim ?? resolved[0].rim;
+    drawTailTaperGeneric(ctx, screenPoints, diameter, tailColor);
+  } else {
+    ctx.save();
+    ctx.shadowColor = hsl(snake.hue, 75, 60, 0.55);
+    ctx.shadowBlur = diameter * 0.45;
+    tracePath(ctx, screenPoints);
+    ctx.strokeStyle = hsl(snake.hue, 55, baseLightness - 24);
+    ctx.lineWidth = diameter * 1.06;
+    ctx.stroke();
+    ctx.restore();
+
+    tracePath(ctx, screenPoints);
+    ctx.strokeStyle = hsl(snake.hue, 70, baseLightness);
+    ctx.lineWidth = diameter * 0.9;
+    ctx.stroke();
+
+    drawSegmentBands(ctx, screenPoints, diameter, snake.hue, baseLightness);
+
+    tracePath(ctx, screenPoints);
+    ctx.strokeStyle = hsl(snake.hue, 55, Math.min(96, baseLightness + 22), 0.45);
+    ctx.lineWidth = diameter * 0.36;
+    ctx.stroke();
+
+    drawTailTaper(ctx, screenPoints, diameter, snake.hue, baseLightness);
+  }
 
   if (snake.boosting) {
     const tail = screenPoints[screenPoints.length - 1];
@@ -280,10 +345,11 @@ function drawPlayerHead(
 ): void {
   const s = camera.worldToScreen(snake.head);
   const r = snake.radius * camera.zoom;
+  const imgR = r * PLAYER_HEAD_IMAGE_SCALE;
 
   ctx.fillStyle = "rgba(0,0,0,0.25)";
   ctx.beginPath();
-  ctx.ellipse(s.x, s.y + r * 0.55, r * 0.85, r * 0.32, 0, 0, Math.PI * 2);
+  ctx.ellipse(s.x, s.y + imgR * 0.55, imgR * 0.85, imgR * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.save();
@@ -292,14 +358,14 @@ function drawPlayerHead(
   if (image && image.complete && image.naturalWidth > 0) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.arc(0, 0, imgR, 0, Math.PI * 2);
     ctx.clip();
-    drawImageTopCrop(ctx, image, -r, -r, r * 2);
+    drawImageTopCrop(ctx, image, -imgR, -imgR, imgR * 2);
     ctx.restore();
   } else {
     ctx.fillStyle = hsl(snake.hue, 80, 75);
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.arc(0, 0, imgR, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
@@ -348,7 +414,7 @@ function drawBotHead(ctx: CanvasRenderingContext2D, camera: Camera, snake: Snake
 
 function drawNameTag(ctx: CanvasRenderingContext2D, camera: Camera, snake: Snake): void {
   const s = camera.worldToScreen(snake.head);
-  const r = snake.radius * camera.zoom;
+  const r = (snake.radius * camera.zoom) * (snake.isPlayer ? PLAYER_HEAD_IMAGE_SCALE : 1);
   ctx.font = "600 13px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(0,0,0,0.55)";

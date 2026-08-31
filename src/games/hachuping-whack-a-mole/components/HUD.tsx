@@ -9,7 +9,7 @@ export default function HUD({ uiSnapshot }: HUDProps) {
   const isLowTime = timeRemaining <= 5;
   
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-6 text-white">
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] text-white sm:p-6 sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pr-[max(1.5rem,env(safe-area-inset-right))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))]">
       {/* Top HUD - Score and Timer */}
       <div className="flex justify-between items-start gap-4">
         {/* Score */}

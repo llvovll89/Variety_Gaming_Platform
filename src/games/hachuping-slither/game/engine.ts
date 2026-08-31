@@ -39,13 +39,14 @@ export class GameEngine {
     playerName: string,
     characterImageUrl: string,
     onDeath: (finalScore: number) => void,
+    playerBodyPalette: string[] = [],
   ) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2D context unavailable");
     this.ctx = ctx;
 
-    this.world = new World(playerName);
+    this.world = new World(playerName, playerBodyPalette);
     this.input = new InputController(canvas);
     this.onDeath = onDeath;
 
@@ -106,6 +107,11 @@ export class GameEngine {
   togglePause(): void {
     if (this.paused) this.resume();
     else this.pause();
+  }
+
+  /** Wired to the on-screen mobile boost button (press-and-hold). */
+  setBoosting(value: boolean): void {
+    this.input.setButtonBoosting(value);
   }
 
   private tick(now: number): void {

@@ -73,5 +73,8 @@ export const MAX_DT = 1 / 30;
 // UI
 export const UI_PUBLISH_INTERVAL = 0.12;
 
-// Input
-export const JOYSTICK_MAX_RADIUS = 55; // CSS pixels
+// Input — touch/mouse steer continuously toward the pointer's world position (like
+// hachuping-slither) rather than a delta-based virtual joystick, which read as imprecise on
+// touch. Below this distance (logical units) the player is considered "arrived" so tiny
+// pointer jitter right on top of the player doesn't cause direction flicker.
+export const POINTER_ARRIVE_DEADZONE = 6;

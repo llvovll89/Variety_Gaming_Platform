@@ -1,7 +1,8 @@
+import { GAME_DURATION_SECONDS } from "./constants";
 import type { UISnapshot } from "./types";
 
 export function emptySnapshot(): UISnapshot {
-  return { status: "playing", score: 0, bestScore: 0 };
+  return { status: "playing", score: 0, bestScore: 0, timeRemaining: GAME_DURATION_SECONDS, finalScore: null };
 }
 
 /** Bridges the imperative game engine into React via useSyncExternalStore (shared/hooks/useUISnapshot). */

@@ -22,6 +22,10 @@ export interface Snake {
 
   hue: number;
 
+  /** Hex colors cycled one-per-segment along the body; empty = classic single-hue rendering.
+   * Only ever set for the player snake — bots always keep the classic look. */
+  bodyPalette: string[];
+
   boostTrailTimer: number;
 
   // Bot-only fields

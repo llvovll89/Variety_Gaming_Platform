@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
+import BoostButton from "./components/BoostButton";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import Leaderboard from "./components/Leaderboard";
@@ -10,6 +11,7 @@ import PauseButton from "../../shared/components/PauseButton";
 import PauseOverlay from "../../shared/components/PauseOverlay";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { emptySnapshot } from "./game/uiStore";
+import { useBodyPalette } from "./useBodyPalette";
 import type { GameProps } from "../../platform/types";
 import type { GameEngine } from "./game/engine";
 
@@ -23,6 +25,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const [playKey, setPlayKey] = useState(0);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
+  const bodyPalette = useBodyPalette();
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
@@ -62,6 +65,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
           key={playKey}
           playerName={profile.name}
           characterImageUrl={profile.characterImage}
+          bodyPaletteColors={bodyPalette.colors}
           onDeath={handleDeath}
           onReady={setEngine}
         />
@@ -74,18 +78,26 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
           {(snapshot.status === "playing" || snapshot.status === "paused") && (
             <PauseButton paused={isPaused} onClick={handleTogglePause} />
           )}
+          {snapshot.status === "playing" && (
+            <BoostButton engine={engine} canBoost={snapshot.canBoost} />
+          )}
         </>
       )}
       {screen === "menu" && (
         <>
           <button
             onClick={onExit}
-            className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-4 sm:top-4"
+            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
           >
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
           </button>
-          <StartMenu profile={profile} onStart={handleStart} />
+          <StartMenu
+            profile={profile}
+            bodyPaletteId={bodyPalette.paletteId}
+            onSelectBodyPalette={bodyPalette.setPaletteId}
+            onStart={handleStart}
+          />
         </>
       )}
       {isPaused && (

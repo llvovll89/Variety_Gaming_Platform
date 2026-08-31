@@ -1,6 +1,7 @@
 import {
   BALLOONS_PER_WAVE_MAX,
   BALLOONS_PER_WAVE_START,
+  GAME_DURATION_SECONDS,
   MAX_DT,
   POP_EFFECT_LIFETIME,
   RAMP_INTERVAL_MAX,
@@ -49,6 +50,8 @@ export class BalloonEngine {
   private lastTime: number | null = null;
   private uiTimer = 0;
   private paused = false;
+  private ended = false;
+  private timeRemaining = GAME_DURATION_SECONDS;
   private bestScoreAtStart: number;
 
   constructor(canvas: HTMLCanvasElement, characterImageUrl: string, bestScore: number) {
@@ -95,7 +98,7 @@ export class BalloonEngine {
   }
 
   pause(): void {
-    if (this.paused) return;
+    if (this.paused || this.ended) return;
     this.paused = true;
     this.uiStore.publish(this.buildSnapshot());
   }
@@ -114,7 +117,7 @@ export class BalloonEngine {
 
   /** Pops every balloon under a tap/click, given in canvas CSS-pixel coordinates. */
   handleScreenTap(screenX: number, screenY: number): void {
-    if (this.paused) return;
+    if (this.paused || this.ended) return;
     const { x, y } = toLogical(this.transform, screenX, screenY);
     const hit = findBalloonsAtPoint(this.balloons, x, y);
     if (hit.length === 0) return;
@@ -138,8 +141,18 @@ export class BalloonEngine {
     if (this.paused) return;
 
     this.decorTime += dt;
-    this.stepWorld(dt);
-    this.stepDifficulty(dt);
+
+    if (!this.ended) {
+      this.timeRemaining -= dt;
+      if (this.timeRemaining <= 0) {
+        this.timeRemaining = 0;
+        this.ended = true;
+        this.uiStore.publish(this.buildSnapshot());
+      } else {
+        this.stepWorld(dt);
+        this.stepDifficulty(dt);
+      }
+    }
     this.advancePopEffects(dt);
 
     renderBalloons(this.ctx, this.transform, this.balloons, this.popEffects, this.mascotImage, this.decorTime);
@@ -187,9 +200,11 @@ export class BalloonEngine {
 
   private buildSnapshot(): UISnapshot {
     return {
-      status: this.paused ? "paused" : "playing",
+      status: this.ended ? "gameover" : this.paused ? "paused" : "playing",
       score: this.score,
       bestScore: Math.max(this.bestScoreAtStart, this.score),
+      timeRemaining: this.timeRemaining,
+      finalScore: this.ended ? this.score : null,
     };
   }
 }

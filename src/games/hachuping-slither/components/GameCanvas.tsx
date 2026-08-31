@@ -5,6 +5,7 @@ import type { GameEngine } from "../game/engine";
 interface GameCanvasProps {
   playerName: string;
   characterImageUrl: string;
+  bodyPaletteColors: string[];
   onDeath: (finalScore: number) => void;
   onReady: (engine: GameEngine) => void;
 }
@@ -12,11 +13,12 @@ interface GameCanvasProps {
 export default function GameCanvas({
   playerName,
   characterImageUrl,
+  bodyPaletteColors,
   onDeath,
   onReady,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  useGameEngine(canvasRef, playerName, characterImageUrl, onDeath, onReady);
+  useGameEngine(canvasRef, playerName, characterImageUrl, bodyPaletteColors, onDeath, onReady);
 
   return (
     <div className="absolute inset-0 overflow-hidden">

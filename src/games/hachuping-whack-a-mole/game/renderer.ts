@@ -6,7 +6,7 @@ import {
   HOLE_BORDER_COLOR,
   HOLE_BORDER_WIDTH,
   MOLE_RADIUS,
-  MOLE_COLOR,
+  MOLE_NOSE_COLOR,
   MOLE_EYE_RADIUS,
   MOLE_NOSE_RADIUS,
   HIT_SCALE_REDUCE,
@@ -173,7 +173,7 @@ export function renderWhackAMole(
       ctx.fill();
 
       // Draw nose
-      ctx.fillStyle = MOLE_COLOR;
+      ctx.fillStyle = MOLE_NOSE_COLOR;
       ctx.beginPath();
       ctx.arc(moleCenterX, moleCenterY + scaledRadius * 0.2, MOLE_NOSE_RADIUS * t.scale, 0, Math.PI * 2);
       ctx.fill();

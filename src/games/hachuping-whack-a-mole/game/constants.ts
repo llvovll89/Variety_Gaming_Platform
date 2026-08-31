@@ -79,10 +79,10 @@ export const ROUND_CONFIG = [
 export const POINTS_PER_HIT = 10;
 
 // Mole visual appearance
-export const MOLE_RADIUS = 20; // radius of mole head
-export const MOLE_COLOR = "#8B4513"; // brown
-export const MOLE_EYE_RADIUS = 3;
-export const MOLE_NOSE_RADIUS = 2;
+export const MOLE_RADIUS = 27; // radius of mole head — was 20, too small inside a 60-wide hole and made the face hard to see
+export const MOLE_NOSE_COLOR = "#2b1810"; // near-black so it actually contrasts against the body gradient
+export const MOLE_EYE_RADIUS = 5;
+export const MOLE_NOSE_RADIUS = 3.5;
 
 // Hole visual appearance
 export const HOLE_BACKGROUND_COLOR = "#654321"; // darker brown for hole

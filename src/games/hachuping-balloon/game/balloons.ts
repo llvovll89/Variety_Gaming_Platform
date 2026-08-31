@@ -49,15 +49,10 @@ export function advanceBalloons(balloons: Balloon[], dt: number): Balloon[] {
   return balloons.filter((b) => b.y > -b.radius * 3);
 }
 
-/**
- * Returns every balloon whose forgiving tap hitbox contains the given logical-space point.
- * A balloon only becomes poppable once it has risen fully into view — otherwise a child can
- * camp the bottom edge and pop balloons the instant they spawn, before ever having to watch
- * or reach for one.
- */
+/** Returns every balloon whose forgiving tap hitbox contains the given logical-space point —
+ * poppable the instant it spawns at the bottom edge, not just once fully risen into view. */
 export function findBalloonsAtPoint(balloons: Balloon[], x: number, y: number): Balloon[] {
   return balloons.filter((b) => {
-    if (b.y + b.radius > LOGICAL_HEIGHT) return false;
     const r = b.radius + BALLOON_HIT_PADDING;
     return distanceSq({ x, y }, { x: b.x, y: b.y }) < r * r;
   });

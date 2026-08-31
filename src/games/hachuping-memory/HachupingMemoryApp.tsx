@@ -64,6 +64,12 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
         height: "100%",
         width: "100%",
         position: "relative",
+        boxSizing: "border-box",
+        padding: "12px",
+        paddingTop: "max(12px, env(safe-area-inset-top))",
+        paddingBottom: "max(12px, env(safe-area-inset-bottom))",
+        paddingLeft: "max(12px, env(safe-area-inset-left))",
+        paddingRight: "max(12px, env(safe-area-inset-right))",
       }}
     >
       {gameActive && engine && (
@@ -80,8 +86,8 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
             onClick={onExit}
             style={{
               position: "absolute",
-              left: "16px",
-              top: "16px",
+              left: "max(16px, env(safe-area-inset-left))",
+              top: "max(16px, env(safe-area-inset-top))",
               zIndex: 100,
               display: "flex",
               alignItems: "center",

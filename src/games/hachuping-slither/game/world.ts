@@ -56,7 +56,7 @@ export class World {
 
   lastDeaths: DeathInfo[] = [];
 
-  constructor(playerName: string) {
+  constructor(playerName: string, playerBodyPalette: string[] = []) {
     this.player = createSnake(
       true,
       playerName || "하츄핑",
@@ -64,6 +64,7 @@ export class World {
       0,
       330,
       START_SCORE,
+      playerBodyPalette,
     );
     this.snakes.push(this.player);
 

@@ -13,7 +13,7 @@ export default function StartMenu({ onStart }: StartMenuProps) {
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       {/* Animated gradient background */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div

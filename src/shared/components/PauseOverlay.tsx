@@ -12,7 +12,7 @@ export default function PauseOverlay({
   onMainMenu,
 }: PauseOverlayProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-black/60 backdrop-blur-sm pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       {/* Animated gradient accent */}
       <div
         className="absolute pointer-events-none opacity-30 blur-3xl"

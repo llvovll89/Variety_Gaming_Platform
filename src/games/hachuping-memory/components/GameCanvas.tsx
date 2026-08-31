@@ -15,9 +15,14 @@ export default function GameCanvas({ engine, onReady }: GameCanvasProps) {
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!canvasRef.current || !engine || !rendererRef.current) return;
 
-      const rect = canvasRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      // The canvas is scaled down by CSS on narrow screens (see style below), so map the
+      // click from CSS-pixel space back to the canvas's internal 600x700 drawing space.
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
 
       const cardIndex = rendererRef.current.getCardAt(x, y);
       if (cardIndex !== null && cardIndex < engine.uiStore.getSnapshot().gameState.cards.length) {
@@ -55,8 +60,10 @@ export default function GameCanvas({ engine, onReady }: GameCanvasProps) {
         backgroundColor: "#fff9f5",
         borderRadius: "20px",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+        width: "100%",
         maxWidth: "600px",
         height: "auto",
+        touchAction: "manipulation",
         cursor: "pointer",
         border: "3px solid #f0f0f0",
         transition: "box-shadow 0.3s",

@@ -20,7 +20,9 @@ export interface PopEffect {
 }
 
 export interface UISnapshot {
-  status: "playing" | "paused";
+  status: "playing" | "paused" | "gameover";
   score: number;
   bestScore: number;
+  timeRemaining: number;
+  finalScore: number | null;
 }

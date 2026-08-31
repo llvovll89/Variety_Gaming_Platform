@@ -80,6 +80,9 @@ export const MINIMAP_TRAIL_POINTS = 14; // recent path points per snake sent for
 
 // Rendering
 export const HEX_TILE_SIZE = 46; // background floor hex radius, world units
+// Purely visual — the player's head photo is drawn larger than snake.radius so the face
+// reads clearly; collision/hitbox math still uses snake.radius untouched.
+export const PLAYER_HEAD_IMAGE_SCALE = 1.5;
 
 export const SNAKE_NAME_POOL = [
   "핑크봇",

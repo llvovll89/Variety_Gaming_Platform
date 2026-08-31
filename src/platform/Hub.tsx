@@ -8,7 +8,7 @@ interface HubProps {
 
 export default function Hub({ games, onSelect }: HubProps) {
   return (
-    <div className="absolute inset-0 overflow-y-auto bg-[#0f1419] px-4 py-12 text-white select-none">
+    <div className="absolute inset-0 overflow-y-auto bg-[#0f1419] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(3rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] text-white select-none">
       {/* Premium ambient gradient */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"

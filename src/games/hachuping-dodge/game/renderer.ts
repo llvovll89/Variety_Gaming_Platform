@@ -1,6 +1,6 @@
 import { LOGICAL_HEIGHT, LOGICAL_WIDTH, PLAYER_RADIUS, STAR_LIFETIME, STAR_RADIUS } from "./constants";
 import type { BonusStar, Orb, PlayerState } from "./types";
-import type { JoystickVisual } from "./input";
+import type { PointerTarget } from "./input";
 import { drawImageTopCrop } from "../../../shared/canvasImage";
 
 export interface LetterboxTransform {
@@ -207,20 +207,18 @@ function drawPlayer(
   }
 }
 
-function drawJoystick(ctx: CanvasRenderingContext2D, joystick: JoystickVisual, maxRadius: number): void {
-  if (!joystick.active) return;
+/** Small reticle at the raw touch/click position — screen space already, no transform needed. */
+function drawTargetMarker(ctx: CanvasRenderingContext2D, target: PointerTarget | null): void {
+  if (!target) return;
   ctx.save();
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.strokeStyle = "rgba(255,255,255,0.5)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(joystick.center.x, joystick.center.y, maxRadius, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.arc(target.x, target.y, 14, 0, Math.PI * 2);
   ctx.stroke();
-
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.beginPath();
-  ctx.arc(joystick.thumb.x, joystick.thumb.y, maxRadius * 0.4, 0, Math.PI * 2);
+  ctx.arc(target.x, target.y, 3, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -239,13 +237,12 @@ export function renderDodge(
   star: BonusStar | null,
   player: PlayerState,
   playerImage: HTMLImageElement | null,
-  joystick: JoystickVisual,
-  joystickMaxRadius: number,
+  pointerTarget: PointerTarget | null,
   decorTime: number,
 ): void {
   drawArenaBackground(ctx, t, decorTime);
   if (star) drawStar(ctx, t, star);
   for (const orb of orbs) drawOrb(ctx, t, orb);
   drawPlayer(ctx, t, player, playerImage);
-  drawJoystick(ctx, joystick, joystickMaxRadius);
+  drawTargetMarker(ctx, pointerTarget);
 }
