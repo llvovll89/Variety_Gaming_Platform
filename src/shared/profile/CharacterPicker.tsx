@@ -1,9 +1,10 @@
 import { useRef } from "react";
 import { PlusIcon } from "@phosphor-icons/react/dist/icons/Plus";
-import { CHARACTERS } from "./characters";
+import { CHARACTERS, DEFAULT_CHARACTER_ID } from "./characters";
 import { CUSTOM_CHARACTER_ID } from "./useProfile";
 
 interface CharacterPickerProps {
+  defaultImage?: string;
   selectedId: string;
   onSelect: (id: string) => void;
   customImage: string | null;
@@ -16,6 +17,7 @@ interface CharacterPickerProps {
 }
 
 export default function CharacterPicker({
+  defaultImage,
   selectedId,
   onSelect,
   customImage,
@@ -49,8 +51,8 @@ export default function CharacterPicker({
   return (
     <div className="flex w-full flex-wrap items-center justify-center gap-3">
       {CHARACTERS.map((c) => (
-        <button key={c.id} type="button" onClick={() => onSelect(c.id)} className={tileClass(selectedId === c.id)}>
-          <img src={c.image} alt={c.name} className="h-14 w-14 rounded-full object-cover object-top" />
+        <button key={c.id} type="button" title={c.name} aria-pressed={selectedId === c.id} onClick={() => onSelect(c.id)} className={tileClass(selectedId === c.id)}>
+          <img src={c.id === DEFAULT_CHARACTER_ID && defaultImage ? defaultImage : c.image} alt={c.name} className="h-14 w-14 rounded-full object-contain" />
         </button>
       ))}
 

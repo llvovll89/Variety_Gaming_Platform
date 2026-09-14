@@ -19,6 +19,7 @@ export default function StartMenu({ profile, bodyPaletteId, onSelectBodyPalette,
         </p>
 
         <CharacterPicker
+          defaultImage={profile.defaultCharacterImage}
           selectedId={profile.characterId}
           onSelect={profile.selectCharacter}
           customImage={profile.customImage}

@@ -65,7 +65,7 @@ export default function Hub({ games, onSelect }: HubProps) {
                   <img
                     src={game.thumbnail}
                     alt={game.title}
-                    className="h-full w-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
+                    className="h-full w-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   
@@ -78,8 +78,9 @@ export default function Hub({ games, onSelect }: HubProps) {
                     {game.id === "hachuping-whack-a-mole" && "반응속도"}
                     {game.id === "hachuping-slither" && "성장"}
                     {game.id === "hachuping-jump" && "점프"}
-                    {game.id === "hachuping-dodge" && "회피"}
+                    {game.id === "hachuping-dodge" && "생존 RPG"}
                     {game.id === "hachuping-balloon" && "터치"}
+                    {game.id === "hachuping-color-match" && "색상 감각"}
                   </div>
                 </div>
 

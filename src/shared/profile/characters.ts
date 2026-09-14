@@ -1,4 +1,3 @@
-import hachupingUrl from "../assets/하츄핑.webp";
 
 export interface Character {
   id: string;
@@ -6,7 +5,15 @@ export interface Character {
   image: string;
 }
 
-export const CHARACTERS: Character[] = [{ id: "hachuping", name: "하츄핑", image: hachupingUrl }];
+export const CHARACTERS: Character[] = [
+  { id: "game-default", name: "게임 기본 캐릭터", image: "/art/star-avatar.svg" },
+];
+
+export const GAME_CHARACTER_IMAGES: Record<string, string> = {
+  "hachuping-slither": "/art/snake-avatar.svg",
+  "hachuping-jump": "/art/bird-avatar.svg",
+  "hachuping-balloon": "/art/star-avatar.svg",
+};
 
 export const DEFAULT_CHARACTER_ID = CHARACTERS[0].id;
 export const DEFAULT_CHARACTER_IMAGE = CHARACTERS[0].image;

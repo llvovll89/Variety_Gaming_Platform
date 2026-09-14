@@ -1,7 +1,6 @@
-import hachupingThumb from "../shared/assets/하츄핑.webp";
 import HachupingSliderApp from "../games/hachuping-slither/HachupingSliderApp";
 import HachupingJumpApp from "../games/hachuping-jump/HachupingJumpApp";
-import HachupingDodgeApp from "../games/hachuping-dodge/HachupingDodgeApp";
+import RuneRangerApp from "../games/hachuping-dodge/survivor/SurvivorApp";
 import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp";
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingWhackAMoleApp from "../games/hachuping-whack-a-mole/HachupingWhackAMoleApp";
@@ -14,7 +13,7 @@ export const GAMES: GameDefinition[] = [
     id: "hachuping-memory",
     title: "동물 친구 기억력",
     description: "패턴을 보고 따라하는 7세 두뇌 발달 게임",
-    thumbnail: hachupingThumb,
+    thumbnail: "/art/memory.svg",
     accentColor: "#ff6fa5",
     Component: HachupingMemoryApp,
   },
@@ -22,7 +21,7 @@ export const GAMES: GameDefinition[] = [
     id: "hachuping-whack-a-mole",
     title: "두더지 잡기",
     description: "떠오르는 두더지를 탭해서 잡는 반응속도 게임",
-    thumbnail: hachupingThumb,
+    thumbnail: "/art/mole.svg",
     accentColor: "#ff9020",
     Component: HachupingWhackAMoleApp,
   },
@@ -30,42 +29,39 @@ export const GAMES: GameDefinition[] = [
     id: "hachuping-slither",
     title: "슬리더",
     description: "별을 먹고 커지는 지렁이 게임",
-    thumbnail: hachupingThumb,
-    accentColor: "#ff6fa5",
+    thumbnail: "/art/slither.svg",
+    accentColor: "#72bd85",
     Component: HachupingSliderApp,
   },
   {
     id: "hachuping-jump",
     title: "점프",
-    // TODO: 사용자가 직접 섬네일 이미지를 제공하면 games/hachuping-jump/assets/에 넣고 여기서 교체
     description: "장애물 사이를 뚫고 날아가는 점프 게임",
-    thumbnail: hachupingThumb,
+    thumbnail: "/art/jump.svg",
     accentColor: "#4fd8ff",
     Component: HachupingJumpApp,
   },
   {
     id: "hachuping-dodge",
-    title: "오브 피하기",
-    // TODO: 사용자가 직접 섬네일 이미지를 제공하면 games/hachuping-dodge/assets/에 넣고 여기서 교체
-    description: "쏟아지는 에너지 오브를 피해 최대한 오래 살아남는 게임",
-    thumbnail: hachupingThumb,
-    accentColor: "#c084fc",
-    Component: HachupingDodgeApp,
+    title: "룬 레인저",
+    description: "자동 사격과 레벨업으로 미니언 군단을 돌파하는 생존 액션 RPG",
+    thumbnail: "/rune-ranger.svg",
+    accentColor: "#77cba3",
+    Component: RuneRangerApp,
   },
   {
     id: "hachuping-color-match",
     title: "색깔 맞추기",
     description: "화면에 뜬 색과 같은 색을 빠르게 찾는 반응속도 게임",
-    thumbnail: hachupingThumb,
+    thumbnail: "/art/color-match.svg",
     accentColor: "#22c55e",
     Component: HachupingColorMatchApp,
   },
   {
     id: "hachuping-balloon",
     title: "풍선 터뜨리기",
-    // TODO: 사용자가 직접 섬네일 이미지를 제공하면 games/hachuping-balloon/assets/에 넣고 여기서 교체
     description: "떠오르는 풍선을 톡톡 터치해서 터뜨리는 놀이 (7세 미만도 쉽게)",
-    thumbnail: hachupingThumb,
+    thumbnail: "/art/balloon.svg",
     accentColor: "#ffb020",
     Component: HachupingBalloonApp,
   },

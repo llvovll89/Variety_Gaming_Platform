@@ -59,7 +59,7 @@ export class World {
   constructor(playerName: string, playerBodyPalette: string[] = []) {
     this.player = createSnake(
       true,
-      playerName || "하츄핑",
+      playerName || "플레이어",
       0,
       0,
       330,

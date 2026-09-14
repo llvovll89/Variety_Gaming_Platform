@@ -16,6 +16,7 @@ export default function StartMenu({ profile, bestScore, onStart }: StartMenuProp
         {bestScore > 0 && <p className="-mt-2 text-xs text-[#8a7256]">최고 기록 {bestScore}</p>}
 
         <CharacterPicker
+          defaultImage={profile.defaultCharacterImage}
           selectedId={profile.characterId}
           onSelect={profile.selectCharacter}
           customImage={profile.customImage}

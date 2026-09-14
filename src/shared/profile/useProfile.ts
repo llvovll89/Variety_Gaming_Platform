@@ -17,6 +17,7 @@ export interface Profile {
   uploadPhoto: (file: File) => void;
   /** The image URL to actually render for the current selection. */
   characterImage: string;
+  defaultCharacterImage: string;
 }
 
 /**
@@ -28,10 +29,14 @@ export interface Profile {
  * us once already: a StartMenu that owned the blob revoked it right as gameplay started).
  */
 export function useProfile(): Profile {
-  const [name, setNameState] = useState(() => safeGetItem(NAME_KEY) ?? "하츄핑");
+  const [name, setNameState] = useState(() => {
+    const stored = safeGetItem(NAME_KEY);
+    // Replace the retired default name while keeping user-entered names.
+    return stored && stored !== '\uD558\uCE04\uD551' ? stored : '플레이어';
+  });
   const [characterId, setCharacterIdState] = useState(() => {
     const stored = safeGetItem(CHARACTER_ID_KEY);
-    return stored && stored !== CUSTOM_CHARACTER_ID ? stored : DEFAULT_CHARACTER_ID;
+    return stored && CHARACTERS.some(character => character.id === stored) ? stored : DEFAULT_CHARACTER_ID;
   });
   const [customImage, setCustomImage] = useState<string | null>(null);
   const customImageRef = useRef<string | null>(null);
@@ -59,7 +64,7 @@ export function useProfile(): Profile {
       ? customImage
       : getCharacterById(characterId).image;
 
-  return { name, setName, characterId, selectCharacter, customImage, uploadPhoto, characterImage };
+  return { name, setName, characterId, selectCharacter, customImage, uploadPhoto, characterImage, defaultCharacterImage: getCharacterById(DEFAULT_CHARACTER_ID).image };
 }
 
 export { CHARACTERS };
