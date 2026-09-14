@@ -24,6 +24,8 @@ export default function BodyColorPicker({ selectedId, onSelect }: BodyColorPicke
             type="button"
             onClick={() => onSelect(p.id)}
             title={p.name}
+            aria-label={p.name}
+            aria-pressed={selectedId === p.id}
             className={`flex h-11 w-11 items-center justify-center rounded-full transition ${
               selectedId === p.id ? "scale-110 ring-2 ring-pink-400 ring-offset-2 ring-offset-black/40" : "hover:scale-105"
             }`}

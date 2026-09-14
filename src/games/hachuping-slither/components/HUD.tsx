@@ -1,30 +1,18 @@
-import { LightningIcon } from "@phosphor-icons/react/dist/icons/Lightning";
-import type { UISnapshot } from "../game/types";
+import { LightningIcon } from '@phosphor-icons/react/dist/icons/Lightning';
+import { MAX_LEVEL } from '../game/progression';
+import type { UISnapshot } from '../game/types';
 
-interface HUDProps {
-  snapshot: UISnapshot;
-}
-
-export default function HUD({ snapshot }: HUDProps) {
-  return (
-    <div className="pointer-events-none absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] flex flex-col gap-1.5 text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]">
-      <div className="rounded-xl border border-pink-400/30 bg-black/70 px-3 py-1.5 shadow-[0_0_16px_rgba(236,72,153,0.25)] backdrop-blur-sm sm:px-4 sm:py-2">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-pink-200/80 sm:text-xs">
-          점수
-        </div>
-        <div className="text-xl font-bold leading-tight tabular-nums sm:text-2xl">
-          {snapshot.score}
-        </div>
-      </div>
-      <div className="rounded-lg border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] tabular-nums text-white/80 sm:text-xs">
-        순위 {snapshot.rank || "-"} / {snapshot.totalAlive}
-      </div>
-      {snapshot.boosting && (
-        <div className="flex w-fit items-center gap-1 animate-pulse rounded-full bg-pink-500/90 px-2.5 py-0.5 text-[11px] font-semibold shadow-[0_0_12px_rgba(236,72,153,0.8)] sm:text-xs">
-          <LightningIcon size={13} weight="fill" />
-          부스트!
-        </div>
-      )}
+export default function HUD({ snapshot: s }: { snapshot: UISnapshot }) {
+  return <>
+    <div className="slither-hud">
+      <div className="slither-hud-title"><span>별빛 정원</span><strong>LV <b>{s.level}</b></strong></div>
+      <div className="slither-xp-label"><span>{s.level === MAX_LEVEL ? '최고 레벨' : '다음 레벨까지'}</span><span>{s.level === MAX_LEVEL ? 'MAX' : Math.floor(s.xp) + ' / ' + s.xpNext + ' XP'}</span></div>
+      <progress className="slither-xp" aria-label="레벨 경험치" max={s.xpNext} value={s.level === MAX_LEVEL ? s.xpNext : s.xp} />
+      <div className="slither-hud-numbers"><div><small>길이</small><strong>{s.score}</strong></div><div><small>현재 순위</small><strong>{s.rank || '-'}<small> / {s.totalAlive}</small></strong></div></div>
     </div>
-  );
+    <div className="slither-stats"><span>이동 <b>{s.speed}</b></span><span>수집 반경 <b>+{s.pickupBonus}</b></span><span>부스트 소모 <b>{s.boostDrain.toFixed(1)}/초</b></span></div>
+    <div className={'slither-boost-note' + (s.boosting ? ' is-boosting' : '')}>
+      <LightningIcon size={14} weight="fill" />{s.boosting ? '질주 중 · 길이 소모' : s.canBoost ? '꾹 눌러 부스트' : '길이 23부터 부스트'}
+    </div>
+  </>;
 }

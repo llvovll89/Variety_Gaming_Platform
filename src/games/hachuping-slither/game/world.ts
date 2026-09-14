@@ -34,6 +34,7 @@ import { createSnake, stepSnake } from "./snake";
 import { createRandomStar, createStar } from "./star";
 import type { Snake, Star } from "./types";
 import { distance, randInt, randRange } from "../../../utils/math";
+import { awardExperience, createProgression, pendingUpgrades } from "./progression";
 
 const MAX_STAR_RADIUS = STAR_MIN_RADIUS + STAR_MAX_VALUE * STAR_RADIUS_PER_VALUE;
 
@@ -55,6 +56,7 @@ export class World {
   private botGrowthTimer = randRange(BOT_GROWTH_INTERVAL_MIN, BOT_GROWTH_INTERVAL_MAX);
 
   lastDeaths: DeathInfo[] = [];
+  time = 0;
 
   constructor(playerName: string, playerBodyPalette: string[] = []) {
     this.player = createSnake(
@@ -81,6 +83,7 @@ export class World {
     this.player.alive = true;
     this.player.name = name || this.player.name;
     this.player.score = START_SCORE;
+    Object.assign(this.player, createProgression());
     this.player.head = { x: spot.x, y: spot.y };
     this.player.pathHistory = [{ x: spot.x, y: spot.y }];
     this.player.heading = Math.random() * Math.PI * 2;
@@ -157,6 +160,8 @@ export class World {
   }
 
   update(dt: number, playerInput: { angle: number; boosting: boolean }): void {
+    if (!this.player.alive) return;
+    this.time += dt;
     this.lastDeaths = [];
 
     if (this.player.alive) {
@@ -185,6 +190,14 @@ export class World {
       const star = this.stars.get(pickup.starId);
       if (!snake || !star) continue;
       snake.score += star.value;
+      awardExperience(snake, star.value);
+      // Rivals grow too, with a balanced automatic allocation.
+      if (!snake.isPlayer) {
+        while (pendingUpgrades(snake) > 0) {
+          const allocated = snake.level - 1 - pendingUpgrades(snake);
+          snake.upgrades[(['agility', 'magnet', 'efficiency'] as const)[allocated % 3]]++;
+        }
+      }
       this.removeStar(pickup.starId);
     }
 

@@ -1,6 +1,8 @@
 import { Camera } from "./camera";
 import {
   BOOST_MIN_SCORE,
+  BASE_SPEED,
+  BOOST_DRAIN_PER_SEC,
   LEADERBOARD_SIZE,
   MAX_DT,
   MINIMAP_TRAIL_POINTS,
@@ -13,6 +15,7 @@ import { UIStore } from "./uiStore";
 import { World } from "./world";
 import type { UISnapshot } from "./types";
 import { lerp, sampleEvenly } from "../../../utils/math";
+import { chooseUpgrade, pendingUpgrades, statsFor, xpForLevel, type UpgradeKey } from "./progression";
 
 const BOOST_INTENSITY_SMOOTHING = 10;
 
@@ -67,6 +70,9 @@ export class GameEngine {
     this.canvas.style.height = `${height}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.camera.setViewport(width, height);
+    // Resizing clears a canvas even while paused.
+    renderWorld(this.ctx, this.world, this.camera, this.playerImage, this.boostIntensity);
+    this.uiStore.publish(this.buildSnapshot());
   }
 
   start(): void {
@@ -83,6 +89,9 @@ export class GameEngine {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     this.rafId = null;
     this.input.destroy();
+    if (import.meta.env.DEV && (window as unknown as { __engine?: GameEngine }).__engine === this) {
+      delete (window as unknown as { __engine?: GameEngine }).__engine;
+    }
   }
 
   isPaused(): boolean {
@@ -107,6 +116,11 @@ export class GameEngine {
   togglePause(): void {
     if (this.paused) this.resume();
     else this.pause();
+  }
+
+  upgrade(key: UpgradeKey): void {
+    if (this.paused || !this.world.player.alive || !chooseUpgrade(this.world.player, key)) return;
+    this.uiStore.publish(this.buildSnapshot());
   }
 
   /** Wired to the on-screen mobile boost button (press-and-hold). */
@@ -165,12 +179,21 @@ export class GameEngine {
 
   private buildSnapshot(): UISnapshot {
     const player = this.world.player;
+    const stats = statsFor(player);
     const aliveSorted = [...this.world.getAliveSnakes()].sort((a, b) => b.score - a.score);
     const rank = player.alive ? aliveSorted.findIndex((s) => s.id === player.id) + 1 : 0;
     const viewRect = this.camera.getViewRect(0);
 
     return {
       status: !player.alive ? "dead" : this.paused ? "paused" : "playing",
+      level: player.level,
+      xp: player.xp,
+      xpNext: xpForLevel(player.level),
+      upgrades: { ...player.upgrades },
+      pendingUpgrades: pendingUpgrades(player),
+      speed: Math.round(BASE_SPEED * stats.speedMultiplier),
+      pickupBonus: stats.pickupBonus,
+      boostDrain: BOOST_DRAIN_PER_SEC * stats.drainMultiplier,
       score: Math.floor(player.score),
       rank,
       totalAlive: aliveSorted.length,

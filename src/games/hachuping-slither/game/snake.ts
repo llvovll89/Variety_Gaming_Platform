@@ -13,6 +13,7 @@ import {
 } from "./growth";
 import type { Snake } from "./types";
 import { angleLerp, distance } from "../../../utils/math";
+import { createProgression, statsFor } from "./progression";
 
 let nextSnakeId = 1;
 
@@ -27,6 +28,7 @@ export function createSnake(
 ): Snake {
   const heading = Math.random() * Math.PI * 2;
   return {
+    ...createProgression(),
     id: nextSnakeId++,
     isPlayer,
     name,
@@ -63,16 +65,17 @@ export function stepSnake(snake: Snake, dt: number, wantsBoost: boolean): SnakeS
   const canBoost = wantsBoost && snake.score > BOOST_MIN_SCORE;
   snake.boosting = canBoost;
 
-  const turnRate = turnRateForRadius(snake.radius);
+  const stats = statsFor(snake);
+  const turnRate = turnRateForRadius(snake.radius) * stats.turnMultiplier;
   snake.heading = angleLerp(snake.heading, snake.targetAngle, turnRate * dt);
 
-  const speed = BASE_SPEED * (canBoost ? BOOST_MULTIPLIER : 1);
+  const speed = BASE_SPEED * stats.speedMultiplier * (canBoost ? BOOST_MULTIPLIER : 1);
   snake.speed = speed;
   snake.head.x += Math.cos(snake.heading) * speed * dt;
   snake.head.y += Math.sin(snake.heading) * speed * dt;
 
   if (canBoost) {
-    snake.score = Math.max(BOOST_MIN_SCORE, snake.score - BOOST_DRAIN_PER_SEC * dt);
+    snake.score = Math.max(BOOST_MIN_SCORE, snake.score - BOOST_DRAIN_PER_SEC * stats.drainMultiplier * dt);
     snake.boostTrailTimer -= dt;
     if (snake.boostTrailTimer <= 0) {
       snake.boostTrailTimer = BOOST_TRAIL_INTERVAL;

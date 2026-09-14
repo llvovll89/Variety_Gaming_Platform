@@ -1,14 +1,15 @@
 import { useCallback, useState } from "react";
-import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
+import './slither.css';
+import UpgradeDialog from './components/UpgradeDialog';
 import BoostButton from "./components/BoostButton";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import Leaderboard from "./components/Leaderboard";
 import Minimap from "./components/Minimap";
 import StartMenu from "./components/StartMenu";
-import GameOverScreen from "../../shared/components/GameOverScreen";
-import PauseButton from "../../shared/components/PauseButton";
-import PauseOverlay from "../../shared/components/PauseOverlay";
+import { PauseIcon } from '@phosphor-icons/react/dist/icons/Pause';
+import { PlayIcon } from '@phosphor-icons/react/dist/icons/Play';
+import SessionDialog from './components/SessionDialog';
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { emptySnapshot } from "./game/uiStore";
 import { useBodyPalette } from "./useBodyPalette";
@@ -17,7 +18,6 @@ import type { GameEngine } from "./game/engine";
 
 type Screen = "menu" | "playing" | "dead";
 
-const ACCENT_COLOR = "#ec4899";
 const FALLBACK_SNAPSHOT = emptySnapshot();
 
 export default function HachupingSliderApp({ onExit, profile }: GameProps) {
@@ -59,7 +59,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const isPaused = snapshot.status === "paused";
 
   return (
-    <div className="relative h-full w-full">
+    <div className="slither relative h-full w-full">
       {gameActive && (
         <GameCanvas
           key={playKey}
@@ -76,7 +76,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
           <Leaderboard entries={snapshot.leaderboard} />
           <Minimap minimap={snapshot.minimap} />
           {(snapshot.status === "playing" || snapshot.status === "paused") && (
-            <PauseButton paused={isPaused} onClick={handleTogglePause} />
+            <button className="slither-pause" aria-label={isPaused ? '계속하기' : '일시정지'} onClick={handleTogglePause}>{isPaused ? <PlayIcon size={20} weight="fill" /> : <PauseIcon size={20} weight="fill" />}</button>
           )}
           {snapshot.status === "playing" && (
             <BoostButton engine={engine} canBoost={snapshot.canBoost} />
@@ -85,14 +85,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       )}
       {screen === "menu" && (
         <>
-          <button
-            onClick={onExit}
-            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
-          >
-            <ArrowLeftIcon size={14} weight="bold" />
-            허브로
-          </button>
           <StartMenu
+            onExit={onExit}
             profile={profile}
             bodyPaletteId={bodyPalette.paletteId}
             onSelectBodyPalette={bodyPalette.setPaletteId}
@@ -101,20 +95,19 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
         </>
       )}
       {isPaused && (
-        <PauseOverlay
-          score={snapshot.score}
-          accentColor={ACCENT_COLOR}
-          onResume={handleTogglePause}
-          onMainMenu={handleMainMenu}
-        />
+        <SessionDialog onCancel={handleTogglePause}>
+          <span className="slither-kicker">TAKE A BREATH</span><h2 id="slither-result-title">잠시 쉬어가기</h2>
+          <p>길이 {snapshot.score} · LV {snapshot.level}</p>
+          <button autoFocus className="slither-primary" onClick={handleTogglePause}>계속하기</button><button onClick={handleMainMenu}>게임 메뉴</button>
+        </SessionDialog>
       )}
+      {screen === 'playing' && snapshot.status === 'playing' && snapshot.pendingUpgrades > 0 && engine && <UpgradeDialog snapshot={snapshot} onChoose={key => engine.upgrade(key)} />}
       {screen === "dead" && finalScore !== null && (
-        <GameOverScreen
-          finalScore={finalScore}
-          accentColor={ACCENT_COLOR}
-          onRestart={handleRestart}
-          onMainMenu={handleMainMenu}
-        />
+        <SessionDialog>
+          <span className="slither-kicker">JOURNEY ENDED</span><h2 id="slither-result-title">조금 더 자란 오늘.</h2><p>다음 정원에서는 더 멀리 가볼까요?</p>
+          <div><span><strong>{finalScore}</strong>최종 길이</span><span><strong>LV {snapshot.level}</strong>도달 레벨</span></div>
+          <button autoFocus className="slither-primary" onClick={handleRestart}>다시 출발</button><button onClick={handleMainMenu}>게임 메뉴</button>
+        </SessionDialog>
       )}
     </div>
   );

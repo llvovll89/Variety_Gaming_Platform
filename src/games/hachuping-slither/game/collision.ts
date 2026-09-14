@@ -8,6 +8,7 @@ import { SpatialHashGrid } from "./spatialGrid";
 import type { Snake, Star } from "./types";
 import { getSegmentsFromNeck } from "./snake";
 import { distance } from "../../../utils/math";
+import { statsFor } from "./progression";
 
 export interface DeathEvent {
   victimId: number;
@@ -45,16 +46,17 @@ export function findStarPickups(
   const consumed = new Set<number>();
   for (const snake of snakes) {
     if (!snake.alive) continue;
+    const pickupRadius = snake.radius + statsFor(snake).pickupBonus;
     const candidates = starGrid.queryRadius(
       snake.head.x,
       snake.head.y,
-      snake.radius + maxStarRadius,
+      pickupRadius + maxStarRadius,
     );
     for (const entry of candidates) {
       if (consumed.has(entry.id)) continue;
       const star = entry.data;
       const d = distance(snake.head, { x: entry.x, y: entry.y });
-      if (d < snake.radius + star.radius) {
+      if (d < pickupRadius + star.radius) {
         consumed.add(entry.id);
         events.push({ snakeId: snake.id, starId: entry.id });
       }

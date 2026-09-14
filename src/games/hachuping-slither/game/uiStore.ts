@@ -1,8 +1,15 @@
 import { WORLD_SIZE } from "./constants";
 import type { UISnapshot } from "./types";
+import { createProgression, xpForLevel } from "./progression";
 
 export function emptySnapshot(): UISnapshot {
   return {
+    ...createProgression(),
+    xpNext: xpForLevel(1),
+    pendingUpgrades: 0,
+    speed: 160,
+    pickupBonus: 0,
+    boostDrain: 6,
     status: "menu",
     score: 0,
     rank: 0,

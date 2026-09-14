@@ -22,8 +22,9 @@ export default function Minimap({ minimap }: MinimapProps) {
       ref={canvasRef}
       width={SIZE}
       height={SIZE}
+      aria-label="정원 미니맵"
       className="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] rounded-lg shadow-lg sm:bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1rem,env(safe-area-inset-right))]"
-      style={{ width: SIZE, height: SIZE }}
+      style={{ width: 'clamp(90px, 12vw, 140px)', height: 'clamp(90px, 12vw, 140px)' }}
     />
   );
 }

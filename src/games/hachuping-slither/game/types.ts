@@ -1,8 +1,9 @@
 import type { Vector2 } from "../../../utils/math";
+import type { Progression, Upgrades } from "./progression";
 
 export type SnakeAiState = "WANDER" | "SEEK_STAR" | "FLEE";
 
-export interface Snake {
+export interface Snake extends Progression {
   id: number;
   isPlayer: boolean;
   name: string;
@@ -55,6 +56,14 @@ export interface LeaderboardEntry {
 
 export interface UISnapshot {
   status: "menu" | "playing" | "paused" | "dead";
+  level: number;
+  xp: number;
+  xpNext: number;
+  upgrades: Upgrades;
+  pendingUpgrades: number;
+  speed: number;
+  pickupBonus: number;
+  boostDrain: number;
   score: number;
   rank: number;
   totalAlive: number;
