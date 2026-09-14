@@ -30,8 +30,8 @@ export default function UpgradeDialog({ snapshot, onChoose }: { snapshot: UISnap
       <p>플레이는 계속됩니다. 버튼 또는 숫자키로 선택하세요.</p>
       {UPGRADE_KEYS.map((key, index) => {
       const Icon = ICONS[key], upgrade = UPGRADES[key];
-      return <button key={key} onClick={() => onChoose(key)} title={upgrade.detail}>
-        <Icon size={20} /><span><strong>{upgrade.name} <small>{snapshot.upgrades[key] + 1}단계</small></strong><small>{upgrade.description}</small></span><kbd>{index + 1}</kbd>
+      return <button key={key} onClick={() => onChoose(key)}>
+        <Icon size={20} /><span><strong>{upgrade.name} <small>{snapshot.upgrades[key] + 1}단계</small></strong><small>{upgrade.description}</small><small>{upgrade.detail}</small></span><kbd>{index + 1}</kbd>
       </button>;
     })}</div>
   </aside>;
