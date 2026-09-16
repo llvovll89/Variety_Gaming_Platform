@@ -5,7 +5,7 @@ import type { JumpEngine } from "../game/engine";
 interface GameCanvasProps {
   characterImageUrl: string;
   bestScore: number;
-  onDeath: (finalScore: number) => void;
+  onDeath: (finalScore: number, cleared?: boolean) => void;
   onReady: (engine: JumpEngine) => void;
 }
 

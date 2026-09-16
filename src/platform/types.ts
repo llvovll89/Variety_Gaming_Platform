@@ -13,5 +13,6 @@ export interface GameDefinition {
   description: string;
   thumbnail: string;
   accentColor: string; // CSS color used for the card's glow/accent
+  disabled?: boolean;
   Component: ComponentType<GameProps>;
 }

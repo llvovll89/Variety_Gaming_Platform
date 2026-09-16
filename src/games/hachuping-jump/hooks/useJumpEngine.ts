@@ -5,7 +5,7 @@ export function useJumpEngine(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   characterImageUrl: string,
   bestScore: number,
-  onDeath: (finalScore: number) => void,
+  onDeath: (finalScore: number, cleared?: boolean) => void,
   onReady: (engine: JumpEngine) => void,
 ): void {
   useEffect(() => {

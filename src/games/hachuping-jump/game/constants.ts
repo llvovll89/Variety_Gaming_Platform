@@ -21,7 +21,7 @@ export const GROUND_HEIGHT = 60;
 export const CEILING_Y = 0;
 export const GROUND_Y = LOGICAL_HEIGHT - GROUND_HEIGHT;
 
-// Obstacles (glowing capsule pillars)
+// Obstacles (rounded candy pillars)
 export const PIPE_WIDTH = 70;
 export const GAP_MARGIN_TOP = 60; // don't let a gap start right at the very top
 export const GAP_MARGIN_BOTTOM = 60; // leave room above the ground strip
@@ -30,9 +30,9 @@ export const GAP_HEIGHT_MIN = 145;
 export const SPAWN_INTERVAL_DISTANCE = 260; // logical units of scroll between obstacle spawns
 
 // Bonus stars (ties into the "별" motif from hachuping-slither)
-export const STAR_SPAWN_CHANCE = 0.4;
+export const STAR_SPAWN_CHANCE = 1;
 export const STAR_RADIUS = 11;
-export const STAR_BONUS_SCORE = 5;
+export const STAR_BONUS_SCORE = 10;
 
 // Difficulty ramp — same "randomized interval, gentle bump, hard cap" philosophy as the
 // slither game's bot-population growth, so the platform's games feel consistent.
@@ -50,5 +50,9 @@ export const MAX_DT = 1 / 30;
 // UI
 export const UI_PUBLISH_INTERVAL = 0.12;
 
-// Rendering
-export const HEX_TILE_SIZE = 34;
+
+export const SHIELD_DURATION = 6;
+export const MAGNET_DURATION = 8;
+export const MAGNET_RADIUS = 110;
+export const ITEM_OFFSET = 95;
+export const ITEM_RADIUS = 16;

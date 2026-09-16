@@ -33,6 +33,14 @@ export function hitsGroundOrCeiling(playerY: number): boolean {
 export function hitsObstacle(playerY: number, obstacle: Obstacle): boolean {
   const gapTop = obstacle.gapCenterY - obstacle.gapHeight / 2;
   const gapBottom = obstacle.gapCenterY + obstacle.gapHeight / 2;
+  if (obstacle.kind === "mushroom") {
+    const cx = obstacle.x + PIPE_WIDTH / 2;
+    const headRadius = PIPE_WIDTH / 2 + PLAYER_HITBOX_RADIUS;
+    const headHit = distanceSq({ x: PLAYER_X, y: playerY }, { x: cx, y: gapBottom + PIPE_WIDTH / 2 }) < headRadius * headRadius;
+    const closestX = clamp(PLAYER_X, obstacle.x + 22, obstacle.x + 48);
+    const closestY = clamp(playerY, gapBottom + 35, GROUND_Y);
+    return headHit || distanceSq({ x: PLAYER_X, y: playerY }, { x: closestX, y: closestY }) < PLAYER_HITBOX_RADIUS ** 2;
+  }
   if (circleHitsPillar(PLAYER_X, playerY, PLAYER_HITBOX_RADIUS, obstacle.x, CEILING_Y, gapTop)) {
     return true;
   }

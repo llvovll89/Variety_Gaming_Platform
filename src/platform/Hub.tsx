@@ -39,9 +39,12 @@ export default function Hub({ games, onSelect }: HubProps) {
           {games.map((game, i) => (
             <button
               key={game.id}
-              onClick={() => onSelect(game.id)}
+              type="button"
+              disabled={game.disabled}
+              aria-label={game.disabled ? `${game.title} 비활성화됨` : game.title}
+              onClick={() => !game.disabled && onSelect(game.id)}
               style={{ animationDelay: `${i * 50}ms` }}
-              className="motion-safe:animate-card-in group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_20px_48px_-12px] active:scale-95"
+              className="motion-safe:animate-card-in group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 enabled:hover:scale-105 enabled:hover:shadow-[0_20px_48px_-12px] enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:grayscale"
             >
               {/* Card Background */}
               <div className="absolute inset-0" style={{
@@ -74,13 +77,7 @@ export default function Hub({ games, onSelect }: HubProps) {
                     className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold text-white transform group-hover:scale-110 transition-transform duration-300"
                     style={{ backgroundColor: `${game.accentColor}dd` }}
                   >
-                    {game.id === "hachuping-memory" && "기억력"}
-                    {game.id === "hachuping-whack-a-mole" && "반응속도"}
-                    {game.id === "hachuping-slither" && "성장"}
-                    {game.id === "hachuping-jump" && "점프"}
-                    {game.id === "hachuping-dodge" && "생존 RPG"}
-                    {game.id === "hachuping-balloon" && "터치"}
-                    {game.id === "hachuping-color-match" && "색상 감각"}
+                    {game.disabled ? "준비 중" : game.id === "hachuping-slither" ? "성장" : game.id === "hachuping-jump" ? "점프" : "생존 RPG"}
                   </div>
                 </div>
 
@@ -100,8 +97,8 @@ export default function Hub({ games, onSelect }: HubProps) {
 
                 {/* CTA */}
                 <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-white/70 group-hover:text-white transition">
-                  지금 시작하기
-                  <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+                  {game.disabled ? "현재 이용할 수 없어요" : "지금 시작하기"}
+                  {!game.disabled && <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>}
                 </div>
               </div>
             </button>

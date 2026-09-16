@@ -1,37 +1,26 @@
+import { createJourney, finishStage, GATES_PER_STAGE, STAGES, STAGE_BONUS } from "./stages";
 import {
   FLAP_IMPULSE,
-  GAP_HEIGHT_MIN,
-  GAP_HEIGHT_START,
-  GAP_SHRINK_PER_RAMP,
   GRAVITY,
   LOGICAL_HEIGHT,
   LOGICAL_WIDTH,
   MAX_DT,
   MAX_FALL_SPEED,
   PIPE_WIDTH,
-  PLAYER_X,
-  RAMP_INTERVAL_MAX,
-  RAMP_INTERVAL_MIN,
   ROTATION_MAX,
   ROTATION_MIN,
   ROTATION_PER_VELOCITY,
   ROTATION_SMOOTHING,
-  SCROLL_SPEED_BASE,
-  SCROLL_SPEED_INCREMENT_MAX,
-  SCROLL_SPEED_INCREMENT_MIN,
-  SCROLL_SPEED_MAX,
   SPAWN_INTERVAL_DISTANCE,
-  STAR_BONUS_SCORE,
   UI_PUBLISH_INTERVAL,
 } from "./constants";
-import { hitsGroundOrCeiling, hitsObstacle } from "./collision";
+import { advanceRewards, createRewards, resolveRewards } from "./rewards";
 import { FlapInputController } from "./input";
 import { advanceObstacles, createObstacle } from "./obstacles";
 import { computeLetterboxTransform, renderJump, type LetterboxTransform } from "./renderer";
-import { hitsStar } from "./star";
 import { UIStore } from "./uiStore";
 import type { Obstacle, PlayerState, UISnapshot } from "./types";
-import { clamp, lerp, randRange } from "../../../utils/math";
+import { clamp, lerp } from "../../../utils/math";
 
 const FLAP_FX_DECAY_PER_SEC = 2.5;
 
@@ -46,12 +35,12 @@ export class JumpEngine {
 
   private player: PlayerState = { y: LOGICAL_HEIGHT / 2, vy: 0, rotation: 0, alive: true };
   private obstacles: Obstacle[] = [];
-  private score = 0;
+  private rewards = createRewards();
+  private spawnSequence = 0;
   private distanceScrolled = 0;
-  private scrollSpeed = SCROLL_SPEED_BASE;
-  private currentGapHeight = GAP_HEIGHT_START;
+  private journey = createJourney();
+  private previousCenter = 320;
   private spawnCounter = 0;
-  private rampTimer = randRange(RAMP_INTERVAL_MIN, RAMP_INTERVAL_MAX);
   private flapFx = 0;
 
   private rafId: number | null = null;
@@ -60,13 +49,13 @@ export class JumpEngine {
   private wasAlive = true;
   private paused = false;
   private bestScoreAtStart: number;
-  private onDeath: (finalScore: number) => void;
+  private onDeath: (finalScore: number, cleared?: boolean) => void;
 
   constructor(
     canvas: HTMLCanvasElement,
     characterImageUrl: string,
     bestScore: number,
-    onDeath: (finalScore: number) => void,
+    onDeath: (finalScore: number, cleared?: boolean) => void,
   ) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
@@ -94,6 +83,7 @@ export class JumpEngine {
     this.canvas.style.height = `${height}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.transform = computeLetterboxTransform(width, height);
+    this.draw();
   }
 
   start(): void {
@@ -113,7 +103,7 @@ export class JumpEngine {
   }
 
   pause(): void {
-    if (this.paused || !this.player.alive) return;
+    if (this.paused || !this.player.alive || this.journey.completed) return;
     this.paused = true;
     this.input.reset();
     this.uiStore.publish(this.buildSnapshot());
@@ -140,21 +130,32 @@ export class JumpEngine {
 
     if (this.paused) return;
 
-    if (this.player.alive) {
+    if (this.player.alive && !this.journey.completed) {
+      advanceRewards(this.rewards, dt);
       this.stepPhysics(dt);
       this.stepWorld(dt);
       this.resolveScoringAndCollisions();
-      this.stepDifficulty(dt);
+      this.stepStage(dt);
     }
 
     this.flapFx = Math.max(0, this.flapFx - dt * FLAP_FX_DECAY_PER_SEC);
 
     if (this.wasAlive && !this.player.alive) {
       this.wasAlive = false;
-      this.onDeath(this.score);
+      this.onDeath(this.rewards.score);
       this.uiStore.publish(this.buildSnapshot());
     }
 
+    this.draw();
+
+    this.uiTimer -= dt;
+    if (this.uiTimer <= 0) {
+      this.uiTimer = UI_PUBLISH_INTERVAL;
+      this.uiStore.publish(this.buildSnapshot());
+    }
+  }
+
+  private draw(): void {
     renderJump(
       this.ctx,
       this.transform,
@@ -163,13 +164,9 @@ export class JumpEngine {
       this.playerImage,
       this.distanceScrolled,
       this.flapFx,
+      this.rewards,
+      this.journey,
     );
-
-    this.uiTimer -= dt;
-    if (this.uiTimer <= 0) {
-      this.uiTimer = UI_PUBLISH_INTERVAL;
-      this.uiStore.publish(this.buildSnapshot());
-    }
   }
 
   private stepPhysics(dt: number): void {
@@ -187,54 +184,61 @@ export class JumpEngine {
   }
 
   private stepWorld(dt: number): void {
-    const dx = this.scrollSpeed * dt;
+    const worldDt = dt * (this.rewards.slowTime > 0 ? 0.6 : 1);
+    const dx = STAGES[this.journey.stage].speed * worldDt;
     this.distanceScrolled += dx;
-    this.obstacles = advanceObstacles(this.obstacles, dx);
+    this.obstacles = advanceObstacles(this.obstacles, dx, worldDt);
 
     this.spawnCounter += dx;
-    if (this.spawnCounter >= SPAWN_INTERVAL_DISTANCE) {
+    if (this.spawnCounter >= SPAWN_INTERVAL_DISTANCE && this.journey.spawned < GATES_PER_STAGE) {
       this.spawnCounter -= SPAWN_INTERVAL_DISTANCE;
-      this.obstacles.push(createObstacle(LOGICAL_WIDTH + PIPE_WIDTH, this.currentGapHeight));
+      const stage = STAGES[this.journey.stage];
+      const obstacle = createObstacle(LOGICAL_WIDTH + PIPE_WIDTH, stage.gap, ++this.spawnSequence, stage.kinds[this.journey.spawned % stage.kinds.length], this.previousCenter);
+      this.previousCenter = obstacle.baseCenterY;
+      this.obstacles.push(obstacle);
+      this.journey.spawned++;
     }
   }
 
   private resolveScoringAndCollisions(): void {
-    let dead = hitsGroundOrCeiling(this.player.y);
-
-    for (const obstacle of this.obstacles) {
-      if (!obstacle.passed && obstacle.x + PIPE_WIDTH / 2 < PLAYER_X) {
-        obstacle.passed = true;
-        this.score += 1;
-      }
-      if (hitsStar(this.player.y, obstacle)) {
-        obstacle.star!.collected = true;
-        this.score += STAR_BONUS_SCORE;
-      }
-      if (!dead && hitsObstacle(this.player.y, obstacle)) {
-        dead = true;
-      }
-    }
-
-    if (dead) this.player.alive = false;
+    resolveRewards(this.player, this.obstacles, this.rewards);
   }
 
-  private stepDifficulty(dt: number): void {
-    this.rampTimer -= dt;
-    if (this.rampTimer > 0) return;
-    this.rampTimer = randRange(RAMP_INTERVAL_MIN, RAMP_INTERVAL_MAX);
-    this.scrollSpeed = Math.min(
-      SCROLL_SPEED_MAX,
-      this.scrollSpeed + randRange(SCROLL_SPEED_INCREMENT_MIN, SCROLL_SPEED_INCREMENT_MAX),
-    );
-    this.currentGapHeight = Math.max(GAP_HEIGHT_MIN, this.currentGapHeight - GAP_SHRINK_PER_RAMP);
+  private stepStage(dt: number): void {
+    if (!this.player.alive) return;
+    this.journey.bannerTime = Math.max(0, this.journey.bannerTime - dt);
+    this.journey.cleared = this.rewards.gates - this.journey.stage * GATES_PER_STAGE;
+    if (!finishStage(this.journey)) return;
+    this.rewards.score += STAGE_BONUS;
+    if (this.journey.completed) {
+      this.uiStore.publish(this.buildSnapshot());
+      this.onDeath(this.rewards.score, true);
+      return;
+    }
+    this.obstacles = [];
+    this.spawnCounter = 0;
+    this.previousCenter = 320;
+    this.player.y = 320;
+    this.player.vy = 0;
+    this.rewards.shieldTime = Math.max(this.rewards.shieldTime, 3);
+    this.uiStore.publish(this.buildSnapshot());
   }
 
   private buildSnapshot(): UISnapshot {
     return {
-      status: !this.player.alive ? "dead" : this.paused ? "paused" : "playing",
-      score: this.score,
-      bestScore: Math.max(this.bestScoreAtStart, this.score),
-      finalScore: this.player.alive ? null : this.score,
+      status: this.journey.completed ? "won" : !this.player.alive ? "dead" : this.paused ? "paused" : "playing",
+      score: this.rewards.score,
+      stars: this.rewards.stars,
+      shieldTime: this.rewards.shieldTime,
+      magnetTime: this.rewards.magnetTime,
+      doubleTime: this.rewards.doubleTime,
+      slowTime: this.rewards.slowTime,
+      hearts: this.rewards.hearts,
+      stage: this.journey.stage,
+      stageCleared: this.journey.cleared,
+      bannerTime: this.journey.bannerTime,
+      bestScore: Math.max(this.bestScoreAtStart, this.rewards.score),
+      finalScore: this.player.alive && !this.journey.completed ? null : this.rewards.score,
     };
   }
 }

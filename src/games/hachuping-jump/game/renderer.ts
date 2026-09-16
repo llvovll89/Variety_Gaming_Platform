@@ -1,281 +1,119 @@
-import {
-  GROUND_Y,
-  HEX_TILE_SIZE,
-  LOGICAL_HEIGHT,
-  LOGICAL_WIDTH,
-  PIPE_WIDTH,
-  PLAYER_RADIUS,
-  PLAYER_X,
-  STAR_RADIUS,
-} from "./constants";
-import type { Obstacle, PlayerState } from "./types";
+import { ITEMS } from "./items";
+import type { ItemKind } from "./items";
+import { STAGES, type Journey } from "./stages";
+﻿import { GROUND_Y, ITEM_OFFSET, ITEM_RADIUS, LOGICAL_HEIGHT, LOGICAL_WIDTH, PIPE_WIDTH, PLAYER_RADIUS, PLAYER_X, STAR_RADIUS } from "./constants";
+import type { Obstacle, ObstacleKind, PlayerState } from "./types";
+import type { Rewards } from "./rewards";
 import { drawImageTopCrop } from "../../../shared/canvasImage";
 
-export interface LetterboxTransform {
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-  viewportWidth: number;
-  viewportHeight: number;
-}
-
-function toScreen(t: LetterboxTransform, x: number, y: number): { x: number; y: number } {
-  return { x: t.offsetX + x * t.scale, y: t.offsetY + y * t.scale };
-}
-
-function drawSky(ctx: CanvasRenderingContext2D, t: LetterboxTransform): void {
-  const grad = ctx.createLinearGradient(0, 0, 0, t.viewportHeight);
-  grad.addColorStop(0, "#171233");
-  grad.addColorStop(1, "#0b0e1a");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, t.viewportWidth, t.viewportHeight);
-}
-
-function drawGroundHex(ctx: CanvasRenderingContext2D, t: LetterboxTransform, scrollDistance: number): void {
-  const groundScreenY = toScreen(t, 0, GROUND_Y).y;
-  ctx.fillStyle = "#0a0d17";
-  ctx.fillRect(0, groundScreenY, t.viewportWidth, t.viewportHeight - groundScreenY);
-
-  const hexSize = HEX_TILE_SIZE * t.scale;
-  const colWidth = Math.sqrt(3) * hexSize;
-  const rowHeight = hexSize * 1.5;
-  const scrollOffset = scrollDistance * t.scale;
-
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
-  ctx.lineWidth = 1;
-
-  const rowCount = Math.ceil((t.viewportHeight - groundScreenY) / rowHeight) + 2;
-  const colCount = Math.ceil(t.viewportWidth / colWidth) + 2;
-  for (let row = 0; row < rowCount; row++) {
-    const rowOffset = row % 2 !== 0 ? colWidth / 2 : 0;
-    const cy = groundScreenY + row * rowHeight;
-    for (let col = -1; col < colCount; col++) {
-      const cx = ((col * colWidth + rowOffset - scrollOffset) % (colWidth * colCount)) + colWidth * colCount * 0.5;
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI / 180) * (60 * i - 30);
-        const px = cx + hexSize * Math.cos(angle);
-        const py = cy + hexSize * Math.sin(angle);
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.stroke();
-    }
-  }
-
-  ctx.strokeStyle = "#4fd8ff";
-  ctx.lineWidth = 2;
-  ctx.shadowColor = "rgba(79,216,255,0.6)";
-  ctx.shadowBlur = 10;
-  ctx.beginPath();
-  ctx.moveTo(0, groundScreenY);
-  ctx.lineTo(t.viewportWidth, groundScreenY);
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-}
-
-function drawPillar(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  hue: number,
-  scrollDistance: number,
-  capAtBottom: boolean,
-): void {
-  if (h <= 0) return;
-  const radius = w / 2;
-  const pulse = 0.5 + 0.5 * Math.sin(scrollDistance * 0.02 + hue);
-
-  const path = new Path2D();
-  path.moveTo(x, y + radius);
-  path.arcTo(x, y, x + radius, y, radius);
-  path.arcTo(x + w, y, x + w, y + radius, radius);
-  path.lineTo(x + w, y + h - radius);
-  path.arcTo(x + w, y + h, x + w - radius, y + h, radius);
-  path.arcTo(x, y + h, x, y + h - radius, radius);
-  path.closePath();
-
-  ctx.save();
-  ctx.shadowColor = `hsla(${hue}, 90%, 65%, ${0.4 + pulse * 0.3})`;
-  ctx.shadowBlur = 14 + pulse * 12;
-
-  const grad = ctx.createLinearGradient(x, 0, x + w, 0);
-  grad.addColorStop(0, `hsla(${hue}, 70%, 42%, 1)`);
-  grad.addColorStop(0.5, `hsla(${hue}, 92%, 76%, 1)`);
-  grad.addColorStop(1, `hsla(${hue}, 70%, 42%, 1)`);
-  ctx.fillStyle = grad;
-  ctx.fill(path);
-  ctx.restore();
-
-  // Diagonal energy stripes that scroll with the world, so the pillars read as
-  // powered/alive rather than static blocks.
-  ctx.save();
-  ctx.clip(path);
-  const stripeSpacing = 24;
-  const stripeThickness = 9;
-  const offset = ((scrollDistance * 0.5) % stripeSpacing + stripeSpacing) % stripeSpacing;
-  ctx.fillStyle = `hsla(${hue}, 100%, 92%, 0.22)`;
-  for (let sy = y - stripeSpacing + offset; sy < y + h + stripeSpacing; sy += stripeSpacing) {
-    ctx.save();
-    ctx.translate(x + w / 2, sy);
-    ctx.rotate((-18 * Math.PI) / 180);
-    ctx.fillRect(-w, -stripeThickness / 2, w * 2, stripeThickness);
-    ctx.restore();
-  }
-  ctx.restore();
-
-  ctx.strokeStyle = `hsla(${hue}, 100%, 92%, 0.55)`;
-  ctx.lineWidth = 1.5;
-  ctx.stroke(path);
-
-  // Glowing energy core at the tip nearest the gap, with a few orbiting sparks —
-  // draws the eye to the gap edge while keeping the actual hitbox untouched.
-  const capY = capAtBottom ? y + h - radius * 0.35 : y + radius * 0.35;
-  const cx = x + w / 2;
-  const coreR = radius * (0.4 + pulse * 0.14);
-
-  const glow = ctx.createRadialGradient(cx, capY, 0, cx, capY, coreR * 2.6);
-  glow.addColorStop(0, `hsla(${hue}, 100%, 92%, ${0.55 + pulse * 0.25})`);
-  glow.addColorStop(1, `hsla(${hue}, 100%, 92%, 0)`);
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(cx, capY, coreR * 2.6, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = `hsla(${hue}, 100%, 95%, 0.95)`;
-  ctx.beginPath();
-  ctx.arc(cx, capY, coreR, 0, Math.PI * 2);
-  ctx.fill();
-
-  const sparkCount = 3;
-  for (let i = 0; i < sparkCount; i++) {
-    const angle = scrollDistance * 0.012 + hue + (i * Math.PI * 2) / sparkCount;
-    const orbitR = coreR * 2.1;
-    const px = cx + Math.cos(angle) * orbitR;
-    const py = capY + Math.sin(angle) * orbitR * 0.55;
-    ctx.fillStyle = `hsla(${hue}, 100%, 90%, 0.85)`;
-    ctx.beginPath();
-    ctx.arc(px, py, Math.max(1, coreR * 0.16), 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function drawObstacles(
-  ctx: CanvasRenderingContext2D,
-  t: LetterboxTransform,
-  obstacles: Obstacle[],
-  scrollDistance: number,
-): void {
-  for (const obstacle of obstacles) {
-    const screenX = toScreen(t, obstacle.x, 0).x;
-    const screenW = PIPE_WIDTH * t.scale;
-    const gapTopY = obstacle.gapCenterY - obstacle.gapHeight / 2;
-    const gapBottomY = obstacle.gapCenterY + obstacle.gapHeight / 2;
-    const scaledScroll = scrollDistance * t.scale;
-
-    const topScreenY = toScreen(t, 0, 0).y;
-    const gapTopScreenY = toScreen(t, 0, gapTopY).y;
-    drawPillar(ctx, screenX, topScreenY, screenW, gapTopScreenY - topScreenY, obstacle.hue, scaledScroll, true);
-
-    const gapBottomScreenY = toScreen(t, 0, gapBottomY).y;
-    const groundScreenY = toScreen(t, 0, GROUND_Y).y;
-    drawPillar(
-      ctx,
-      screenX,
-      gapBottomScreenY,
-      screenW,
-      groundScreenY - gapBottomScreenY,
-      obstacle.hue,
-      scaledScroll,
-      false,
-    );
-
-    if (obstacle.star && !obstacle.star.collected) {
-      const s = toScreen(t, obstacle.x + PIPE_WIDTH / 2, obstacle.star.y);
-      const r = STAR_RADIUS * t.scale;
-      const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r * 2.4);
-      glow.addColorStop(0, "hsla(48, 95%, 70%, 0.4)");
-      glow.addColorStop(1, "hsla(48, 95%, 70%, 0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r * 2.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "hsl(48, 95%, 65%)";
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "hsla(48, 100%, 90%, 0.8)";
-      ctx.beginPath();
-      ctx.arc(s.x - r * 0.3, s.y - r * 0.3, r * 0.35, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-}
-
-function drawPlayer(
-  ctx: CanvasRenderingContext2D,
-  t: LetterboxTransform,
-  player: PlayerState,
-  image: HTMLImageElement | null,
-  flapFx: number,
-): void {
-  const s = toScreen(t, PLAYER_X, player.y);
-  const r = PLAYER_RADIUS * t.scale;
-
-  if (flapFx > 0.01) {
-    ctx.strokeStyle = `rgba(255,255,255,${0.5 * flapFx})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, r * (1.3 + (1 - flapFx) * 1.2), 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  ctx.fillStyle = "rgba(0,0,0,0.25)";
-  ctx.beginPath();
-  ctx.ellipse(s.x, s.y + r * 0.6, r * 0.85, r * 0.3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(s.x, s.y);
-  ctx.rotate(player.rotation);
-  if (image && image.complete && image.naturalWidth > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.clip();
-    drawImageTopCrop(ctx, image, -r, -r, r * 2);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = "#4fd8ff";
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
+export interface LetterboxTransform { scale: number; offsetX: number; offsetY: number; viewportWidth: number; viewportHeight: number }
 export function computeLetterboxTransform(viewportWidth: number, viewportHeight: number): LetterboxTransform {
   const scale = Math.min(viewportWidth / LOGICAL_WIDTH, viewportHeight / LOGICAL_HEIGHT);
-  const offsetX = (viewportWidth - LOGICAL_WIDTH * scale) / 2;
-  const offsetY = (viewportHeight - LOGICAL_HEIGHT * scale) / 2;
-  return { scale, offsetX, offsetY, viewportWidth, viewportHeight };
+  return { scale, offsetX: (viewportWidth - LOGICAL_WIDTH * scale) / 2, offsetY: (viewportHeight - LOGICAL_HEIGHT * scale) / 2, viewportWidth, viewportHeight };
 }
+function oval(c: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, color: string) {
+  c.fillStyle = color; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fill();
+}
+function star(c: CanvasRenderingContext2D, x: number, y: number, r: number, color: string) {
+  c.beginPath();
+  for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2; const d = i % 2 ? r * .48 : r; const px = x + Math.cos(a) * d, py = y + Math.sin(a) * d; if (!i) c.moveTo(px, py); else c.lineTo(px, py); }
+  c.closePath(); c.fillStyle = color; c.fill();
+}
+function face(c: CanvasRenderingContext2D, x: number, y: number) {
+  oval(c, x - 9, y, 2.3, 3.4, '#674b68'); oval(c, x + 9, y, 2.3, 3.4, '#674b68');
+  oval(c, x - 16, y + 6, 5, 2.8, '#f89ea8'); oval(c, x + 16, y + 6, 5, 2.8, '#f89ea8');
+  c.strokeStyle = '#674b68'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y + 4, 4, .15, Math.PI - .15); c.stroke();
+}
+function cloud(c: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  c.save(); c.translate(x, y); c.scale(size, size);
+  oval(c, 0, 9, 42, 15, '#ffffffcc'); oval(c, -18, 0, 21, 20, '#ffffffcc'); oval(c, 12, -6, 25, 25, '#ffffffed'); c.restore();
+}
+function landscape(c: CanvasRenderingContext2D, distance: number, stageIndex: number) {
+  const stage = STAGES[stageIndex];
+  const sky = c.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT); sky.addColorStop(0, stage.sky[0]); sky.addColorStop(.6, stage.sky[1]); sky.addColorStop(1, stage.sky[2]);
+  c.fillStyle = sky; c.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+  oval(c, 320, 115, 42, 42, '#fff1b5'); oval(c, 320, 115, 33, 33, '#fff9d9'); face(c, 320, 116);
+  c.save(); c.globalAlpha = stageIndex === 0 ? .26 : .08; const rainbow = ['#ee8fa7', '#ffc775', '#fff8ac', '#92d6bb', '#97cde5'];
+  rainbow.forEach((color, i) => { c.strokeStyle = color; c.lineWidth = 9; c.beginPath(); c.arc(195, 405, 190 - i * 9, Math.PI, 0); c.stroke(); }); c.restore();
+  for (let i = 0; i < 6; i++) { const x = ((i * 113 - distance * .12) % 560 + 560) % 560 - 70; cloud(c, x, 180 + (i % 3) * 95, .6 + (i % 2) * .3); }
+  for (let layer = 0; layer < 2; layer++) for (let i = -1; i < 5; i++) {
+    const x = i * 170 - (distance * (.15 + layer * .13)) % 170;
+    oval(c, x, GROUND_Y + 25, 125, 110 - layer * 38, stageIndex === 0 ? (layer ? '#a6d7c2' : '#c7e4d8') : stageIndex === 1 ? (layer ? '#396e64' : '#699689') : stageIndex === 2 ? (layer ? '#96c6db' : '#c6e7ec') : (layer ? '#75658f' : '#9580a5'));
+    if (layer && stageIndex === 0) { c.fillStyle = '#93c3ab'; c.fillRect(x + 30, 565, 7, 62); oval(c, x + 34, 565, 24, 35, '#b6dfb2'); oval(c, x + 25, 556, 13, 19, '#d1eabf'); }
+  }
+  if (stageIndex === 1) {
+    for (let i = 0; i < 7; i++) {
+      const x = i * 85 - distance * .2 % 85;
+      c.fillStyle = '#e4d9b4'; c.fillRect(x - 5, 545, 10, 85);
+      oval(c, x, 545, 29, 20, i % 2 ? '#dfabc6' : '#d8cc9b');
+      oval(c, x - 10, 539, 5, 4, '#fff2da'); oval(c, x + 8, 548, 4, 3, '#fff2da');
+    }
+    for (let i = 0; i < 26; i++) oval(c, (i * 71 + Math.sin(distance * .006 + i) * 12) % 400, 220 + (i * 53) % 380, 2, 2, '#fff5a9bb');
+  }
+  if (stageIndex === 2) {
+    c.save(); c.globalAlpha = .25;
+    for (let i = 0; i < 3; i++) { c.strokeStyle = ['#9cf6c9','#c9adff','#a4eff5'][i]; c.lineWidth = 22; c.beginPath(); c.moveTo(-30, 150 + i * 30); c.bezierCurveTo(130, 20 + i * 40, 260, 320 - i * 40, 430, 100 + i * 40); c.stroke(); } c.restore();
+    for (let i = 0; i < 6; i++) { const x = i * 90 - distance * .18 % 90; c.fillStyle = '#d9f7f1aa'; c.beginPath(); c.moveTo(x, 630); c.lineTo(x + 22, 505 - i % 2 * 45); c.lineTo(x + 44, 630); c.fill(); }
+  }
+  if (stageIndex === 3) {
+    for (let i = 0; i < 35; i++) star(c, (i * 67 + 13) % 400, 100 + (i * 43) % 470, i % 3 + 1, '#ffebbfaa');
+    for (let i = 0; i < 6; i++) { const x = i * 95 - distance * .15 % 95; c.fillStyle = '#af98bdaa'; c.fillRect(x, 525, 32, 115); c.beginPath(); c.moveTo(x - 5,525); c.lineTo(x+16,490); c.lineTo(x+37,525); c.fill(); star(c,x+16,485,6,'#ffe5a5'); }
+  }
 
-export function renderJump(
-  ctx: CanvasRenderingContext2D,
-  t: LetterboxTransform,
-  obstacles: Obstacle[],
-  player: PlayerState,
-  playerImage: HTMLImageElement | null,
-  scrollDistance: number,
-  flapFx: number,
-): void {
-  drawSky(ctx, t);
-  drawGroundHex(ctx, t, scrollDistance);
-  drawObstacles(ctx, t, obstacles, scrollDistance);
-  drawPlayer(ctx, t, player, playerImage, flapFx);
+}
+function pillar(c: CanvasRenderingContext2D, x: number, y: number, h: number, hue: number, top: boolean, kind: ObstacleKind) {
+  if (h <= 0) return;
+  if (kind === 'mushroom') {
+    c.fillStyle = '#fff0d0'; c.fillRect(x + 22, y + 35, 26, h - 35);
+    c.fillStyle = '#ebcfa8'; c.fillRect(x + 40, y + 45, 8, h - 45);
+    oval(c, x + 35, y + 35, 35, 35, '#d9779a');
+    oval(c, x + 22, y + 17, 8, 6, '#fff4e0'); oval(c, x + 49, y + 26, 7, 5, '#fff4e0');
+    face(c, x + 35, y + 43); return;
+  }
+  if (kind === 'cloud') hue = 195;
+  if (kind === 'crystal') hue = 240;
+  c.save(); const path = new Path2D(); path.roundRect(x, y, PIPE_WIDTH, h, PIPE_WIDTH / 2);
+  const g = c.createLinearGradient(x, 0, x + PIPE_WIDTH, 0); g.addColorStop(0, `hsl(${hue} 55% 66%)`); g.addColorStop(.32, `hsl(${hue} 85% 89%)`); g.addColorStop(1, `hsl(${hue} 58% 72%)`);
+  c.fillStyle = g; c.fill(path); c.strokeStyle = `hsl(${hue} 40% 56%)`; c.lineWidth = 2; c.stroke(path);
+  c.clip(path); c.strokeStyle = '#ffffff66'; c.lineWidth = 13;
+  if (kind === "candy") for (let sy = y - 70; sy < y + h + 70; sy += 43) { c.beginPath(); c.moveTo(x - 10, sy + 38); c.lineTo(x + PIPE_WIDTH + 10, sy); c.stroke(); }
+  if (kind === 'cloud') for (let sy = y + 20; sy < y + h; sy += 36) { oval(c, x + 20, sy, 27, 23, '#ffffffbb'); oval(c, x + 53, sy + 13, 25, 22, '#e4faff'); }
+  if (kind === 'crystal') { c.fillStyle = '#ffffff88'; c.beginPath(); c.moveTo(x + 35,y); c.lineTo(x + 58,y + h / 2); c.lineTo(x + 35,y + h); c.lineTo(x + 15,y + h / 2); c.closePath(); c.fill(); c.strokeStyle = '#eeeaff'; c.lineWidth = 1; c.stroke(); }
+  const tip = top ? y + h - 33 : y + 33;
+  oval(c, x + 35, tip, 29, 25, `hsl(${hue} 85% 91%)`); face(c, x + 35, tip - 2);
+  c.fillStyle = '#ffffff80'; c.beginPath(); c.roundRect(x + 9, y + 25, 5, Math.max(1, h - 65), 3); c.fill(); c.restore();
+}
+function item(c: CanvasRenderingContext2D, x: number, y: number, kind: ItemKind, pulse: number) {
+  const color = ITEMS[kind].color;
+  oval(c, x, y, ITEM_RADIUS + 7 + pulse * 2, ITEM_RADIUS + 7 + pulse * 2, kind === 'shield' ? '#d7faff88' : '#ffe0edaa');
+  oval(c, x, y, ITEM_RADIUS, ITEM_RADIUS, '#fffdf9'); c.strokeStyle = color; c.lineWidth = 2; c.stroke();
+  c.strokeStyle = color; c.lineWidth = 4; c.beginPath();
+  if (kind === 'shield') { c.moveTo(x, y - 9); c.lineTo(x + 8, y - 5); c.quadraticCurveTo(x + 8, y + 6, x, y + 10); c.quadraticCurveTo(x - 8, y + 6, x - 8, y - 5); c.closePath(); }
+  else if (kind === 'magnet') { c.moveTo(x - 7, y - 8); c.lineTo(x - 7, y + 2); c.arc(x, y + 2, 7, Math.PI, 0, true); c.lineTo(x + 7, y - 8); } c.stroke();
+  if (kind !== "shield" && kind !== "magnet") { c.fillStyle = color; c.font = "bold 18px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(ITEMS[kind].symbol, x, y + 1); c.textBaseline = "alphabetic"; }
+}
+export function renderJump(c: CanvasRenderingContext2D, t: LetterboxTransform, obstacles: Obstacle[], player: PlayerState, image: HTMLImageElement | null, distance: number, flapFx: number, rewards: Rewards, journey: Journey): void {
+  c.fillStyle = STAGES[journey.stage].sky[0]; c.fillRect(0, 0, t.viewportWidth, t.viewportHeight);
+  c.save(); c.translate(t.offsetX, t.offsetY); c.scale(t.scale, t.scale); c.beginPath(); c.rect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); c.clip();
+  landscape(c, distance, journey.stage);
+  for (const o of obstacles) {
+    if (o.kind !== "mushroom") pillar(c, o.x, -35, o.gapCenterY - o.gapHeight / 2 + 35, o.hue, true, o.kind);
+    const bottom = o.gapCenterY + o.gapHeight / 2; pillar(c, o.x, bottom, GROUND_Y - bottom + 35, o.hue, false, o.kind);
+    const pulse = Math.sin(distance * .025 + o.id);
+    if (o.star && !o.star.collected) { const x = o.x + PIPE_WIDTH / 2; oval(c, x, o.star.y, 23 + pulse * 2, 23 + pulse * 2, '#fff8bd88'); star(c, x, o.star.y, STAR_RADIUS + 3, '#dc962e'); star(c, x, o.star.y - 1, STAR_RADIUS + 1, '#ffdc65'); star(c, x - 2, o.star.y - 4, 3, '#fff9dc'); }
+    if (o.item && !o.item.collected) item(c, o.x - ITEM_OFFSET, o.gapCenterY, o.item.kind, pulse);
+  }
+  c.fillStyle = STAGES[journey.stage].ground; c.fillRect(0, GROUND_Y, 400, 60); c.fillStyle = STAGES[journey.stage].frosting; c.fillRect(0, GROUND_Y, 400, 13);
+  for (let i = -1; i < 15; i++) { const x = i * 32 - distance % 32; oval(c, x, GROUND_Y + 12, 17, 9, STAGES[journey.stage].frosting); oval(c, x + 8, GROUND_Y + 40, 3, 2, '#d3a480'); }
+  const x = PLAYER_X, y = player.y;
+  for (let i = 1; i <= 4; i++) star(c, x - 18 - i * 11, y + Math.sin(distance * .04 - i) * 5, (5 - i) * 1.4, '#ffffffaa');
+  if (rewards.magnetTime > 0) { c.save(); c.setLineDash([4, 7]); c.strokeStyle = '#d86eaa77'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 44, 0, Math.PI * 2); c.stroke(); c.restore(); }
+  if (rewards.shieldTime > 0) { c.save(); c.globalAlpha = rewards.shieldTime < 1.5 ? .55 + Math.sin(distance * .14) * .25 : 1; oval(c, x, y, 29, 29, '#bdf8ff88'); c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.stroke(); oval(c, x - 12, y - 16, 7, 3, '#fff'); c.restore(); }
+  if (flapFx > .01) { c.strokeStyle = `rgba(255,255,255,${flapFx * .6})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 20 + (1 - flapFx) * 16, 0, Math.PI * 2); c.stroke(); }
+  c.save(); c.translate(x, y); c.rotate(player.rotation); oval(c, 0, 0, PLAYER_RADIUS + 2, PLAYER_RADIUS + 2, '#fffaf6');
+  c.beginPath(); c.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2); c.clip();
+  if (image && image.complete && image.naturalWidth > 0) drawImageTopCrop(c, image, -PLAYER_RADIUS, -PLAYER_RADIUS, PLAYER_RADIUS * 2);
+  else { oval(c, 0, 0, PLAYER_RADIUS, PLAYER_RADIUS, '#ffc4db'); face(c, 0, -3); } c.restore();
+  for (const fx of rewards.effects) { c.save(); c.globalAlpha = Math.min(1, fx.life * 2); c.font = 'bold 17px Pretendard, sans-serif'; c.textAlign = 'center'; c.strokeStyle = '#fff'; c.lineWidth = 4; c.strokeText(fx.text, fx.x, fx.y - 18); c.fillStyle = fx.color; c.fillText(fx.text, fx.x, fx.y - 18); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; star(c, fx.x + Math.cos(a) * (1 - fx.life) * 45, fx.y + Math.sin(a) * (1 - fx.life) * 35, fx.life * 4, '#ffd060'); } c.restore(); }
+  c.restore();
 }

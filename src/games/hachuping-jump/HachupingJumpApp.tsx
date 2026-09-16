@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
+import Victory from "./components/Victory";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
@@ -12,7 +13,7 @@ import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
 import type { JumpEngine } from "./game/engine";
 
-type Screen = "menu" | "playing" | "dead";
+type Screen = "menu" | "playing" | "dead" | "won";
 
 const GAME_ID = "hachuping-jump";
 const ACCENT_COLOR = "#4fd8ff";
@@ -34,10 +35,10 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
   }, []);
 
   const handleDeath = useCallback(
-    (score: number) => {
+    (score: number, cleared = false) => {
       setFinalScore(score);
       submitScore(score);
-      setScreen("dead");
+      setScreen(cleared ? "won" : "dead");
     },
     [submitScore],
   );
@@ -57,7 +58,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
     engine?.togglePause();
   }, [engine]);
 
-  const gameActive = screen === "playing" || screen === "dead";
+  const gameActive = screen === "playing" || screen === "dead" || screen === "won";
   const isPaused = snapshot.status === "paused";
 
   return (
@@ -99,6 +100,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
           onMainMenu={handleMainMenu}
         />
       )}
+      {screen === "won" && <Victory score={finalScore ?? 0} onRestart={handleRestart} onMenu={handleMainMenu} />}
       {screen === "dead" && finalScore !== null && (
         <GameOverScreen
           finalScore={finalScore}
