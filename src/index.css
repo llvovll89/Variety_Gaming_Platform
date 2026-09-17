@@ -27,7 +27,12 @@
   --game-balloon-primary: #ffb020;
   --game-balloon-light: #ffd699;
   --game-balloon-dark: #d97706;
-  
+
+  /* 삼국지 패업 runs an ink-wash light theme, so its "light" token is paper, not a tint. */
+  --game-sangokushi-primary: #7a2020;
+  --game-sangokushi-light: #f0e6d2;
+  --game-sangokushi-dark: #3a3226;
+
   /* Neutral palette */
   --bg-dark: #0f1419;
   --bg-card: #1a1f2e;

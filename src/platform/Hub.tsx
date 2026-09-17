@@ -77,7 +77,7 @@ export default function Hub({ games, onSelect }: HubProps) {
                     className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold text-white transform group-hover:scale-110 transition-transform duration-300"
                     style={{ backgroundColor: `${game.accentColor}dd` }}
                   >
-                    {game.disabled ? "준비 중" : game.id === "hachuping-slither" ? "성장" : game.id === "hachuping-jump" ? "점프" : "생존 RPG"}
+                    {game.disabled ? "준비 중" : game.id === "hachuping-slither" ? "성장" : game.id === "hachuping-jump" ? "점프" : game.id === "three-kingdoms" ? "전략" : "생존 RPG"}
                   </div>
                 </div>
 

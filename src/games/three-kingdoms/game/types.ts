@@ -107,6 +107,11 @@ export interface Unit {
   status: { confused: number; slowed: number; fired: number };
   /** Consecutive turns cut off from supply. Drives starvation. */
   unsuppliedTurns: number;
+  /**
+   * Standing objective, used by the AI. Persisting it on the unit is what stops armies
+   * oscillating between two similarly-valued targets and never arriving at either.
+   */
+  orderTarget?: { kind: "city"; id: CityId } | { kind: "hex"; hex: HexCoord };
 }
 
 export interface Faction {
@@ -127,8 +132,14 @@ export interface InternalOrder {
   officerIds: OfficerId[];
   buildAt?: HexCoord;
   buildType?: FacilityType;
-  /** Gold debited up front, refunded verbatim if the order is cancelled. */
+  /**
+   * What was debited and promised at queue time. Stored rather than recomputed so a cancel
+   * refunds exactly what it took and a resolve delivers exactly what was previewed —
+   * recomputing from the bill drifts by a unit or two through rounding.
+   */
   goldSpent: number;
+  foodSpent: number;
+  delta: number;
 }
 
 export interface LogEntry {
@@ -189,6 +200,10 @@ export interface UISnapshot {
     officers: number;
   } | null;
   selected: { kind: "none" } | { kind: "city"; cityId: CityId } | { kind: "unit"; unitId: UnitId };
+  /** Set while the player is picking a map tile for a facility. */
+  placement: { cityId: CityId; type: FacilityType } | null;
+  /** 전법 armed and waiting for the player to tap a target. */
+  pendingTactic: TacticId | null;
   log: LogEntry[];
   /** True while the step machine is draining — panels lock and TopBar offers 가속. */
   busy: boolean;

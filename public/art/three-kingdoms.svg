@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200" role="img" aria-label="삼국지 패업">
+  <defs>
+    <clipPath id="frame"><rect width="320" height="200"/></clipPath>
+    <g id="hex"><path d="M0,-18 L15.6,-9 L15.6,9 L0,18 L-15.6,9 L-15.6,-9 Z"/></g>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="320" height="200" fill="#f0e6d2"/>
+
+    <!-- terrain wash -->
+    <g stroke="#3a3226" stroke-opacity="0.22" stroke-width="1">
+      <use href="#hex" x="42"  y="58"  fill="#d9c9a3"/>
+      <use href="#hex" x="73"  y="40"  fill="#bdab84"/>
+      <use href="#hex" x="73"  y="76"  fill="#d9c9a3"/>
+      <use href="#hex" x="104" y="58"  fill="#d9c9a3"/>
+      <use href="#hex" x="104" y="94"  fill="#b3c09a"/>
+      <use href="#hex" x="135" y="40"  fill="#d9c9a3"/>
+      <use href="#hex" x="135" y="76"  fill="#d9c9a3"/>
+      <use href="#hex" x="166" y="58"  fill="#d9c9a3"/>
+      <use href="#hex" x="166" y="94"  fill="#d9c9a3"/>
+      <use href="#hex" x="197" y="76"  fill="#bdab84"/>
+      <use href="#hex" x="197" y="112" fill="#b3c09a"/>
+      <use href="#hex" x="228" y="58"  fill="#d9c9a3"/>
+      <use href="#hex" x="228" y="94"  fill="#d9c9a3"/>
+      <use href="#hex" x="259" y="76"  fill="#8a7a5e"/>
+      <use href="#hex" x="42"  y="94"  fill="#8a7a5e"/>
+      <use href="#hex" x="135" y="112" fill="#d9c9a3"/>
+      <use href="#hex" x="104" y="130" fill="#b3c09a"/>
+      <use href="#hex" x="166" y="130" fill="#d9c9a3"/>
+      <use href="#hex" x="228" y="130" fill="#b3c09a"/>
+    </g>
+
+    <!-- 황하 -->
+    <path d="M10,34 C60,22 96,48 140,34 C186,19 224,44 312,28" fill="none" stroke="#7d9aa8" stroke-width="13" stroke-linecap="round" opacity="0.85"/>
+    <path d="M10,34 C60,22 96,48 140,34 C186,19 224,44 312,28" fill="none" stroke="#26424f" stroke-width="1.2" stroke-opacity="0.3"/>
+
+    <!-- cities -->
+    <g stroke="#3a3226" stroke-width="2.4">
+      <use href="#hex" x="104" y="58" fill="#1f4e79"/>
+      <use href="#hex" x="197" y="76" fill="#7a2020"/>
+      <use href="#hex" x="135" y="112" fill="#1f5c3a"/>
+    </g>
+    <g font-family="'Noto Serif KR','Nanum Myeongjo','Batang',serif" font-weight="700" font-size="17" text-anchor="middle" fill="#ffffff" stroke="#3a3226" stroke-width="3" paint-order="stroke">
+      <text x="104" y="64">魏</text>
+      <text x="197" y="82">吳</text>
+      <text x="135" y="118">蜀</text>
+    </g>
+
+    <!-- units -->
+    <g stroke="#3a3226" stroke-width="2">
+      <path d="M166,50 L176,68 L156,68 Z" fill="#1f4e79"/>
+      <path d="M228,104 L238,122 L218,122 Z" fill="#7a2020"/>
+    </g>
+
+    <!-- seal -->
+    <rect x="272" y="150" width="34" height="34" rx="3" fill="#a33226"/>
+    <text x="289" y="173" font-family="'Noto Serif KR','Nanum Myeongjo','Batang',serif" font-weight="700" font-size="20" text-anchor="middle" fill="#f0e6d2">覇</text>
+  </g>
+</svg>
