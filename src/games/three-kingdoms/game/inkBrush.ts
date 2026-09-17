@@ -158,6 +158,29 @@ export function drawWaves(ctx: Ctx, center: Point, size: number, q: number, r: n
   ctx.restore();
 }
 
+/**
+ * Sparse grass ticks for open ground. Only drawn when zoomed in: at overview scale the
+ * plains should read as empty paper, but up close a completely bare hex looks unfinished.
+ */
+export function drawGrass(ctx: Ctx, center: Point, size: number, q: number, r: number): void {
+  ctx.save();
+  ctx.strokeStyle = "rgba(96, 92, 58, 0.26)";
+  ctx.lineWidth = Math.max(0.6, size * 0.03);
+  ctx.lineCap = "round";
+  for (let i = 0; i < 5; i++) {
+    const a = tileNoise(q, r, 110 + i) * Math.PI * 2;
+    const d = Math.sqrt(tileNoise(q, r, 120 + i)) * size * 0.62;
+    const x = center.x + Math.cos(a) * d;
+    const y = center.y + Math.sin(a) * d;
+    const lean = (tileNoise(q, r, 130 + i) - 0.5) * size * 0.1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + lean, y - size * (0.08 + tileNoise(q, r, 140 + i) * 0.07));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 /** A low mound or two for hill country. */
 export function drawMounds(ctx: Ctx, center: Point, size: number, q: number, r: number): void {
   ctx.save();

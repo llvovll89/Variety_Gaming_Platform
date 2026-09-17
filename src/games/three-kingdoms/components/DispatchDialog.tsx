@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { HANJA_FONT, PALETTE, UNIT_TYPES } from "../game/constants";
 import { dispatchCost, validateDispatch } from "../game/commands";
 import { officersInCity } from "../game/state";
+import { OfficerPortrait } from "./OfficerPortrait";
 import type { GameEngine } from "../game/engine";
 import type { City, GameState, OfficerId, UnitType } from "../game/types";
 
@@ -81,6 +82,7 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
                   background: on ? "rgba(163,50,38,0.12)" : "transparent",
                 }}
               >
+                <OfficerPortrait officer={o} state={state} size={30} />
                 <span className="font-semibold">{o.name}</span>
                 {rank === 0 && <span className="text-[10px]" style={{ color: PALETTE.seal }}>대장</span>}
                 <span className="text-[10px] tabular-nums opacity-60">

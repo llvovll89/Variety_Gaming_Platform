@@ -23,6 +23,7 @@ import {
 import {
   canRenderHanja,
   createPaperPattern,
+  drawGrass,
   drawGrove,
   drawMounds,
   drawRidges,
@@ -30,12 +31,25 @@ import {
   fillHex,
   hexPath,
   inkText,
-  plate,
   strokeHexEdge,
   type Ctx,
 } from "./inkBrush";
-import { FACILITIES, HANJA_FONT, HEX_SIZE, PALETTE, TERRAIN_FILL, UNIT_TYPES } from "./constants";
+import { FACILITIES, HEX_SIZE, PALETTE, TERRAIN_FILL, UNIT_TYPES } from "./constants";
+import {
+  banner,
+  barrackYard,
+  crossbowTower,
+  DETAIL_THRESHOLD,
+  farmField,
+  formation,
+  fortCamp,
+  groundShadow,
+  mapLabel,
+  marketStalls,
+  walledCity,
+} from "./structures";
 import { tileAt } from "./map";
+import { fxProgress, type Fx } from "./animation";
 import type { GameState, Tile } from "./types";
 
 /**
@@ -55,6 +69,12 @@ export interface RenderOverlay {
   targets?: HexCoord[];
   /** Legal spots while placing a facility. */
   buildable?: HexCoord[];
+  /** A unit mid-march, drawn at an interpolated world position instead of on its tile. */
+  moving?: { unitId: number; point: Point };
+  /** Floating damage numbers and callouts. */
+  fx?: Fx[];
+  /** Frame timestamp, for anything that animates. */
+  now?: number;
 }
 
 export class MapRenderer {
@@ -99,7 +119,8 @@ export class MapRenderer {
     this.drawFacilities(ctx, state, rect, size, screenOf);
     this.drawOverlay(ctx, cam, view, size, overlay);
     this.drawCities(ctx, state, rect, size, screenOf);
-    this.drawUnits(ctx, state, cam, view, size);
+    this.drawUnits(ctx, state, cam, view, size, overlay.moving);
+    this.drawFx(ctx, cam, view, size, overlay.fx ?? [], overlay.now ?? 0);
   }
 
   // --- layers ---------------------------------------------------------------
@@ -132,6 +153,9 @@ export class MapRenderer {
         else if (tile.terrain === "forest") drawGrove(ctx, c, size, tile.q, tile.r);
         else if (tile.terrain === "water") drawWaves(ctx, c, size, tile.q, tile.r);
         else if (tile.terrain === "hill") drawMounds(ctx, c, size, tile.q, tile.r);
+        else if (size >= DETAIL_THRESHOLD && !tile.facility) {
+          drawGrass(ctx, c, size, tile.q, tile.r);
+        }
       }
     }
     // Pass 3: outline only where the terrain CHANGES. Outlining every hex is what makes an
@@ -192,6 +216,11 @@ export class MapRenderer {
     }
   }
 
+  /**
+   * Facilities. Each type gets a recognisable little building rather than a glyph in a
+   * circle, because the whole point of building on the map is that you can see what you
+   * built and so can the enemy who comes to burn it.
+   */
   private drawFacilities(
     ctx: Ctx,
     state: GameState,
@@ -200,36 +229,52 @@ export class MapRenderer {
     screenOf: (c: number, r: number) => Point,
   ): void {
     const { map } = state;
+    const detailed = size >= DETAIL_THRESHOLD;
     for (let row = rect.minRow; row <= rect.maxRow; row++) {
       for (let col = rect.minCol; col <= rect.maxCol; col++) {
         const tile = map.tiles[row * map.width + col];
         if (!tile?.facility) continue;
-        const spec = FACILITIES[tile.facility.type];
+        const f = tile.facility;
+        const spec = FACILITIES[f.type];
         const c = screenOf(col, row);
-        const building = tile.facility.buildTurnsLeft > 0;
+        const building = f.buildTurnsLeft > 0;
+        const color = state.factions[f.faction]?.color ?? PALETTE.neutral;
 
         ctx.save();
-        ctx.globalAlpha = building ? 0.4 : 0.95;
-        ctx.beginPath();
-        ctx.arc(c.x, c.y, size * 0.38, 0, Math.PI * 2);
-        ctx.fillStyle = PALETTE.paper;
-        ctx.fill();
-        ctx.strokeStyle = PALETTE.ink;
-        ctx.lineWidth = Math.max(1, size * 0.045);
-        if (building) ctx.setLineDash([size * 0.14, size * 0.1]);
-        ctx.stroke();
+        if (building) ctx.globalAlpha = 0.45;
+
+        if (detailed) {
+          const line = Math.max(0.8, size * 0.03);
+          const ground = c.y + size * 0.4;
+          const w = size * 1.15;
+          groundShadow(ctx, { x: c.x, y: ground + size * 0.04 }, w * 0.8, size * 0.15);
+          if (f.type === "farm") farmField(ctx, { x: c.x, y: ground }, w, line);
+          else if (f.type === "market") marketStalls(ctx, { x: c.x, y: ground }, w, line);
+          else if (f.type === "barracks") barrackYard(ctx, { x: c.x, y: ground }, w, line);
+          else if (f.type === "fort") fortCamp(ctx, { x: c.x, y: ground }, w, color, line);
+          else crossbowTower(ctx, { x: c.x, y: ground }, w, line);
+        } else {
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, size * 0.36, 0, Math.PI * 2);
+          ctx.fillStyle = PALETTE.paper;
+          ctx.fill();
+          ctx.strokeStyle = PALETTE.ink;
+          ctx.lineWidth = Math.max(1, size * 0.045);
+          if (building) ctx.setLineDash([size * 0.14, size * 0.1]);
+          ctx.stroke();
+          inkText(ctx, this.label(spec.hanja, spec.label[0]), c, size * 0.42, PALETTE.ink, PALETTE.paper, 1);
+        }
         ctx.restore();
 
-        inkText(ctx, this.label(spec.hanja, spec.label[0]), c, size * 0.44, PALETTE.ink, PALETTE.paper, 1);
-        if (building) {
-          inkText(
+        if (building && size >= 18) {
+          // Months remaining, on a plate so it reads over whatever is underneath. Below this
+          // size the plate is wider than the hex and turns the map into a wall of tags.
+          mapLabel(
             ctx,
-            String(tile.facility.buildTurnsLeft),
-            { x: c.x + size * 0.36, y: c.y - size * 0.34 },
-            size * 0.3,
+            { x: c.x, y: c.y - size * 0.62 },
+            `${spec.label} ${f.buildTurnsLeft}달`,
+            Math.max(9, size * 0.24),
             PALETTE.seal,
-            PALETTE.paper,
-            2,
           );
         }
       }
@@ -299,6 +344,12 @@ export class MapRenderer {
     }
   }
 
+  /**
+   * Cities. Zoomed out they stay flat coloured hexes with a big Hanja, which is what an
+   * overview needs; zoomed in they become walled compounds. The name always rides on a
+   * paper plate below the hex rather than on top of the artwork, so it stays readable at
+   * every zoom and never fights the roofs for space.
+   */
   private drawCities(
     ctx: Ctx,
     state: GameState,
@@ -306,119 +357,216 @@ export class MapRenderer {
     size: number,
     screenOf: (c: number, r: number) => Point,
   ): void {
+    const detailed = size >= DETAIL_THRESHOLD;
     for (const city of Object.values(state.cities)) {
       const { col, row } = offsetOfCoord(city.coord);
       if (col < rect.minCol || col > rect.maxCol || row < rect.minRow || row > rect.maxRow) continue;
       const c = screenOf(col, row);
       const color = city.faction ? state.factions[city.faction].color : PALETTE.neutral;
-
-      ctx.save();
-      ctx.globalAlpha = 0.88;
-      fillHex(ctx, c, size * 0.96, color);
-      ctx.restore();
-
-      hexPath(ctx, c, size * 0.96);
-      ctx.strokeStyle = PALETTE.ink;
-      ctx.lineWidth = Math.max(2, size * 0.09);
-      ctx.stroke();
-      hexPath(ctx, c, size * 0.78);
-      ctx.strokeStyle = "rgba(240, 230, 210, 0.75)";
-      ctx.lineWidth = Math.max(1, size * 0.035);
-      ctx.stroke();
-
+      const ratio = city.maxDefense > 0 ? city.defense / city.maxDefense : 1;
       const name = this.label(city.hanja, city.name);
-      // Two-character names get a slightly smaller face so they never overflow the hex.
-      const fontPx = size * (name.length > 1 ? 0.44 : 0.56);
-      inkText(ctx, name, { x: c.x, y: c.y - size * 0.05 }, fontPx, "#ffffff", PALETTE.ink);
 
-      if (city.defense < city.maxDefense) {
-        const w = size * 1.1;
-        const h = Math.max(3, size * 0.11);
-        const y = c.y + size * 0.6;
+      if (!detailed) {
         ctx.save();
-        ctx.fillStyle = "rgba(58, 50, 38, 0.55)";
-        ctx.fillRect(c.x - w / 2, y, w, h);
-        ctx.fillStyle = city.defense / city.maxDefense > 0.3 ? "#d8cba6" : PALETTE.seal;
-        ctx.fillRect(c.x - w / 2, y, (w * city.defense) / city.maxDefense, h);
+        ctx.globalAlpha = 0.88;
+        fillHex(ctx, c, size * 0.96, color);
         ctx.restore();
+        hexPath(ctx, c, size * 0.96);
+        ctx.strokeStyle = PALETTE.ink;
+        ctx.lineWidth = Math.max(2, size * 0.09);
+        ctx.stroke();
+        inkText(ctx, name, { x: c.x, y: c.y - size * 0.05 }, size * (name.length > 1 ? 0.44 : 0.56), "#ffffff", PALETTE.ink);
+        if (ratio < 1) this.damageBar(ctx, c, size, ratio);
+        continue;
+      }
+
+      // A faction-tinted platform under the compound. Without it the only coloured thing on
+      // a detailed city hex is the gate arch, and at a glance you cannot tell whose it is.
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      fillHex(ctx, c, size * 0.97, color);
+      ctx.restore();
+      hexPath(ctx, c, size * 0.97);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = Math.max(2, size * 0.075);
+      ctx.stroke();
+
+      walledCity(
+        ctx, c, size, color, city.scale, ratio,
+        Math.max(0.9, size * 0.035),
+        city.coord.q * 31 + city.coord.r,
+        (city.coord.q + city.coord.r) * 0.7,
+      );
+      mapLabel(ctx, { x: c.x, y: c.y + size * 0.86 }, name, Math.max(10, size * 0.34));
+      if (ratio < 1) this.damageBar(ctx, c, size, ratio, size * 1.08);
+    }
+  }
+
+  private damageBar(ctx: Ctx, c: Point, size: number, ratio: number, offset = size * 0.6): void {
+    const w = size * 1.1;
+    const h = Math.max(3, size * 0.1);
+    const y = c.y + offset;
+    ctx.save();
+    ctx.fillStyle = "rgba(58, 50, 38, 0.55)";
+    ctx.fillRect(c.x - w / 2, y, w, h);
+    ctx.fillStyle = ratio > 0.3 ? "#d8cba6" : PALETTE.seal;
+    ctx.fillRect(c.x - w / 2, y, w * ratio, h);
+    ctx.restore();
+  }
+
+  /**
+   * Armies. Zoomed out a triangle is the clearest possible token; zoomed in the same hex
+   * carries a banner and a knot of soldiers whose silhouettes say which 병종 it is without
+   * anyone reading a glyph.
+   */
+  /**
+   * Armies. Zoomed out a triangle is the clearest possible token; zoomed in the same hex
+   * carries a banner and a knot of soldiers whose silhouettes say which 병종 it is without
+   * anyone having to read a glyph.
+   *
+   * An army sitting in one of its own cities is drawn as a compact banner badge in the
+   * corner of the hex instead of a full formation — a whole regiment painted over the
+   * gatehouse buried the city it was supposed to be defending.
+   */
+  private drawUnits(
+    ctx: Ctx,
+    state: GameState,
+    cam: Camera,
+    view: Viewport,
+    size: number,
+    moving?: { unitId: number; point: Point },
+  ): void {
+    const detailed = size >= DETAIL_THRESHOLD;
+    for (const unit of Object.values(state.units)) {
+      const { col, row } = offsetOfCoord(unit.coord);
+      const marching = moving?.unitId === unit.id;
+      const base = marching
+        ? worldToScreen(moving.point, cam, view)
+        : worldToScreen(tileCenter(col, row), cam, view);
+      // A unit in transit is never "in a city" for drawing purposes, even if its destination
+      // tile happens to be one.
+      const garrisoned = !marching && Boolean(state.map.tiles[row * state.map.width + col]?.cityId);
+      const color = state.factions[unit.faction].color;
+      const spec = UNIT_TYPES[unit.type];
+      const glyph = this.label(spec.hanja, spec.label[0]);
+
+      if (garrisoned) {
+        this.garrisonBadge(ctx, base, size, color, glyph, unit.troops);
+        continue;
+      }
+
+      const line = Math.max(0.9, size * 0.032);
+      if (detailed) {
+        const ground = base.y + size * 0.34;
+        formation(ctx, { x: base.x + size * 0.1, y: ground }, size * 1.05, color, unit.type, line, unit.id);
+        banner(ctx, { x: base.x - size * 0.52, y: ground }, size * 0.78, color, glyph, line, unit.id * 0.9);
+      } else {
+        const h = size * 0.8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y - h * 0.72);
+        ctx.lineTo(base.x + h * 0.66, base.y + h * 0.5);
+        ctx.lineTo(base.x - h * 0.66, base.y + h * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = PALETTE.ink;
+        ctx.lineWidth = Math.max(1.4, size * 0.055);
+        ctx.stroke();
+        ctx.restore();
+        inkText(ctx, glyph, { x: base.x, y: base.y + size * 0.02 }, size * 0.32, "#ffffff", "rgba(58,50,38,0.85)", 2);
+      }
+
+      // Troop count and condition, stacked clear of the artwork. Suppressed when the hex is
+      // too small for the text to be anything but clutter.
+      if (size >= 16) {
+        const plateY = base.y + size * (detailed ? 0.62 : 0.66);
+        mapLabel(ctx, { x: base.x, y: plateY }, this.troopText(unit.troops), Math.max(9, size * 0.25));
+        this.conditionBar(ctx, base.x, plateY + size * 0.26, size * 0.9, unit.morale, unit.energy);
       }
     }
   }
 
-  private drawUnits(ctx: Ctx, state: GameState, cam: Camera, view: Viewport, size: number): void {
-    for (const unit of Object.values(state.units)) {
-      const { col, row } = offsetOfCoord(unit.coord);
-      const base = worldToScreen(tileCenter(col, row), cam, view);
-      // An army standing in a city would otherwise bury the city's name. Nudge it clear and
-      // shrink it a little so both stay readable on the same hex.
-      const garrisoned = Boolean(state.map.tiles[row * state.map.width + col]?.cityId);
-      const c = garrisoned ? { x: base.x + size * 0.34, y: base.y + size * 0.42 } : base;
-      const scale = garrisoned ? 0.62 : 1;
-      const color = state.factions[unit.faction].color;
-      const spec = UNIT_TYPES[unit.type];
-
-      // Upward triangle: reads as a banner at a glance and never collides with a city hex.
-      const h = size * 0.8 * scale;
+  /** Rising, fading callouts over the board. Drawn last so nothing covers them. */
+  private drawFx(
+    ctx: Ctx,
+    cam: Camera,
+    view: Viewport,
+    size: number,
+    fx: Fx[],
+    now: number,
+  ): void {
+    for (const f of fx) {
+      const t = fxProgress(f, now);
+      const { col, row } = offsetOfCoord(f.at);
+      const at = worldToScreen(tileCenter(col, row), cam, view);
       ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(c.x, c.y - h * 0.72);
-      ctx.lineTo(c.x + h * 0.66, c.y + h * 0.5);
-      ctx.lineTo(c.x - h * 0.66, c.y + h * 0.5);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = PALETTE.ink;
-      ctx.lineWidth = Math.max(1.4, size * 0.055);
-      ctx.stroke();
-      ctx.restore();
-
+      ctx.globalAlpha = 1 - t * t;
       inkText(
         ctx,
-        this.label(spec.hanja, spec.label[0]),
-        { x: c.x, y: c.y + size * 0.02 * scale },
-        size * 0.32 * scale,
-        "#ffffff",
-        "rgba(58,50,38,0.85)",
-        2,
+        f.text,
+        { x: at.x, y: at.y - size * (0.2 + t * 0.9) },
+        Math.max(12, size * 0.4),
+        f.color,
+        "rgba(244,237,222,0.92)",
+        Math.max(2, size * 0.09),
       );
-
-      const troops = unit.troops >= 1000
-        ? `${(unit.troops / 1000).toFixed(1)}천`
-        : String(unit.troops);
-      const plateAt = { x: c.x, y: c.y + size * 0.66 * scale };
-      const pw = size * 0.86 * scale;
-      const ph = size * 0.32 * scale;
-      ctx.save();
-      plate(ctx, plateAt, pw, ph, ph / 2);
-      ctx.fillStyle = PALETTE.paper;
-      ctx.fill();
-      ctx.strokeStyle = PALETTE.ink;
-      ctx.lineWidth = 1;
-      ctx.stroke();
       ctx.restore();
-      inkText(ctx, troops, plateAt, size * 0.24 * scale, PALETTE.ink, PALETTE.paper, 0.5, HANJA_FONT);
-
-      // 사기 on the left, 기력 on the right — two thin arcs, no legend needed.
-      this.gauge(ctx, c, size * scale, -1, unit.morale / 100, "#c0562f");
-      this.gauge(ctx, c, size * scale, 1, unit.energy / 100, "#3f6f8a");
     }
   }
 
-  private gauge(ctx: Ctx, c: Point, size: number, side: -1 | 1, value: number, color: string): void {
-    const r = size * 0.82;
-    const start = side === -1 ? Math.PI * 0.62 : Math.PI * 0.38;
-    const sweep = Math.PI * 0.34 * Math.max(0, Math.min(1, value));
+  private troopText(troops: number): string {
+    return troops >= 1000 ? `${(troops / 1000).toFixed(1)}천` : String(troops);
+  }
+
+  /** Compact corner marker for an army inside a friendly city. */
+  private garrisonBadge(
+    ctx: Ctx,
+    center: Point,
+    size: number,
+    color: string,
+    glyph: string,
+    troops: number,
+  ): void {
+    const at = { x: center.x + size * 0.52, y: center.y - size * 0.42 };
+    const r = size * 0.24;
     ctx.save();
-    ctx.lineWidth = Math.max(2, size * 0.07);
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "rgba(58,50,38,0.22)";
     ctx.beginPath();
-    ctx.arc(c.x, c.y, r, start, start + side * Math.PI * 0.34, side === -1);
+    ctx.arc(at.x, at.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = PALETTE.ink;
+    ctx.lineWidth = Math.max(1, size * 0.04);
     ctx.stroke();
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, r, start, start + side * sweep, side === -1);
-    ctx.stroke();
+    ctx.restore();
+    inkText(ctx, glyph, at, r * 1.15, "#ffffff", "rgba(58,50,38,0.8)", 1.5);
+    if (size >= 20) {
+      mapLabel(ctx, { x: at.x, y: at.y + r * 1.5 }, this.troopText(troops), Math.max(8, size * 0.2));
+    }
+  }
+
+  /** Two stacked slivers: 사기 on top, 기력 below. Replaces the arcs, which vanished. */
+  private conditionBar(
+    ctx: Ctx,
+    cx: number,
+    y: number,
+    w: number,
+    morale: number,
+    energy: number,
+  ): void {
+    const h = Math.max(2, w * 0.045);
+    const rows: [number, string][] = [
+      [morale / 100, "#c0562f"],
+      [energy / 100, "#3f6f8a"],
+    ];
+    ctx.save();
+    for (const [index, [value, color]] of rows.entries()) {
+      const top = y + index * (h + 1);
+      ctx.fillStyle = "rgba(58,50,38,0.28)";
+      ctx.fillRect(cx - w / 2, top, w, h);
+      ctx.fillStyle = color;
+      ctx.fillRect(cx - w / 2, top, w * Math.max(0, Math.min(1, value)), h);
+    }
     ctx.restore();
   }
 }

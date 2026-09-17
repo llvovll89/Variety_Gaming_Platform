@@ -4,6 +4,8 @@ import type { UISnapshot } from "../game/types";
 interface Props {
   snapshot: UISnapshot;
   onEndTurn: () => void;
+  onSkip: () => void;
+  onOverview: () => void;
   onExit: () => void;
 }
 
@@ -22,7 +24,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function TopBar({ snapshot, onEndTurn, onExit }: Props) {
+export function TopBar({ snapshot, onEndTurn, onSkip, onOverview, onExit }: Props) {
   const p = snapshot.player;
   return (
     <div
@@ -52,12 +54,21 @@ export function TopBar({ snapshot, onEndTurn, onExit }: Props) {
       <span className="ml-auto flex items-center gap-2">
         <button
           type="button"
-          onClick={onEndTurn}
-          disabled={snapshot.busy}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform disabled:opacity-40 enabled:hover:-translate-y-px"
-          style={{ background: PALETTE.seal }}
+          onClick={onOverview}
+          className="rounded-lg border px-3 py-1 text-xs transition-colors hover:bg-black/5"
+          style={{ borderColor: PALETTE.inkSoft }}
         >
-          턴 종료
+          현황
+        </button>
+        {/* While the month is playing out the same slot becomes the skip control, so the
+            player is never stuck watching rival armies shuffle around. */}
+        <button
+          type="button"
+          onClick={snapshot.busy ? onSkip : onEndTurn}
+          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:-translate-y-px"
+          style={{ background: snapshot.busy ? "#4a4a42" : PALETTE.seal }}
+        >
+          {snapshot.busy ? "가속 ▶▶" : "턴 종료"}
         </button>
         <button
           type="button"

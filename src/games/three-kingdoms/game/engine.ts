@@ -8,6 +8,7 @@
  */
 import {
   clampCamera,
+  clampZoom,
   fitToView,
   focusOn,
   panBy,
@@ -31,11 +32,17 @@ import { canCapture, captureCity } from "./siege";
 import { attackTargets, reachable } from "./pathfinding";
 import { logEvent } from "./events";
 import { hexKey } from "./hex";
-import { beginTurn } from "./turn";
+import {
+  ageFx, movePoint, present, type BlockingAnim, type Fx,
+} from "./animation";
+import { ANIM } from "./constants";
+import { beginTurn, type TurnRunner } from "./turn";
 import { saveGame } from "./save";
 import { HEX_SIZE } from "./constants";
 import { axialToPixel, hexEquals, type HexCoord, type Point } from "./hex";
 import type { FacilityType, FactionId, GameState, InternalKind, TacticId, UISnapshot, Unit } from "./types";
+import type { GameEvent } from "./events";
+import { tileAt } from "./map";
 
 export type Selection =
   | { kind: "none" }
@@ -70,6 +77,11 @@ export class GameEngine {
   private dirty = true;
   private running = false;
 
+  /** Turn playback: the step machine plus how much screen time it has already spent. */
+  private playback: { runner: TurnRunner; spent: number } | null = null;
+  private blocking: { anim: BlockingAnim; start: number } | null = null;
+  private fx: Fx[] = [];
+
   constructor(canvas: HTMLCanvasElement, playerFactionId: FactionId, seed?: number) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
@@ -83,10 +95,23 @@ export class GameEngine {
   start(): void {
     if (this.running) return;
     this.running = true;
-    this.camera = fitToView(this.view);
+    // Open on the player's own capital at a zoom where the 2.5D buildings actually render,
+    // not fitted to the whole board. Fit-to-view put every hex below the detail threshold
+    // and gave a first-time player twelve identical beige dots and no idea where they were.
+    this.camera = this.openingCamera();
     this.markDirty();
     this.publish();
     this.exposeDebugHook();
+  }
+
+  /** Frame the player's biggest city, close enough to see what is on the board. */
+  private openingCamera(): Camera {
+    const home = citiesOf(this.state, this.state.playerFactionId)
+      .sort((a, b) => b.maxTroops - a.maxTroops)[0];
+    const fitted = fitToView(this.view);
+    if (!home) return fitted;
+    const zoom = clampZoom(Math.max(1.15, fitted.zoom));
+    return clampCamera(focusOn({ ...fitted, zoom }, home.coord), this.view);
   }
 
   /**
@@ -163,22 +188,108 @@ export class GameEngine {
     this.rafId = requestAnimationFrame(this.frame);
   }
 
-  private frame = (): void => {
+  private frame = (now: number): void => {
     this.rafId = 0;
-    if (!this.running || !this.dirty) return;
-    this.dirty = false;
-    this.draw();
-    // The loop ends here: nothing animates yet. Once turn playback lands it will call
-    // markDirty() again for as long as the animation queue is non-empty.
+    if (!this.running) return;
+    const animating = this.advance(now);
+    if (this.dirty || animating) {
+      this.dirty = false;
+      this.draw(now);
+    }
+    // Keep the loop alive only while something is actually moving. A turn-based board must
+    // idle at zero.
+    if (animating) this.rafId = requestAnimationFrame(this.frame);
   };
 
-  private draw(): void {
+  /**
+   * Advance playback by one frame. Returns whether anything is still in motion.
+   *
+   * Only events the player can see or has a stake in get screen time, and the whole turn is
+   * capped: past the budget the rest is applied instantly and lands in the log. Watching six
+   * rival factions shuffle armies for ninety seconds is how a strategy game loses a player.
+   */
+  private advance(now: number): boolean {
+    const before = this.fx.length;
+    this.fx = ageFx(this.fx, now);
+    let changed = this.fx.length !== before || this.fx.length > 0;
+
+    if (this.blocking) {
+      if (now - this.blocking.start < this.blocking.anim.ms) return true;
+      this.playback = this.playback
+        ? { ...this.playback, spent: this.playback.spent + this.blocking.anim.ms }
+        : null;
+      this.blocking = null;
+      changed = true;
+    }
+
+    if (!this.playback) return changed;
+
+    // Pull events until one of them is worth watching, or the turn runs out.
+    for (;;) {
+      const event = this.playback.runner.next(this.state);
+      if (!event) {
+        this.finishPlayback();
+        return true;
+      }
+      const overBudget = this.playback.spent >= ANIM.aiBudgetMs;
+      const shown = overBudget ? null : present(event, now);
+      if (!shown) continue;
+      if (shown.fx.length > 0) this.fx.push(...shown.fx);
+      if (shown.focus && this.worthWatching(shown.focus, event)) this.focus(shown.focus);
+      if (shown.blocking) {
+        this.blocking = { anim: shown.blocking, start: now };
+        return true;
+      }
+      if (shown.fx.length > 0) return true;
+    }
+  }
+
+  /** Is this somewhere the player would want the camera to go? */
+  private worthWatching(hex: HexCoord, event: GameEvent): boolean {
+    const mine = this.state.playerFactionId;
+    if (event.kind === "capture") return true;
+    const tile = tileAt(this.state.map, hex);
+    if (tile?.cityId && this.state.cities[tile.cityId]?.faction === mine) return true;
+    if (tile?.domainOf && this.state.cities[tile.domainOf]?.faction === mine) return true;
+    if (tile?.unitId != null && this.state.units[tile.unitId]?.faction === mine) return true;
+    return false;
+  }
+
+  private finishPlayback(): void {
+    this.playback = null;
+    this.blocking = null;
+    const selected = this.selection.kind === "unit" ? this.state.units[this.selection.unitId] : null;
+    if (this.selection.kind === "unit" && !selected) this.selection = { kind: "none" };
+    if (selected) this.refreshUnitOverlay(selected);
+    saveGame(this.state);
+    this.markDirty();
+    this.publish();
+  }
+
+  /** Drop the remaining animation and settle the month at once. */
+  skipPlayback(): void {
+    if (!this.playback) return;
+    this.playback.runner.drain(this.state);
+    this.fx = [];
+    this.finishPlayback();
+  }
+
+  private draw(now = performance.now()): void {
+    const moving = this.blocking?.anim.kind === "move"
+      ? {
+          unitId: this.blocking.anim.unitId,
+          point: movePoint(this.blocking.anim, (now - this.blocking.start) / this.blocking.anim.ms),
+        }
+      : undefined;
     const overlay: RenderOverlay = {
       selected: this.selectedHex(),
       hovered: this.hovered,
       buildable: this.placement?.spots,
       reachable: this.reach,
       targets: this.targets,
+      moving,
+      fx: this.fx,
+      now,
     };
     this.renderer.render(this.ctx, this.state, this.camera, this.view, overlay);
   }
@@ -473,12 +584,9 @@ export class GameEngine {
     this.reach = [];
     this.targets = [];
     this.pendingTactic = null;
-    const runner = beginTurn(this.state);
-    runner.drain(this.state);
-    const selected = this.selection.kind === "unit" ? this.state.units[this.selection.unitId] : null;
-    if (this.selection.kind === "unit" && !selected) this.selection = { kind: "none" };
-    if (selected) this.refreshUnitOverlay(selected);
-    saveGame(this.state);
+    // Hand the month to the step machine and let the frame loop play it out, rather than
+    // draining it here. This is the whole reason turn.ts is a step machine.
+    this.playback = { runner: beginTurn(this.state), spent: 0 };
     this.markDirty();
     this.publish();
   }
@@ -522,7 +630,7 @@ export class GameEngine {
         ? { cityId: this.placement.cityId, type: this.placement.type }
         : null,
       log: s.log.slice(-40),
-      busy: s.phase !== "player",
+      busy: this.playback !== null || s.phase !== "player",
       standings: standings(s),
     };
     this.ui.publish(snapshot);

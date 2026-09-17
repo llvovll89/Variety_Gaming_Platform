@@ -5,6 +5,7 @@ import { canCapture } from "../game/siege";
 import { isSupplied } from "../game/supply";
 import { hexNeighbors } from "../game/hex";
 import { DispatchDialog } from "./DispatchDialog";
+import { OfficerPortrait } from "./OfficerPortrait";
 import { officersInCity, officersOfUnit } from "../game/state";
 import { barracksBonus, buildableTiles, developmentCap, facilityCount, previewInternal } from "../game/internal";
 import { orderLabel } from "../game/events";
@@ -96,6 +97,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
             <ul className="border-t pt-1" style={{ borderColor: PALETTE.inkFaint }}>
               {officersOfUnit(state, unit).map((o) => (
                 <li key={o.id} className="flex items-center gap-2 py-1">
+                  <OfficerPortrait officer={o} state={state} size={30} />
                   <span className="w-14 shrink-0 text-xs font-semibold">{o.name}</span>
                   <OfficerStats officer={o} />
                 </li>
@@ -208,6 +210,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                         background: on ? "rgba(163,50,38,0.12)" : "transparent",
                       }}
                     >
+                      <OfficerPortrait officer={o} state={state} size={26} />
                       <span className="font-semibold">{o.name}</span>
                       <OfficerStats officer={o} />
                     </button>
@@ -325,6 +328,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
           <ul className="max-h-32 overflow-y-auto border-t pt-1" style={{ borderColor: PALETTE.inkFaint }}>
             {roster.map((o) => (
               <li key={o.id} className="flex items-center gap-2 py-1">
+                <OfficerPortrait officer={o} state={state} size={30} />
                 <span className="w-14 shrink-0 text-xs font-semibold">{o.name}</span>
                 <OfficerStats officer={o} />
               </li>
@@ -358,13 +362,25 @@ function Header({ badge, color, title, subtitle }: { badge: string; color: strin
  * share a container on purpose: six separate panels is where a strategy game's UI budget
  * quietly disappears.
  */
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ title, children }: { title?: string; children: React.ReactNode }) {
+  // Collapsible, because on a laptop the open panel eats close to half the board and there
+  // is no way to just look at the map.
+  const [open, setOpen] = useState(true);
   return (
     <div
-      className="pointer-events-auto max-h-[48vh] overflow-y-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+      className="pointer-events-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
       style={{ background: "rgba(240,230,210,0.96)", borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
     >
-      {children}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 px-3 py-1 text-[11px] transition-colors hover:bg-black/5"
+      >
+        <span className="opacity-45">{title ?? "선택"}</span>
+        <span className="ml-auto opacity-45">{open ? "패널 접기" : "패널 펼치기"}</span>
+      </button>
+      {open && <div className="max-h-[44vh] overflow-y-auto">{children}</div>}
     </div>
   );
 }
