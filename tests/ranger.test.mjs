@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorld, stepWorld, spawnEnemy, chooseUpgrade, nextStage, DIFFICULTIES, PLAYER_RADIUS} from '../src/games/hachuping-dodge/survivor/world.ts';
+import {createWorld, stepWorld, spawnEnemy, chooseUpgrade, choosePromotion, nextStage, DIFFICULTIES, PLAYER_RADIUS, STAGES} from '../src/games/hachuping-dodge/survivor/world.ts';
+import {ADVANCE_LEVELS,promotionOptions} from '../src/games/hachuping-dodge/survivor/classes.ts';
 const still={x:0,y:0};
 function isolated(){const w=createWorld('playing','easy');w.spawnTimer=999;return w;}
 test('auto fire kills a nearby enemy and its gem awards experience',()=>{
@@ -30,11 +31,13 @@ test('elite gates the boss and telegraphs a radial attack',()=>{
   elite.hp=0;stepWorld(w,.01,still);stepWorld(w,.01,still);assert.ok(w.bossSpawned);
 });
 test('stage clear preserves growth, heals, and final boss ends in victory',()=>{
-  const w=isolated();w.level=8;w.xpNext=999;w.player.damage=64;w.player.hp=21;
-  for(let stage=0;stage<3;stage++){
+  const w=isolated();w.level=ADVANCE_LEVELS[1];w.status='promotion';
+  while(w.status==='promotion')choosePromotion(w,promotionOptions(w.loadout.hero,w.job)[0].id);
+  w.xpNext=999;w.player.damage=64;w.player.hp=21;
+  for(let stage=0;stage<STAGES.length;stage++){
     w.xp=0;const boss=spawnEnemy(w,'boss');boss.hp=0;stepWorld(w,.01,still);
-    assert.equal(w.status,stage===2?'victory':'clear');
-    if(stage<2){nextStage(w);assert.equal(w.stage,stage+1);assert.equal(w.player.damage,64);assert.equal(w.player.hp,w.player.maxHp);assert.equal(w.level,8);assert.equal(w.enemies.length,0);}
+    assert.equal(w.status,stage===STAGES.length-1?'victory':'clear');
+    if(stage<STAGES.length-1){nextStage(w);assert.equal(w.stage,stage+1);assert.equal(w.player.damage,64);assert.equal(w.player.hp,w.player.maxHp);assert.equal(w.level,ADVANCE_LEVELS[1]);assert.equal(w.enemies.length,0);}
   }
 });
 test('contact damage has invulnerability frames and death stops the world',()=>{
@@ -44,11 +47,38 @@ test('contact damage has invulnerability frames and death stops the world',()=>{
   const time=w.time;stepWorld(w,1,still);assert.equal(w.time,time);
 });
 test('paused and completed worlds cannot move or spawn',()=>{
-  for(const state of ['menu','paused','upgrade','clear','dead','victory']){const w=createWorld(state);stepWorld(w,1,{x:1,y:1});assert.equal(w.time,0);assert.equal(w.player.x,600);assert.equal(w.enemies.length,0);}
+  for(const state of ['menu','paused','upgrade','promotion','clear','dead','victory']){const w=createWorld(state);stepWorld(w,1,{x:1,y:1});assert.equal(w.time,0);assert.equal(w.player.x,600);assert.equal(w.enemies.length,0);}
 });
 test('simultaneous elite kill cannot revive a defeated player',()=>{
   const w=isolated();w.player.hp=1;const e=spawnEnemy(w,'elite');e.x=w.player.x;e.y=w.player.y;e.hp=0;
+  w.shots.push({x:w.player.x,y:w.player.y,vx:0,vy:0,life:1,damage:10,hostile:true,radius:5});
   stepWorld(w,.01,still);assert.equal(w.status,'dead');assert.equal(w.player.hp,0);
+});
+test('sword hits a front arc but cannot hit distant or rear targets',()=>{
+  const w=isolated();w.loadout.weapon='sword';
+  const enemies=[[70,0],[80,30],[-70,0],[180,0]].map(([x,y])=>{const e=spawnEnemy(w,'golem');e.x=w.player.x+x;e.y=w.player.y+y;e.speed=0;return e;});
+  stepWorld(w,.01,still);
+  assert.ok(enemies[0].hp<enemies[0].maxHp);assert.ok(enemies[1].hp<enemies[1].maxHp);
+  assert.equal(enemies[2].hp,enemies[2].maxHp);assert.equal(enemies[3].hp,enemies[3].maxHp);
+  assert.equal(w.attacks[0].kind,'sword');assert.equal(w.shots.length,0);
+});
+test('laser pierces aligned enemies and misses enemies outside its beam',()=>{
+  const w=isolated();w.loadout.weapon='laser';
+  const enemies=[[100,0],[220,0],[220,80]].map(([x,y])=>{const e=spawnEnemy(w,'golem');e.x=w.player.x+x;e.y=w.player.y+y;e.speed=0;return e;});
+  stepWorld(w,.01,still);
+  assert.ok(enemies[0].hp<enemies[0].maxHp);assert.ok(enemies[1].hp<enemies[1].maxHp);assert.equal(enemies[2].hp,enemies[2].maxHp);
+  assert.equal(w.attacks[0].kind,'laser');
+});
+test('robot shotgun emits seven distinct short range pellets and loadout survives stage changes',()=>{
+  const w=createWorld('playing','easy',{weapon:'shotgun',hero:'robot',tint:'violet'});w.spawnTimer=999;
+  const e=spawnEnemy(w,'golem');e.x=w.player.x+200;e.y=w.player.y;e.speed=0;
+  stepWorld(w,.01,still);assert.equal(w.shots.length,7);assert.equal(new Set(w.shots.map(s=>s.vy)).size,7);assert.ok(w.shots.every(s=>s.life<.5));
+  w.status='clear';nextStage(w);assert.deepEqual(w.loadout,{weapon:'shotgun',hero:'robot',tint:'violet'});assert.equal(w.attacks.length,0);
+});
+test('new enemy archetypes have distinct speed, durability and contact damage',()=>{
+  const w=isolated();const bat=spawnEnemy(w,'bat'),slime=spawnEnemy(w,'slime'),golem=spawnEnemy(w,'golem');
+  assert.ok(bat.speed>slime.speed && slime.speed>golem.speed);assert.ok(bat.hp<slime.hp && slime.hp<golem.hp);
+  w.fireTimer=999;golem.x=w.player.x;golem.y=w.player.y;stepWorld(w,.01,still);assert.equal(w.player.hp,78);
 });
 test('spawns stay separated from player even at arena corners',()=>{
   for(const [x,y] of [[28,45],[1172,772],[600,420]]){const w=isolated();w.player.x=x;w.player.y=y;for(let i=0;i<200;i++){const e=spawnEnemy(w,'soldier');assert.ok(Math.hypot(e.x-x,e.y-y)>=280);}}
