@@ -11,12 +11,12 @@ interface Props {
 export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
   const won = snapshot.result === "victory";
   const seal = won ? "統" : "終";
-  const months = snapshot.turn;
+  const months = Math.floor((snapshot.turn - 1) / 3);
 
   return (
     <div
       className="absolute inset-0 z-40 flex items-center justify-center p-4"
-      style={{ background: "rgba(58,50,38,0.55)" }}
+      style={{ background: "rgba(24,24,24,0.55)" }}
     >
       <div
         className="w-full max-w-md rounded-2xl border p-6 text-center motion-safe:animate-panel-in"

@@ -232,6 +232,7 @@ export function beginTurn(state: GameState): TurnRunner {
   steps.push((s) => {
     const events: GameEvent[] = [];
     for (const id of s.factionOrder) {
+      if ((s.day ?? 1) !== 21) break;
       if (!s.factions[id]?.alive) continue;
       const produced = collectIncome(s, id);
       // Only the player's ledger deserves a log line; the rest just moves numbers.
@@ -256,7 +257,9 @@ export function beginTurn(state: GameState): TurnRunner {
       return null;
     }
     const ended: GameEvent = { kind: "turn-end", year: s.year, month: s.month };
-    s.month += 1;
+    const day = s.day ?? 1;
+    s.day = day === 1 ? 11 : day === 11 ? 21 : 1;
+    if (day === 21) s.month += 1;
     if (s.month > 12) {
       s.month = 1;
       s.year += 1;

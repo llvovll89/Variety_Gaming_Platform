@@ -4,14 +4,17 @@ import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { MapCanvas } from "./components/MapCanvas";
 import { StartMenu } from "./components/StartMenu";
 import { TopBar } from "./components/TopBar";
-import { GuideBar } from "./components/GuideBar";
+import { OfficerEditor } from './components/OfficerEditor';
+import { BattlePreview } from './components/BattlePreview';
+import { BattlePlayback } from './components/BattlePlayback';
+import { StrategicMap } from './components/StrategicMap';
+import './three-kingdoms.css';
 import { InspectorPanel } from "./components/InspectorPanel";
 import { LogStrip } from "./components/LogStrip";
 import { OverviewSheet } from "./components/OverviewSheet";
 import { ResultScreen } from "./components/ResultScreen";
 import { emptySnapshot } from "./game/uiStore";
 import { clearSave, loadGame } from "./game/save";
-import { PALETTE } from "./game/constants";
 import type { GameEngine } from "./game/engine";
 import type { FactionId, GameState } from "./game/types";
 
@@ -29,6 +32,7 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
   const [factionId, setFactionId] = useState<FactionId | null>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const [overview, setOverview] = useState(false);
+  const [editor, setEditor] = useState(false);
   const snapshot = useUISnapshot(engine?.ui ?? null, emptySnapshot());
   // A restored save is handed to the engine once it exists, since the engine builds a fresh
   // scenario in its constructor and only then can adopt someone else's board.
@@ -37,8 +41,8 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
   const handleReady = useCallback((next: GameEngine) => {
     setEngine(next);
     if (resumeRef.current) {
-      next.adopt(resumeRef.current);
-      resumeRef.current = null;
+      // React StrictMode replays the mount effect. Both engine instances must restore.
+      next.adopt(structuredClone(resumeRef.current));
     }
   }, []);
 
@@ -68,29 +72,38 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
   const state = engine?.getState() ?? null;
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden" style={{ background: PALETTE.paper }}>
+    <div className="tk-game">
+      <div className="tk-toolbar"><strong>삼국지 패업 <b>PK</b></strong><button onClick={() => setEditor(true)} disabled={!engine || snapshot.busy || snapshot.result !== 'playing'}>PK 장수 편집</button><span className="tk-mode">{engine?.viewMode()} · 중원 쟁패</span></div>
       <TopBar
         snapshot={snapshot}
         onEndTurn={() => engine?.endTurn()}
         onSkip={() => engine?.skipPlayback()}
         onOverview={() => setOverview(true)}
-        onExit={onExit}
+        onExit={() => { engine?.save(); onExit(); }}
       />
-      {state && (
-        <GuideBar
-          state={state}
-          revision={snapshot.turn * 1000 + snapshot.log.length}
-          onFocus={(hex) => engine?.focus(hex)}
-        />
-      )}
-      <div className="relative min-h-0 flex-1">
-        <MapCanvas playerFactionId={factionId} onReady={handleReady} />
+      <div className="tk-battlefield">
+        <div className="tk-map-area">
+          <MapCanvas playerFactionId={factionId} onReady={handleReady} />
+          <div className="tk-view-controls" aria-label="지도 시점 조절">
+            <button onClick={() => engine?.rotateView(-Math.PI / 6)} aria-label="시점 왼쪽 회전">↶ 회전</button>
+            <button onClick={() => engine?.rotateView(Math.PI / 6)} aria-label="시점 오른쪽 회전">회전 ↷</button>
+            <button onClick={() => engine?.tiltView()}>시점 전환</button>
+            <button onClick={() => engine?.zoomView(1.2)} aria-label="지도 확대">＋</button>
+            <button onClick={() => engine?.zoomView(1 / 1.2)} aria-label="지도 축소">−</button>
+            <button onClick={() => engine?.toggleGrid()}>격자</button>
+          </div>
+          {engine && <StrategicMap engine={engine} />}
+          <div className="tk-map-help">드래그 이동 · 휠 확대 · 도시 선택 → 장수 편성 → 출진</div>
+        </div>
+        <aside className="tk-command-panel" aria-label="명령 및 선택 정보">{engine && state && <InspectorPanel engine={engine} state={state} snapshot={snapshot} />}</aside>
         {snapshot.result !== "playing" && (
           <ResultScreen snapshot={snapshot} onRestart={restart} onExit={onExit} />
         )}
       </div>
       <LogStrip log={snapshot.log} onFocus={(entry) => entry.focus && engine?.focus(entry.focus)} />
-      {engine && state && <InspectorPanel engine={engine} state={state} snapshot={snapshot} />}
+      {editor && engine && <OfficerEditor engine={engine} onClose={() => setEditor(false)} />}
+      {engine?.pendingAttack() && <BattlePreview engine={engine} snapshot={snapshot} />}
+      {engine?.getBattleScene() && <BattlePlayback engine={engine} />}
       {overview && state && (
         <OverviewSheet
           state={state}

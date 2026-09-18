@@ -5,7 +5,7 @@
 import { hexDistance, type HexCoord } from "./hex";
 import { tileAt } from "./map";
 import { SCENARIO_START } from "./constants";
-import { createOfficers } from "./officers";
+import { createOfficers, PK_ROSTER_VERSION } from "./officers";
 import { createCities, createFactions, createScenarioMap, DEFAULT_FACTION } from "./scenario";
 import type {
   City, CityId, Faction, FactionId, FactionStanding, GameState, Officer, OfficerId, Unit, UnitId,
@@ -33,6 +33,8 @@ export function createGameState(
   const player = factions[playerFactionId];
   return {
     turn: 1,
+    day: 1,
+    pkRosterVersion: PK_ROSTER_VERSION,
     year: SCENARIO_START.year,
     month: SCENARIO_START.month,
     phase: "player",

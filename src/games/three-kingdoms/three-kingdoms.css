@@ -1,0 +1,216 @@
+.tk-game { color: #dfdfdf; background: #2d2d2d; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.tk-game *, .tk-editor *, .tk-battle-dialog * { transition: none; }
+.tk-game button, .tk-editor button, .tk-battle-dialog button { cursor: pointer; }
+.tk-game button:focus-visible, .tk-editor :focus-visible, .tk-battle-dialog :focus-visible { outline: 2px solid #9d9d9d; outline-offset: 3px; }
+.tk-game button:disabled, .tk-editor button:disabled { cursor: default; opacity: .45; }
+.tk-toolbar { display: flex; align-items: center; gap: 8px; padding: 7px 14px; background: #2d2d2d; border-bottom: 1px solid #717171; flex-wrap: wrap; font-size: 12px; }
+.tk-toolbar strong { font-family: Batang, serif; font-size: 17px; letter-spacing: 2px; margin-right: 14px; }
+.tk-toolbar b { color: #b1b1b1; font: 11px sans-serif; letter-spacing: 1px; }
+.tk-toolbar button { border: 1px solid #6b6b6b; padding: 5px 10px; background: #3b3b3b; }
+.tk-toolbar .tk-mode { margin-left: auto; color: #c1c1c1; font-size: 11px; }
+.tk-battlefield { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.tk-map-area { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.tk-command-panel { background: #e2e2e2; color: #313131; overflow-y: auto; border-left: 3px double #7d7d7d; min-height: 0; }
+.tk-command-panel > div { border-top: 0; }
+.tk-command-panel .max-h-\[44vh\] { max-height: none; }
+.tk-view-controls { position: absolute; left: 16px; top: 16px; display: flex; gap: 3px; flex-wrap: wrap; max-width: calc(100% - 32px); }
+.tk-view-controls button { background: #2d2d2deb; border: 1px solid #898989; color: #e2e2e2; padding: 6px 10px; font-size: 11px; }
+.tk-map-help { position: absolute; bottom: 12px; left: 16px; background: #2d2d2dcf; color: #e1e1e1; padding: 6px 10px; font-size: 11px; pointer-events: none; }
+.tk-minimap { position: absolute; bottom: 42px; right: 16px; width: 230px; height: 157px; background: #2f2f2fdf; border: 1px solid #898989; padding: 8px; box-shadow: 0 4px 18px #1c1c1c30; }
+.tk-minimap > span { font-size: 10px; color: #c4c4c4; letter-spacing: 3px; }
+.tk-minimap > div { position: relative; height: 117px; }
+.tk-minimap button { position: absolute; transform: translate(-50%, -50%); font-size: 9px; background: #d8d8d8; color: #343434; border-left: 4px solid; padding: 1px 3px; white-space: nowrap; }
+.tk-editor, .tk-battle-dialog { color: #363636; background: #e4e4e4; border: 1px solid #8b8b8b; padding: 0; margin: auto; box-shadow: 0 25px 100px #0008; max-height: 92dvh; }
+.tk-editor::backdrop, .tk-battle-dialog::backdrop { background: #171717dd; }
+.tk-editor { width: min(1120px, 95vw); }
+.tk-editor header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #aeaeae; }
+.tk-editor small, .tk-battle-dialog > small { color: #626262; letter-spacing: 2px; font-size: 10px; }
+.tk-editor h2, .tk-battle-dialog h2 { font: bold 24px Batang, serif; margin: 5px 0; }
+.tk-editor header p, .tk-model-column p { font-size: 12px; color: #696969; }
+.tk-editor button, .tk-battle-dialog button { padding: 7px 13px; border: 1px solid #a6a6a6; font-size: 12px; }
+.tk-editor .tk-primary, .tk-primary, .tk-battle-dialog .tk-primary { background: #444444; color: #f0f0f0; border: 1px solid #535353; }
+.tk-editor-body { display: grid; grid-template-columns: 205px minmax(210px, 1fr) 355px; min-height: 0; }
+.tk-officer-list { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-right: 1px solid #bbbbbb; }
+.tk-editor input, .tk-editor select { width: 100%; background: #f3f3f3; border: 1px solid #adadad; padding: 7px; min-width: 0; border-radius: 0; }
+.tk-editor input[type=color] { padding: 3px; height: 35px; }
+.tk-roster-scroll { height: 440px; overflow-y: auto; }
+.tk-roster-scroll button { width: 100%; text-align: left; border: 0; border-bottom: 1px solid #c2c2c2; padding: 10px 8px; }
+.tk-roster-scroll button[aria-pressed=true] { background: #3d3d3d; color: #eaeaea; }
+.tk-roster-scroll span { display: block; font-size: 10px; margin-top: 3px; opacity: .7; }
+.tk-model-column { text-align: center; background: radial-gradient(ellipse at 50% 40%, #6e6e6e, #333333 80%); color: #e3e3e3; padding: 18px 8px; }
+.tk-model-column h3 { font: 24px Batang, serif; margin-top: 8px; }
+.tk-model-column small { color: #afafaf; }
+.tk-model-column p { color: #b5b5b5; margin-top: 8px; }
+.tk-model-view { height: 440px; position: relative; }
+.tk-model-view canvas { width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.tk-model-view > span { position: absolute; bottom: 4px; left: 0; width: 100%; font-size: 10px; color: #cccccc; pointer-events: none; }
+.tk-editor-fields { padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; max-height: 68dvh; overflow-y: auto; }
+.tk-editor-fields h3 { font-size: 13px; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid #b5b5b5; }
+.tk-editor-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #5a5a5a; }
+.tk-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tk-stat-inputs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.tk-stat-inputs input { padding: 7px 3px; font-size: 13px; }
+.tk-colors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tk-editor-fields p { font-size: 11px; line-height: 1.6; }
+.tk-discard { padding: 14px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #808080; background: #cecece; font-size: 12px; }
+.tk-battle-dialog { padding: 26px; width: min(450px, 92vw); }
+.tk-battle-dialog h2 { font-size: 20px; margin: 10px 0 20px; }
+.tk-battle-dialog p { font-size: 12px; margin: 14px 0; }
+.tk-battle-numbers { display: flex; gap: 40px; margin: 16px 0; font-size: 11px; }
+.tk-battle-numbers strong { display: block; font-size: 27px; color: #4b4b4b; }
+.tk-battle-dialog footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px; }
+@media(max-width: 850px) {
+  .tk-battlefield { grid-template-columns: minmax(0, 1fr) 280px; }
+  .tk-minimap { display: none; }
+  .tk-editor-body { grid-template-columns: 150px 1fr; }
+  .tk-editor-fields { grid-column: 1 / -1; max-height: none; }
+  .tk-model-view, .tk-roster-scroll { height: 230px; }
+}
+@media(max-width: 620px) {
+  .tk-battlefield { display: flex; flex-direction: column; }
+  .tk-map-area { flex: 1; min-height: 190px; }
+  .tk-command-panel { max-height: 32dvh; border-left: 0; border-top: 2px solid #7d7d7d; }
+  .tk-toolbar { padding: 6px 10px; gap: 6px; }
+  .tk-toolbar strong { font-size: 14px; margin-right: auto; }
+  .tk-toolbar .tk-mode { display: none; }
+  .tk-map-help { display: none; }
+  .tk-view-controls { left: 8px; top: 8px; }
+  .tk-view-controls button { padding: 5px 7px; }
+  .tk-editor header { padding: 12px; }
+  .tk-editor header p { max-width: 230px; font-size: 10px; }
+  .tk-editor-body { grid-template-columns: 135px minmax(0, 1fr); }
+  .tk-officer-list { padding: 8px; }
+  .tk-editor-fields { padding: 16px; }
+  .tk-discard { flex-wrap: wrap; }
+}
+
+/* Monochrome interface, with intrinsic sizing boundaries for every layout. */
+.tk-game, .tk-start, .tk-editor, .tk-battle-dialog, .tk-replay { color-scheme: light; font-family: Pretendard, sans-serif; }
+:is(.tk-game, .tk-start, .tk-editor, .tk-battle-dialog, .tk-replay) * { box-sizing: border-box; min-width: 0; }
+:is(.tk-game, .tk-start, .tk-editor, .tk-battle-dialog, .tk-replay) :is(p, h1, h2, h3, span, strong, button, label) { overflow-wrap: anywhere; }
+:is(.tk-game, .tk-start, .tk-editor, .tk-battle-dialog, .tk-replay) button { touch-action: manipulation; }
+.tk-game { background: #171717; }
+.tk-toolbar { background: #111; border-color: #444; color: #fff; flex-shrink: 0; }
+.tk-toolbar button, .tk-view-controls button { background: #222; border-color: #666; color: #fff; min-height: 36px; }
+.tk-toolbar strong { letter-spacing: 1px; }
+.tk-toolbar b, .tk-toolbar .tk-mode { color: #ccc; }
+.tk-topbar { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.tk-topbar > span { max-width: 100%; }
+.tk-topbar > span:not(.tk-top-actions) { white-space: nowrap; }
+.tk-top-actions { flex-wrap: wrap; }
+.tk-top-actions button { min-height: 36px; white-space: nowrap; }
+.tk-command-panel { background: #fafafa; color: #171717; border-color: #aaa; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.tk-command-panel canvas, .tk-overview canvas, .tk-dispatch canvas { filter: grayscale(1); flex-shrink: 0; }
+.tk-command-panel span[style*="background"], .tk-overview span[style*="background"] { filter: grayscale(1); }
+.tk-command-panel .w-14 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tk-city-roster { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; max-height: 240px; overflow-y: auto; padding: 2px; overscroll-behavior: contain; }
+.tk-city-roster > button { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); text-align: left; }
+.tk-officer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tk-city-roster .tk-officer-stats { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tk-officer-stats { flex-wrap: wrap; }
+.tk-orders-grid, .tk-build-grid { display: grid; gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tk-orders-grid button, .tk-build-grid button { min-height: 52px; }
+.tk-command-panel li { flex-wrap: wrap; }
+.tk-map-help { background: #171717de; color: #eee; max-width: calc(100% - 32px); }
+.tk-view-controls { gap: 4px; }
+.tk-minimap { background: #171717eb; border-color: #aaa; }
+.tk-minimap > span { color: #eee; }
+.tk-minimap button { background: #eee; color: #111; }
+.tk-start { overflow-x: hidden; }
+.tk-start header > button { flex-shrink: 0; }
+.tk-overview, .tk-dispatch { padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+.tk-overview > div, .tk-dispatch > div { max-width: 100%; max-height: 94dvh; overflow-x: hidden; }
+.tk-overview > div { width: min(768px, 100%); }
+.tk-dispatch > div { width: min(540px, 100%); }
+.tk-overview h2 { flex-shrink: 0; }
+.tk-overview > div > div:first-child { flex-wrap: wrap; }
+.tk-overview li > button { flex-wrap: wrap; }
+.tk-overview .grid.flex-1 { min-width: 130px; }
+.tk-overview .w-20, .tk-overview .w-16 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tk-dispatch button { overflow-wrap: anywhere; }
+.tk-editor { background: #fafafa; color: #171717; width: min(1120px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow-x: hidden; overflow-y: auto; }
+.tk-editor header { gap: 12px; background: #fafafa; border-color: #ccc; }
+.tk-editor header > button { flex-shrink: 0; min-height: 40px; }
+.tk-editor-body { grid-template-columns: minmax(150px, 205px) minmax(190px, 1fr) minmax(280px, 355px); }
+.tk-editor-fields { max-height: 68dvh; }
+.tk-editor input, .tk-editor select { color: #171717; background: #fff; border-color: #bdbdbd; min-height: 38px; }
+.tk-editor select { text-overflow: ellipsis; }
+.tk-editor input[type=range] { padding: 0; accent-color: #222; }
+.tk-editor label, .tk-editor small { color: #555; }
+.tk-editor-fields p { color: #444; }
+.tk-editor .tk-primary, .tk-battle-dialog .tk-primary, .tk-replay .tk-primary { background: #171717; color: #fff; border-color: #171717; }
+.tk-roster-scroll button[aria-pressed=true] { background: #171717; color: #fff; }
+.tk-roster-scroll button { white-space: normal; }
+.tk-roster-count { color: #666; font-size: 11px; }
+.tk-model-column { background: radial-gradient(ellipse at 50% 40%, #505050, #202020 80%); color: #fff; }
+.tk-model-column :is(p, small) { color: #ccc; }
+.tk-field-pair, .tk-colors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tk-colors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tk-stat-inputs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tk-discard { position: sticky; bottom: 0; background: #e5e5e5; flex-wrap: wrap; z-index: 1; }
+.tk-battle-dialog { background: #fafafa; color: #171717; width: min(480px, calc(100vw - 24px)); max-width: calc(100vw - 24px); overflow: auto; }
+.tk-battle-dialog footer { flex-wrap: wrap; }
+.tk-battle-dialog footer button { min-height: 44px; }
+.tk-battle-numbers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tk-battle-numbers strong { color: #111; }
+.tk-editor::backdrop, .tk-battle-dialog::backdrop, .tk-replay::backdrop { background: #000b; }
+.tk-replay { padding: 0; margin: auto; width: min(900px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); background: #fafafa; color: #171717; border: 1px solid #555; box-shadow: 0 20px 90px #0008; overflow: auto; }
+.tk-replay header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; border-bottom: 1px solid #ccc; }
+.tk-replay header > div { flex: 1; }
+.tk-replay h2 { font-size: clamp(16px, 2.5vw, 24px); font-weight: 700; }
+.tk-replay h2 span { font-size: 12px; color: #888; padding: 0 8px; }
+.tk-replay header small { font-size: 10px; letter-spacing: 2px; color: #666; }
+.tk-battle-phase { flex-shrink: 0; font-size: 12px; border: 1px solid #999; padding: 6px 8px; }
+.tk-battle-stage { position: relative; height: clamp(180px, 38dvh, 360px); background: #202020; }
+.tk-battle-stage canvas { display: block; width: 100%; height: 100%; }
+.tk-stage-fallback { position: absolute; inset: 40% 15px auto; text-align: center; color: white; font-size: 12px; }
+.tk-combatants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 16px 20px; }
+.tk-combatant > small { color: #666; font-size: 11px; }
+.tk-combatant h3 { font-size: 17px; font-weight: 700; margin: 4px 0; }
+.tk-combatant > strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+.tk-combatant strong small { font-size: 11px; font-weight: 400; }
+.tk-combatant p { font-size: 11px; color: #555; margin-top: 7px; }
+.tk-troop-track { height: 4px; background: #ddd; margin-top: 8px; }
+.tk-troop-track span { display: block; height: 100%; background: #222; }
+.tk-battle-description { padding: 0 20px 16px; font-size: 12px; color: #555; }
+.tk-replay footer { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding: 12px 20px; border-top: 1px solid #ccc; background: #fafafa; position: sticky; bottom: 0; }
+.tk-replay button { min-height: 44px; padding: 8px 14px; border: 1px solid #999; font-size: 12px; cursor: pointer; }
+@media(max-width: 960px) {
+  .tk-editor-body { grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); }
+  .tk-editor-fields { grid-column: 1 / -1; max-height: none; }
+  .tk-model-view { height: 260px; }
+  .tk-roster-scroll { height: 200px; }
+}
+@media(max-width: 620px) {
+  .tk-toolbar button, .tk-view-controls button, .tk-top-actions button { min-height: 40px; }
+  .tk-toolbar { padding: 6px 8px; gap: 8px; }
+  .tk-topbar { gap: 5px 12px; padding: 8px; }
+  .tk-top-actions { width: 100%; margin-left: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr); gap: 6px; }
+  .tk-battlefield { overflow: hidden; }
+  .tk-map-area { min-height: 120px; }
+  .tk-command-panel { flex-shrink: 0; max-height: 34dvh; }
+  .tk-view-controls { top: 6px; left: 6px; max-width: calc(100% - 12px); gap: 3px; }
+  .tk-view-controls button { padding: 4px 7px; }
+  .tk-editor { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); }
+  .tk-editor-body { grid-template-columns: minmax(118px, .8fr) minmax(0, 1.2fr); }
+  .tk-model-view { height: 205px; }
+  .tk-roster-scroll { height: 180px; }
+  .tk-editor input:not([type=color]):not([type=range]), .tk-editor select { font-size: 16px; }
+  .tk-editor .tk-stat-inputs input { padding-inline: 3px; }
+  .tk-editor-fields { padding: 14px 12px; }
+  .tk-replay header { padding: 12px; gap: 8px; }
+  .tk-replay footer { padding: 10px 12px; }
+  .tk-battle-stage { height: clamp(170px, 30dvh, 270px); }
+  .tk-combatants { padding: 12px; gap: 14px; }
+  .tk-battle-description { padding: 0 12px 12px; }
+  .tk-battle-dialog { padding: 18px; }
+}
+@media(max-height: 520px) and (min-width: 621px) {
+  .tk-toolbar { padding-block: 3px; }
+  .tk-topbar { padding-block: 3px; }
+  .tk-minimap, .tk-map-help { display: none; }
+  .tk-editor, .tk-replay { max-height: calc(100dvh - 12px); }
+  .tk-battle-stage { height: 170px; }
+}
+.tk-dispatch-roster { max-height: min(280px, 30dvh); overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
+.tk-game input[type="range"], .tk-game input[type="checkbox"] { accent-color: #171717; }

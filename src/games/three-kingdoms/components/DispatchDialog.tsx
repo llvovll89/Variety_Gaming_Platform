@@ -49,8 +49,8 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="출진 편성"
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(58,50,38,0.45)" }}
+      className="tk-dispatch fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(24,24,24,0.45)" }}
       onClick={onClose}
     >
       <div
@@ -66,7 +66,7 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
         </p>
 
         <p className="mb-1 text-[11px] opacity-60">대장과 부장 (최대 3명, 첫 번째가 대장)</p>
-        <div className="mb-3 flex flex-wrap gap-1.5">
+        <div className="tk-dispatch-roster mb-3 flex flex-wrap gap-1.5">
           {roster.map((o) => {
             const on = picked.includes(o.id);
             const rank = picked.indexOf(o.id);
@@ -79,7 +79,7 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
                 className="flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs"
                 style={{
                   borderColor: on ? PALETTE.seal : PALETTE.inkSoft,
-                  background: on ? "rgba(163,50,38,0.12)" : "transparent",
+                  background: on ? "rgba(24,24,24,0.12)" : "transparent",
                 }}
               >
                 <OfficerPortrait officer={o} state={state} size={30} />
@@ -108,7 +108,7 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
                 className="flex flex-col items-center rounded-lg border px-2 py-1.5 text-xs"
                 style={{
                   borderColor: on ? PALETTE.seal : PALETTE.inkSoft,
-                  background: on ? "rgba(163,50,38,0.12)" : "transparent",
+                  background: on ? "rgba(24,24,24,0.12)" : "transparent",
                 }}
               >
                 <span className="text-base font-bold" style={{ fontFamily: HANJA_FONT }}>{spec.hanja}</span>

@@ -8,6 +8,7 @@
 import { gameStorageKey, safeGetItem, safeSetItem } from "../../../shared/storage";
 import { GAME_ID, MAP_HEIGHT, MAP_WIDTH } from "./constants";
 import type { GameState } from "./types";
+import { createOfficers, PK_ROSTER_VERSION } from './officers';
 
 const KEY = gameStorageKey(GAME_ID, "save");
 /** Bump when the state shape changes so stale saves are discarded instead of crashing. */
@@ -49,6 +50,18 @@ export function loadGame(): GameState | null {
       return null;
     }
     state.phase = "player";
+    state.day ??= 1;
+    if ((state.pkRosterVersion ?? 0) < PK_ROSTER_VERSION) {
+      for (const officer of Object.values(createOfficers())) {
+        if (state.officers[officer.id]) continue;
+        const city = state.cities[officer.cityId];
+        if (!city) continue;
+        officer.faction = city.faction;
+        state.officers[officer.id] = officer;
+        if (!city.officerIds.includes(officer.id)) city.officerIds.push(officer.id);
+      }
+      state.pkRosterVersion = PK_ROSTER_VERSION;
+    }
     return state;
   } catch {
     return null;

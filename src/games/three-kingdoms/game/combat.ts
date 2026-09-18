@@ -20,7 +20,8 @@ import { tileAt } from "./map";
 import { absorbUnit, destroyUnit } from "./commands";
 import { nearestFriendlyCity, officersOfUnit } from "./state";
 import { createRng } from "./rng";
-import { routeTo } from "./pathfinding";
+import { battleSide, finishBattleReplay, type BattleReplay } from './battleReplay';
+import { routeTo, attackTargets, isPassable } from "./pathfinding";
 import type { GameEvent } from "./events";
 import type { City, GameState, TacticId, Tile, Unit } from "./types";
 
@@ -176,12 +177,31 @@ export interface AttackOutcome {
  * `targetHex` may hold a unit or an enemy city.
  */
 export function resolveAttack(
+  state: GameState, attacker: Unit, targetHex: HexCoord, tactic?: TacticId,
+): AttackOutcome {
+  const tile = tileAt(state.map, targetHex);
+  const defender = tile?.unitId != null ? state.units[tile.unitId] : null;
+  const city = !defender && tile?.cityId ? state.cities[tile.cityId] : null;
+  const report: BattleReplay = { attacker: battleSide(state, attacker, null), defender: battleSide(state, defender ?? null, city ?? null), tactic, displaced: false, tacticLanded: null };
+  const outcome = resolveAttackCore(state, attacker, targetHex, tactic);
+  if (outcome.events.length) {
+    finishBattleReplay(report, state, attacker.id, defender?.id ?? null, city?.id ?? null, outcome.events);
+    outcome.events.unshift({ kind: 'battle-scene', report, at: { ...targetHex } });
+  }
+  return outcome;
+}
+
+function resolveAttackCore(
   state: GameState,
   attacker: Unit,
   targetHex: HexCoord,
   tactic?: TacticId,
 ): AttackOutcome {
   const events: GameEvent[] = [];
+  // Validate before spending energy or actions. Also protects stale UI confirmations.
+  if (!state.units[attacker.id] || attacker.hasActed || attacker.status.confused > 0 ||
+      !attackTargets(state, attacker).some(h => h.q === targetHex.q && h.r === targetHex.r) ||
+      (tactic && !availableTactics(state, attacker).includes(tactic))) return { events };
   const spec = UNIT_TYPES[attacker.type];
   const distance = hexDistance(attacker.coord, targetHex);
   const tile = tileAt(state.map, targetHex);
@@ -219,7 +239,8 @@ export function resolveAttack(
       return { events };
     }
 
-    const power = attackPower(state, attacker, defender.type, plan.tacticMult);
+    const flammable = tile.terrain === 'forest' || tile.terrain === 'wasteland';
+    const power = attackPower(state, attacker, defender.type, plan.tacticMult) * (tactic === 'fire' && plan.tacticLanded && flammable ? 1.5 : 1);
     const guard = defensePower(state, defender, plan.ignoreTerrainDefense);
     const dealt = Math.min(
       defender.troops,
@@ -264,6 +285,22 @@ export function resolveAttack(
       taken,
       ranged: distance > 1,
     });
+
+    // Spear thrusts and cavalry charges change the front line, not just a number.
+    if ((tactic === 'pike' || tactic === 'charge') && plan.tacticLanded && distance === 1 && defender.troops > BALANCE.destroyTroops) {
+      const pushed = { q: defender.coord.q * 2 - attacker.coord.q, r: defender.coord.r * 2 - attacker.coord.r };
+      if (isPassable(state, pushed, defender.faction) && !tileAt(state.map, pushed)?.cityId) {
+        const from = { ...defender.coord };
+        tile.unitId = null;
+        tileAt(state.map, pushed)!.unitId = defender.id;
+        defender.coord = pushed;
+        events.push({ kind: 'move', unitId: defender.id, from, to: pushed, path: [pushed] });
+      } else {
+        const collision = Math.min(defender.troops, Math.round(dealt * 0.2));
+        defender.troops -= collision;
+        events.push({ kind: 'battle', at: defender.coord, attackerId: attacker.id, defenderId: defender.id, dealt: collision, taken: 0, ranged: false });
+      }
+    }
 
     events.push(...settle(state, defender));
     events.push(...settle(state, attacker));

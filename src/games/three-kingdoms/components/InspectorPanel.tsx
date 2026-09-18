@@ -27,7 +27,7 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
   return (
     <div className="flex items-center gap-2">
       <span className="w-10 shrink-0 text-[11px] opacity-60">{label}</span>
-      <span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(58,50,38,0.15)" }}>
+      <span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(24,24,24,0.15)" }}>
         <span className="block h-full rounded-full" style={{ width: `${pct * 100}%`, background: color }} />
       </span>
       <span className="w-24 shrink-0 text-right text-[11px] tabular-nums" style={{ transition: "none" }}>
@@ -44,7 +44,7 @@ function OfficerStats({ officer }: { officer: Officer }) {
     ["정", officer.pol], ["매", officer.cha],
   ];
   return (
-    <span className="flex gap-1.5 text-[11px] tabular-nums">
+    <span className="tk-officer-stats flex gap-1.5 text-[11px] tabular-nums">
       {stats.map(([k, v]) => (
         <span key={k} className="flex gap-0.5">
           <span className="opacity-45">{k}</span>
@@ -84,7 +84,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
               color={faction.color}
               title={`${officersOfUnit(state, unit)[0]?.name ?? "부대"} · ${spec.label}`}
               subtitle={`${faction.name} · 이동 ${unit.movesLeft}${unit.hasActed ? " · 행동 완료" : ""}${
-                ours && !supplied ? ` · 보급 끊김 ${unit.unsuppliedTurns}달` : ""
+                ours && !supplied ? ` · 보급 끊김 ${unit.unsuppliedTurns}순` : ""
               }`}
             />
             <div className="flex flex-col gap-1.5">
@@ -191,9 +191,9 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
             )}
             <div>
               <p className="mb-1 text-[11px] opacity-60">
-                무장을 고르고 지시하십시오. 배정된 무장은 이번 달 내내 그 일을 맡습니다.
+                무장을 고르고 지시하십시오. 배정된 무장은 이번 순(10일) 동안 임무를 수행합니다.
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="tk-city-roster">
                 {roster.map((o) => {
                   const busy = o.duty !== "idle";
                   const on = picked.includes(o.id);
@@ -207,11 +207,11 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                       className="flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition-colors disabled:opacity-35"
                       style={{
                         borderColor: on ? PALETTE.seal : PALETTE.inkSoft,
-                        background: on ? "rgba(163,50,38,0.12)" : "transparent",
+                        background: on ? "rgba(24,24,24,0.12)" : "transparent",
                       }}
                     >
                       <OfficerPortrait officer={o} state={state} size={26} />
-                      <span className="font-semibold">{o.name}</span>
+                      <span className="tk-officer-name font-semibold" title={o.name}>{o.name}</span>
                       <OfficerStats officer={o} />
                     </button>
                   );
@@ -220,7 +220,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-6">
+            <div className="tk-orders-grid">
               {ORDERS.map((kind) => {
                 const preview = picked.length > 0 ? previewInternal(state, cityId, kind, picked) : null;
                 const blocked = !preview || Boolean(preview.problem);
@@ -263,7 +263,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                   </button>
                 )}
               </p>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="tk-build-grid">
                 {BUILDABLE.map((type) => {
                   const spec = FACILITIES[type];
                   const spots = picked.length ? buildableTiles(state, cityId, type).length : 0;
@@ -280,7 +280,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                       className="flex flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-xs transition-colors disabled:opacity-35 enabled:hover:bg-black/5"
                       style={{
                         borderColor: active ? PALETTE.seal : PALETTE.inkSoft,
-                        background: active ? "rgba(163,50,38,0.12)" : "transparent",
+                        background: active ? "rgba(24,24,24,0.12)" : "transparent",
                       }}
                     >
                       <span className="font-semibold" style={{ fontFamily: HANJA_FONT }}>{spec.hanja}</span>
@@ -369,7 +369,7 @@ function Shell({ title, children }: { title?: string; children: React.ReactNode 
   return (
     <div
       className="pointer-events-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-      style={{ background: "rgba(240,230,210,0.96)", borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
+      style={{ background: "rgba(250,250,250,0.96)", borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
     >
       <button
         type="button"
@@ -410,7 +410,7 @@ function UnitActions({
   return (
     <>
       <p className="text-[11px] opacity-60">
-        흰 칸을 눌러 이동하고, 붉게 표시된 적을 눌러 공격합니다.
+        파란 칸을 눌러 이동하고, 붉은 적을 누르면 공격 결과를 확인할 수 있습니다.
       </p>
       {tactics.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -428,7 +428,7 @@ function UnitActions({
                 className="rounded-lg border px-2 py-1 text-xs disabled:opacity-35"
                 style={{
                   borderColor: armed ? PALETTE.seal : PALETTE.inkSoft,
-                  background: armed ? "rgba(163,50,38,0.12)" : "transparent",
+                  background: armed ? "rgba(24,24,24,0.12)" : "transparent",
                 }}
               >
                 <span className="font-semibold" style={{ fontFamily: HANJA_FONT }}>{t.hanja}</span>

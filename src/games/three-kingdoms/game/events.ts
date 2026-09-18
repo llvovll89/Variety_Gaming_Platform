@@ -5,10 +5,12 @@
  * think about presentation, and the step machine has exactly one thing to hand the engine.
  */
 import type { HexCoord } from "./hex";
+import type { BattleReplay } from './battleReplay';
 import { FACILITIES, TACTICS } from "./constants";
 import type { CityId, FacilityType, FactionId, GameState, InternalKind, LogEntry, TacticId, UnitId } from "./types";
 
 export type GameEvent =
+  | { kind: 'battle-scene'; report: BattleReplay; at: HexCoord }
   | { kind: "turn-begin"; year: number; month: number }
   | { kind: "internal"; cityId: CityId; order: InternalKind; delta: number; officers: string[] }
   | { kind: "build-progress"; cityId: CityId; at: HexCoord; facility: FacilityType; left: number }
@@ -50,7 +52,7 @@ export function describe(state: GameState, event: GameEvent): LogEntry | null {
   const turn = state.turn;
   switch (event.kind) {
     case "turn-begin":
-      return { turn, text: `${event.year}년 ${event.month}월.`, focus: null, kind: "info" };
+      return { turn, text: `${event.year}년 ${event.month}월 ${state.day === 21 ? '하순' : state.day === 11 ? '중순' : '상순'}.`, focus: null, kind: "info" };
 
     case "internal": {
       const city = state.cities[event.cityId];
@@ -79,6 +81,7 @@ export function describe(state: GameState, event: GameEvent): LogEntry | null {
     }
 
     case "build-progress":
+    case 'battle-scene':
     case "move":
       return null; // Too chatty for the log; the map already shows both of these.
 

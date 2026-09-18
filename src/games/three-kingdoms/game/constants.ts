@@ -29,12 +29,12 @@ export const HARVEST_MONTH = 9;
 // --- Ink-wash palette --------------------------------------------------------
 
 export const PALETTE = {
-  paper: "#f0e6d2",
-  paperDeep: "#e6d9be",
-  ink: "#3a3226",
-  inkSoft: "rgba(58, 50, 38, 0.35)",
-  inkFaint: "rgba(58, 50, 38, 0.16)",
-  seal: "#a33226",
+  paper: "#fafafa",
+  paperDeep: "#e5e5e5",
+  ink: "#171717",
+  inkSoft: "rgba(23, 23, 23, 0.35)",
+  inkFaint: "rgba(23, 23, 23, 0.16)",
+  seal: "#171717",
   plain: "#d9c9a3",
   wasteland: "#cbbfa2",
   forest: "#b3c09a",
@@ -148,11 +148,11 @@ export interface TacticSpec {
 export const TACTICS: Record<TacticId, TacticSpec> = {
   charge: {
     label: "돌격", hanja: "突擊", unitType: "cavalry", energy: 40, damageMult: 1.6,
-    desc: "반격을 받지 않는다",
+    desc: "반격 없이 적을 한 칸 밀어낸다. 막히면 충돌 피해 20%",
   },
   pike: {
-    label: "제사", hanja: "刺", unitType: "spear", energy: 35, damageMult: 1.4,
-    desc: "대상 사기 -8",
+    label: "돌출", hanja: "突出", unitType: "spear", energy: 35, damageMult: 1.4,
+    desc: "사기 -8, 적을 한 칸 밀어낸다. 막히면 충돌 피해 20%",
   },
   volley: {
     label: "화시", hanja: "火矢", unitType: "archer", energy: 35, damageMult: 1.3,

@@ -20,6 +20,10 @@ import {
 } from "./camera";
 import { PointerTracker } from "./input";
 import { MapRenderer, type RenderOverlay } from "./renderer";
+import { MapRenderer3D } from './renderer3d';
+import { editOfficer } from './editor';
+import type { Officer } from './types';
+import type { BattleReplay } from './battleReplay';
 import { UIStore } from "./uiStore";
 import { cityAt, createGameState, standings, unitAt } from "./state";
 import { factionFood, factionGold, factionOfficers } from "./state";
@@ -53,7 +57,10 @@ export class GameEngine {
   readonly ui = new UIStore();
 
   private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
+  private ctx: CanvasRenderingContext2D | null = null;
+  private renderer3d: MapRenderer3D | null = null;
+  private attackRequest: HexCoord | null = null;
+  private battleScene: { report: BattleReplay; instant: boolean } | null = null;
   private renderer = new MapRenderer();
   private pointers = new PointerTracker();
 
@@ -84,9 +91,11 @@ export class GameEngine {
 
   constructor(canvas: HTMLCanvasElement, playerFactionId: FactionId, seed?: number) {
     this.canvas = canvas;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("2D canvas context unavailable");
-    this.ctx = ctx;
+    try { this.renderer3d = new MapRenderer3D(canvas); }
+    catch {
+      this.ctx = canvas.getContext('2d');
+      if (!this.ctx) throw new Error('지도를 표시할 그래픽 컨텍스트를 만들 수 없습니다.');
+    }
     this.state = createGameState(playerFactionId, seed);
   }
 
@@ -99,6 +108,8 @@ export class GameEngine {
     // not fitted to the whole board. Fit-to-view put every hex below the detail threshold
     // and gave a first-time player twelve identical beige dots and no idea where they were.
     this.camera = this.openingCamera();
+    const home = citiesOf(this.state, this.state.playerFactionId).sort((a, b) => b.maxTroops - a.maxTroops)[0];
+    if (home) this.selection = { kind: 'city', cityId: home.id };
     this.markDirty();
     this.publish();
     this.exposeDebugHook();
@@ -127,17 +138,17 @@ export class GameEngine {
       screenOfCity: (cityId: string) => {
         const city = this.state.cities[cityId];
         if (!city) return null;
-        return worldToScreen(axialToPixel(city.coord, HEX_SIZE), this.camera, this.view);
+        return this.screenPoint(axialToPixel(city.coord, HEX_SIZE));
       },
       screenOfHex: (hex: HexCoord) =>
-        worldToScreen(axialToPixel(hex, HEX_SIZE), this.camera, this.view),
+        this.screenPoint(axialToPixel(hex, HEX_SIZE)),
       reach: () => this.reach,
       targets: () => this.targets,
       selection: () => this.selection,
       firstBuildSpot: () => {
         const spot = this.placement?.spots[0];
         if (!spot) return null;
-        return worldToScreen(axialToPixel(spot, HEX_SIZE), this.camera, this.view);
+        return this.screenPoint(axialToPixel(spot, HEX_SIZE));
       },
       summary: () => {
         const s = this.state;
@@ -165,15 +176,22 @@ export class GameEngine {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     this.rafId = 0;
     this.pointers.clear();
+    this.renderer3d?.dispose();
   }
 
   resize(width: number, height: number, dpr: number): void {
     this.view = { width, height };
+    if (this.renderer3d) {
+      this.renderer3d.resize(this.view, dpr);
+      this.camera = clampCamera(this.camera, this.view);
+      this.markDirty();
+      return;
+    }
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.camera = clampCamera(this.camera, this.view);
     this.markDirty();
   }
@@ -209,6 +227,7 @@ export class GameEngine {
    * rival factions shuffle armies for ninety seconds is how a strategy game loses a player.
    */
   private advance(now: number): boolean {
+    if (this.battleScene) return false;
     const before = this.fx.length;
     this.fx = ageFx(this.fx, now);
     let changed = this.fx.length !== before || this.fx.length > 0;
@@ -232,6 +251,14 @@ export class GameEngine {
         return true;
       }
       const overBudget = this.playback.spent >= ANIM.aiBudgetMs;
+      if (event.kind === 'battle-scene') {
+        if ([event.report.attacker.faction, event.report.defender.faction].includes(this.state.playerFactionId)) {
+          this.battleScene = { report: event.report, instant: false };
+          this.focus(event.at); this.publish();
+          return false;
+        }
+        continue;
+      }
       const shown = overBudget ? null : present(event, now);
       if (!shown) continue;
       if (shown.fx.length > 0) this.fx.push(...shown.fx);
@@ -268,6 +295,7 @@ export class GameEngine {
 
   /** Drop the remaining animation and settle the month at once. */
   skipPlayback(): void {
+    this.battleScene = null;
     if (!this.playback) return;
     this.playback.runner.drain(this.state);
     this.fx = [];
@@ -291,7 +319,66 @@ export class GameEngine {
       fx: this.fx,
       now,
     };
-    this.renderer.render(this.ctx, this.state, this.camera, this.view, overlay);
+    if (this.renderer3d) this.renderer3d.render(this.state, this.camera, this.view, overlay);
+    else if (this.ctx) this.renderer.render(this.ctx, this.state, this.camera, this.view, overlay);
+  }
+
+  private screenPoint(p: Point): Point {
+    return this.renderer3d?.screenOf(p) ?? worldToScreen(p, this.camera, this.view);
+  }
+  private hexAt(p: Point): HexCoord {
+    return this.renderer3d?.hexAt(p) ?? screenToHex(p, this.camera, this.view);
+  }
+  viewMode(): string { return this.renderer3d ? '3D 전장' : '2D 호환 모드'; }
+  rotateView(delta: number): void {
+    if (this.renderer3d) this.renderer3d.yaw += delta;
+    this.markDirty();
+  }
+  tiltView(): void {
+    if (this.renderer3d) this.renderer3d.pitch = this.renderer3d.pitch > 1 ? 0.85 : 1.35;
+    this.markDirty();
+  }
+  toggleGrid(): void {
+    if (this.renderer3d) this.renderer3d.grid = !this.renderer3d.grid;
+    this.markDirty();
+  }
+  zoomView(factor: number): void {
+    this.camera.zoom = clampZoom(this.camera.zoom * factor); this.markDirty();
+  }
+  updateOfficer(draft: Officer, creating = false): CommandResult {
+    const result = editOfficer(this.state, draft, creating);
+    if (result.ok) {
+      if (this.selection.kind === 'unit') {
+        const unit = this.state.units[this.selection.unitId];
+        if (unit) this.refreshUnitOverlay(unit);
+      }
+      this.pendingTactic = null; this.attackRequest = null;
+      this.save(); this.markDirty(); this.publish();
+    }
+    return result;
+  }
+  pendingAttack(): HexCoord | null { return this.attackRequest; }
+  getBattleScene() { return this.battleScene; }
+  closeBattleScene(): void {
+    this.battleScene = null; this.fx = []; this.markDirty(); this.publish();
+  }
+  cancelAttack(): void { this.attackRequest = null; this.publish(); }
+  confirmAttack(instant = false): void {
+    if (this.battleScene) return;
+    const target = this.attackRequest;
+    this.attackRequest = null;
+    if (!target || this.selection.kind !== 'unit' || this.state.phase !== 'player') return;
+    const unit = this.state.units[this.selection.unitId];
+    if (!unit || !attackTargets(this.state, unit).some(h => hexEquals(h, target))) { this.publish(); return; }
+    const outcome = resolveAttack(this.state, unit, target, this.pendingTactic ?? undefined);
+    this.pendingTactic = null;
+    for (const event of outcome.events) {
+      if (event.kind === 'battle-scene') this.battleScene = { report: event.report, instant };
+      logEvent(this.state, event);
+      const presentation = present(event, performance.now());
+      this.fx.push(...presentation.fx);
+    }
+    this.save(); this.afterUnitAction(unit.id);
   }
 
   // --- input ----------------------------------------------------------------
@@ -303,7 +390,12 @@ export class GameEngine {
   pointerMove(id: number, p: Point): void {
     const gesture = this.pointers.move(id, p);
     if (gesture?.pan) {
-      this.camera = clampCamera(panBy(this.camera, gesture.pan.dx, gesture.pan.dy), this.view);
+      if (this.renderer3d) {
+        const center = { x: this.view.width / 2, y: this.view.height / 2 };
+        const a = this.renderer3d.worldAt(center);
+        const b = this.renderer3d.worldAt({ x: center.x + gesture.pan.dx, y: center.y + gesture.pan.dy });
+        this.camera = clampCamera({ ...this.camera, x: this.camera.x + a.x - b.x, y: this.camera.y + a.y - b.y }, this.view);
+      } else this.camera = clampCamera(panBy(this.camera, gesture.pan.dx, gesture.pan.dy), this.view);
       this.markDirty();
     }
     if (gesture?.pinch) {
@@ -318,7 +410,7 @@ export class GameEngine {
 
   pointerUp(id: number): void {
     const tap = this.pointers.up(id);
-    if (tap) this.select(screenToHex(tap, this.camera, this.view));
+    if (tap) this.select(this.hexAt(tap));
   }
 
   pointerCancel(id: number): void {
@@ -339,7 +431,7 @@ export class GameEngine {
   }
 
   private setHover(p: Point): void {
-    const hex = screenToHex(p, this.camera, this.view);
+    const hex = this.hexAt(p);
     if (this.hovered && hexEquals(this.hovered, hex)) return;
     this.hovered = hex;
     this.markDirty();
@@ -383,18 +475,19 @@ export class GameEngine {
     if (this.state.phase !== "player") return false;
 
     if (this.targets.some((t) => hexEquals(t, hex))) {
-      const tactic = this.pendingTactic ?? undefined;
-      this.pendingTactic = null;
-      const outcome = resolveAttack(this.state, unit, hex, tactic);
-      for (const event of outcome.events) logEvent(this.state, event);
-      this.afterUnitAction(unit.id);
+      this.attackRequest = hex;
+      this.publish();
       return true;
     }
 
     if (this.reach.some((t) => hexEquals(t, hex))) {
+      const from = { ...unit.coord };
       const result = moveUnit(this.state, unit.id, hex);
       if (result.ok) {
+        const shown = present({ kind: 'move', unitId: unit.id, from, to: hex, path: [hex] }, performance.now());
+        if (shown.blocking) this.blocking = { anim: shown.blocking, start: performance.now() };
         for (const event of result.events ?? []) logEvent(this.state, event);
+        this.save();
         this.afterUnitAction(unit.id);
         return true;
       }
@@ -425,12 +518,13 @@ export class GameEngine {
     const map = reachable(this.state, unit);
     const origin = hexKey(unit.coord);
     this.reach = [...map.entries()].filter(([k]) => k !== origin).map(([, e]) => e.hex);
-    this.targets = attackTargets(this.state, unit);
+    this.targets = unit.hasActed || unit.status.confused > 0 ? [] : attackTargets(this.state, unit);
   }
 
   /** Arm a 전법; the next tap on a valid target uses it. */
   setTactic(tactic: TacticId | null): void {
     this.pendingTactic = tactic;
+    this.attackRequest = null;
     this.markDirty();
     this.publish();
   }
@@ -453,6 +547,7 @@ export class GameEngine {
         this.selection = { kind: "unit", unitId: fresh.id };
         this.refreshUnitOverlay(fresh);
       }
+      this.save();
       this.markDirty();
       this.publish();
     }
@@ -484,6 +579,7 @@ export class GameEngine {
   }
 
   select(hex: HexCoord): void {
+    this.attackRequest = null;
     // While placing, a tap is an answer to "where?" rather than a new selection.
     if (this.placement) {
       const { cityId, type, officerIds, spots } = this.placement;
@@ -521,6 +617,7 @@ export class GameEngine {
   }
 
   clearSelection(): void {
+    this.attackRequest = null;
     this.selection = { kind: "none" };
     this.reach = [];
     this.targets = [];
@@ -579,7 +676,9 @@ export class GameEngine {
    * exactly what the TurnRunner shape is for.
    */
   endTurn(): void {
+    if (this.battleScene) return;
     if (this.state.phase !== "player") return;
+    this.attackRequest = null;
     this.placement = null;
     this.reach = [];
     this.targets = [];
@@ -597,7 +696,12 @@ export class GameEngine {
 
   /** Replace the board with a restored save. */
   adopt(state: GameState): void {
+    this.battleScene = null;
+    this.playback = null; this.blocking = null; this.fx = [];
     this.state = state;
+    this.attackRequest = null;
+    this.reach = []; this.targets = []; this.pendingTactic = null;
+    this.camera = this.openingCamera();
     this.selection = { kind: "none" };
     this.placement = null;
     this.markDirty();
@@ -612,6 +716,7 @@ export class GameEngine {
     const snapshot: UISnapshot = {
       screen: s.result === "playing" ? "playing" : "ended",
       year: s.year,
+      day: s.day ?? 1,
       month: s.month,
       turn: s.turn,
       result: s.result,
@@ -630,7 +735,7 @@ export class GameEngine {
         ? { cityId: this.placement.cityId, type: this.placement.type }
         : null,
       log: s.log.slice(-40),
-      busy: this.playback !== null || s.phase !== "player",
+      busy: this.battleScene !== null || this.playback !== null || s.phase !== "player",
       standings: standings(s),
     };
     this.ui.publish(snapshot);

@@ -146,7 +146,7 @@ export function moveUnit(state: GameState, unitId: UnitId, target: HexCoord): Co
 
   const reach = reachable(state, unit);
   const entry = reach.get(hexKey(target));
-  if (!entry) return { ok: false, reason: "이번 달에는 거기까지 갈 수 없습니다." };
+  if (!entry) return { ok: false, reason: "이번 순에는 거기까지 갈 수 없습니다." };
   const path = pathFrom(reach, target);
   if (!path || path.length === 0) return { ok: false, reason: "길이 없습니다." };
 

@@ -20,6 +20,9 @@ const compiled = await build({ stdin: { contents: `
   export * from './src/games/three-kingdoms/game/supply';
   export * from './src/games/three-kingdoms/game/victory';
   export * from './src/games/three-kingdoms/game/ai';
+  export * from './src/games/three-kingdoms/game/editor';
+  export * from './src/games/three-kingdoms/game/appearance';
+  export * from './src/games/three-kingdoms/game/save';
   export { TERRAIN_MOVE_COST, TYPE_COUNTER, MAP_WIDTH, MAP_HEIGHT, DOMAIN_RADIUS,
     HARVEST_MONTH, BALANCE, DEV_CAP_BY_SCALE, DEV_CAP_PER_FACILITY, SCENARIO_START, TACTICS,
     MAX_DEFENSE_BY_SCALE }
@@ -40,6 +43,7 @@ const {
   canCapture, captureCity, resolveSupply, supplyReach, isSupplied, evaluateVictory,
   planInternal, planMilitary, explainMilitary, unitsOf, idleOfficers, factionGold,
   TACTICS, MAX_DEFENSE_BY_SCALE,
+  editOfficer, appearanceFor, saveGame, loadGame,
 } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 
 function allTiles() {
@@ -210,13 +214,13 @@ test('the city adjacency graph is symmetric and connects every city', () => {
 test('the scenario rosters, garrisons and ownership all line up', () => {
   const s = createGameState('liubei');
   assert.equal(Object.keys(s.cities).length, 12);
-  assert.equal(Object.keys(s.officers).length, 39);
+  assert.equal(Object.keys(s.officers).length, 120);
   assert.equal(s.factionOrder[0], 'liubei', 'the player must act first');
   assert.equal(new Set(s.factionOrder).size, s.factionOrder.length);
 
   const filed = Object.values(s.cities).flatMap((c) => c.officerIds);
-  assert.equal(filed.length, 39);
-  assert.equal(new Set(filed).size, 39);
+  assert.equal(filed.length, 120);
+  assert.equal(new Set(filed).size, 120);
   for (const o of Object.values(s.officers)) {
     assert.ok(s.cities[o.cityId], o.id + ' posted to a missing city');
     assert.ok(s.cities[o.cityId].officerIds.includes(o.id));
@@ -434,11 +438,13 @@ test('ending the turn rolls the calendar and always lands back on the player', (
   const s = createGameState('liubei');
   const startMonth = s.month;
   runTurn(s);
-  assert.equal(s.month, startMonth + 1);
+  assert.equal(s.month, startMonth);
+  assert.equal(s.day, 11);
   assert.equal(s.phase, 'player');
   assert.equal(s.turn, 2);
 
   s.month = 12;
+  s.day = 21;
   const year = s.year;
   runTurn(s);
   assert.equal(s.month, 1);
@@ -621,6 +627,87 @@ function duel(typeA, typeB, tweak = () => {}) {
   tweak(s, a, b);
   return { s, a, b };
 }
+
+test('PK thrust moves the defender and updates both occupancy indexes', () => {
+  const { s, a, b } = duel('spear', 'spear');
+  const from = { ...b.coord };
+  const to = { q: b.coord.q * 2 - a.coord.q, r: b.coord.r * 2 - a.coord.r };
+  const destination = tileAt(s.map, to);
+  assert.ok(destination); destination.terrain = 'plain'; destination.cityId = null; destination.unitId = null;
+  const outcome = resolveAttack(s, a, from, 'pike');
+  assert.deepEqual(b.coord, to);
+  assert.equal(tileAt(s.map, from).unitId, null);
+  assert.equal(destination.unitId, b.id);
+  assert.ok(outcome.events.some(e => e.kind === 'move' && e.unitId === b.id));
+});
+
+test('PK blocked thrust causes collision without overwriting another unit', () => {
+  const { s, a, b } = duel('spear', 'spear');
+  const from = { ...b.coord };
+  const to = { q: b.coord.q * 2 - a.coord.q, r: b.coord.r * 2 - a.coord.r };
+  const destination = tileAt(s.map, to); assert.ok(destination);
+  destination.unitId = 999;
+  const outcome = resolveAttack(s, a, from, 'pike');
+  assert.deepEqual(b.coord, from);
+  assert.equal(destination.unitId, 999);
+  assert.equal(outcome.events.filter(e => e.kind === 'battle').length, 2);
+});
+
+test('PK invalid and repeated attacks cannot spend resources or damage armies', () => {
+  const { s, a, b } = duel('spear', 'spear');
+  const before = JSON.stringify(s);
+  assert.equal(resolveAttack(s, a, b.coord, 'charge').events.length, 0);
+  assert.equal(resolveAttack(s, a, { q: -100, r: -100 }).events.length, 0);
+  assert.equal(JSON.stringify(s), before);
+  resolveAttack(s, a, b.coord);
+  const after = JSON.stringify(s);
+  assert.equal(resolveAttack(s, a, b.coord).events.length, 0);
+  assert.equal(JSON.stringify(s), after);
+});
+
+test('battle replay snapshots match the real resolution and remain detached from live officers', () => {
+  const { s, a, b } = duel('cavalry', 'spear');
+  const before = { attacker: a.troops, defender: b.troops };
+  const outcome = resolveAttack(s, a, b.coord, 'charge');
+  const scenes = outcome.events.filter(e => e.kind === 'battle-scene');
+  assert.equal(scenes.length, 1);
+  const report = scenes[0].report;
+  assert.equal(report.attacker.before, before.attacker);
+  assert.equal(report.defender.before, before.defender);
+  assert.equal(report.attacker.after, s.units[a.id]?.troops ?? 0);
+  assert.equal(report.defender.after, s.units[b.id]?.troops ?? 0);
+  assert.equal(report.tactic, 'charge');
+  const name = report.attacker.officer.name;
+  s.officers[a.officerIds[0]].name = '변경된 이름';
+  assert.equal(report.attacker.officer.name, name);
+  assert.equal(resolveAttack(s, a, b.coord).events.length, 0, 'watching twice cannot apply an attack again');
+});
+
+test('replay reports preserve destroyed defenders', () => {
+  const { s, a, b } = duel('spear', 'spear');
+  b.troops = 100;
+  const outcome = resolveAttack(s, a, b.coord);
+  const report = outcome.events.find(e => e.kind === 'battle-scene').report;
+  assert.equal(report.defender.before, 100);
+  assert.equal(report.defender.after, 0);
+  assert.ok(report.defender.officer.name);
+});
+
+test('roster v1 saves migrate to 120 without overwriting edited officers', () => {
+  const memory = new Map();
+  globalThis.localStorage = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) };
+  try {
+    const s = createGameState('liubei'); s.pkRosterVersion = 1;
+    delete s.officers.zhugeliang;
+    s.cities.xiapi.officerIds = s.cities.xiapi.officerIds.filter(id => id !== 'zhugeliang');
+    s.officers.guanyu.name = '관우 편집'; saveGame(s);
+    const restored = loadGame();
+    assert.equal(Object.keys(restored.officers).length, 120);
+    assert.equal(restored.pkRosterVersion, 2);
+    assert.equal(restored.officers.guanyu.name, '관우 편집');
+    assert.equal(restored.cities.xiapi.officerIds.filter(id => id === 'zhugeliang').length, 1);
+  } finally { delete globalThis.localStorage; }
+});
 
 test('the counter triangle actually changes casualties', () => {
   const even = duel('spear', 'spear');
@@ -860,6 +947,74 @@ function autoplay(seed, turns) {
   }
   return { state: s, captures };
 }
+
+test('PK editor validates atomically, transfers rosters and preserves assignments', () => {
+  const s = createGameState('caocao');
+  const draft = structuredClone(s.officers.guanyu);
+  draft.cityId = 'chenliu'; draft.war = 100;
+  draft.appearance = { ...appearanceFor(draft), armor: '#123456', weapon: 'spear' };
+  assert.equal(editOfficer(s, draft).ok, true);
+  assert.equal(s.officers.guanyu.faction, 'caocao');
+  assert.equal(s.cities.xiapi.officerIds.includes('guanyu'), false);
+  assert.equal(s.cities.chenliu.officerIds.filter(id => id === 'guanyu').length, 1);
+  const before = JSON.stringify(s);
+  assert.equal(editOfficer(s, { ...draft, war: NaN }).ok, false);
+  assert.equal(editOfficer(s, { ...draft, name: '' }).ok, false);
+  assert.equal(editOfficer(s, { ...draft, appearance: { ...draft.appearance, build: 999 } }).ok, false);
+  assert.equal(JSON.stringify(s), before);
+  s.officers.guanyu.duty = 'internal';
+  assert.equal(editOfficer(s, { ...draft, cityId: 'xiapi' }).ok, false);
+  assert.equal(editOfficer(s, { ...draft, int: 99 }).ok, true);
+  assert.equal(s.officers.guanyu.duty, 'internal');
+  assert.ok(s.officers.guanyu.tactics.includes('confuse'));
+});
+
+test('PK custom officers are usable in dispatch and serializable with their models', () => {
+  const s = createGameState('caocao');
+  const draft = { ...structuredClone(s.officers.xiahoudun), id: 'custom-test', name: '검증 장수', appearance: { ...appearanceFor(s.officers.xiahoudun), cloth: '#abcdef' } };
+  assert.equal(editOfficer(s, draft, true).ok, true);
+  assert.equal(editOfficer(s, draft, true).ok, false);
+  const result = dispatch(s, { cityId: 'chenliu', officerIds: ['custom-test'], type: 'cavalry', troops: 1000 });
+  assert.equal(result.ok, true);
+  assert.equal(s.officers['custom-test'].duty, 'marching');
+  assert.equal(JSON.parse(JSON.stringify(s)).officers['custom-test'].appearance.cloth, '#abcdef');
+});
+
+test('PK appearance profiles are deterministic and distinguish every historical officer', () => {
+  const roster = Object.values(createOfficers());
+  const looks = roster.map(o => JSON.stringify(appearanceFor(o)));
+  assert.equal(new Set(looks).size, roster.length);
+  assert.deepEqual(looks, Object.values(createOfficers()).map(o => JSON.stringify(appearanceFor(o))));
+  assert.equal(appearanceFor(createOfficers().guanyu).weapon, 'blade');
+  assert.equal(appearanceFor(createOfficers().lubu).helmet, 'plume');
+});
+
+test('PK calendar advances three periods per month and collects income only at month end', () => {
+  const s = createGameState('caocao');
+  s.factionOrder = ['caocao'];
+  const gold = s.cities.chenliu.gold;
+  runTurn(s); assert.equal(s.day, 11); assert.equal(s.cities.chenliu.gold, gold);
+  runTurn(s); assert.equal(s.day, 21); assert.equal(s.cities.chenliu.gold, gold);
+  runTurn(s); assert.equal(s.day, 1); assert.equal(s.month, 7); assert.ok(s.cities.chenliu.gold > gold);
+});
+
+test('PK save migration adds missing officers once and preserves edits and custom units', () => {
+  const memory = new Map();
+  globalThis.localStorage = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => memory.set(key, value) };
+  try {
+    const s = createGameState('caocao');
+    delete s.pkRosterVersion; delete s.day;
+    delete s.officers.guojia;
+    s.cities.chenliu.officerIds = s.cities.chenliu.officerIds.filter(id => id !== 'guojia');
+    s.officers.guanyu.war = 88;
+    saveGame(s);
+    const restored = loadGame();
+    assert.equal(restored.day, 1); assert.equal(restored.officers.guanyu.war, 88);
+    assert.equal(restored.officers.guojia.name, '곽가');
+    saveGame(restored);
+    assert.equal(loadGame().cities.chenliu.officerIds.filter(id => id === 'guojia').length, 1);
+  } finally { delete globalThis.localStorage; }
+});
 
 test('the AI never issues a command the rules would reject', () => {
   const s = createGameState('liubei', 31);

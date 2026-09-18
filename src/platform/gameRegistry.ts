@@ -5,15 +5,16 @@ import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp"
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingWhackAMoleApp from "../games/hachuping-whack-a-mole/HachupingWhackAMoleApp";
 import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
-import ThreeKingdomsApp from "../games/three-kingdoms/ThreeKingdomsApp";
+import { lazy } from 'react';
+const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
   {
     id: "three-kingdoms",
-    title: "삼국지 패업",
-    description: "육각 지도에서 도시를 키우고 부대를 출진시켜 중원을 통일하는 턴제 전략",
+    title: "삼국지 패업 PK",
+    description: "3D 중원 전장 · 장수별 모델과 PK 편집 · 육각 턴제 전략",
     thumbnail: "/art/three-kingdoms.svg",
     accentColor: "#7a2020",
     Component: ThreeKingdomsApp,

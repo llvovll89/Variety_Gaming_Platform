@@ -31,7 +31,7 @@ export function LogStrip({ log, onFocus }: Props) {
   return (
     <div
       className="pointer-events-auto border-t text-xs"
-      style={{ background: "rgba(240,230,210,0.9)", borderColor: PALETTE.inkFaint, color: PALETTE.ink }}
+      style={{ background: "rgba(250,250,250,0.9)", borderColor: PALETTE.inkFaint, color: PALETTE.ink }}
     >
       <button
         type="button"

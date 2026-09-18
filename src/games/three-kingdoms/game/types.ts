@@ -46,6 +46,7 @@ export interface GameMap {
 }
 
 export interface Officer {
+  appearance?: OfficerAppearance;
   id: OfficerId;
   name: string;
   hanja: string;
@@ -60,6 +61,16 @@ export interface Officer {
   duty: "idle" | "internal" | "marching" | "captured";
   unitId: UnitId | null;
   tactics: TacticId[];
+}
+
+export interface OfficerAppearance {
+  armor: string;
+  cloth: string;
+  skin: string;
+  helmet: "crown" | "helmet" | "scholar" | "plume";
+  weapon: "spear" | "blade" | "sword" | "fan" | "bow";
+  beard: number;
+  build: number;
 }
 
 export interface City {
@@ -151,6 +162,9 @@ export interface LogEntry {
 }
 
 export interface GameState {
+  /** PK turns advance one ten-day period. Missing in pre-PK saves. */
+  day?: 1 | 11 | 21;
+  pkRosterVersion?: number;
   turn: number;
   year: number;
   month: number;
@@ -185,6 +199,7 @@ export interface FactionStanding {
 }
 
 export interface UISnapshot {
+  day?: 1 | 11 | 21;
   screen: "menu" | "playing" | "ended";
   year: number;
   month: number;

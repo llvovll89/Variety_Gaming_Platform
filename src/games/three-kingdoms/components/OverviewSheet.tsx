@@ -44,8 +44,8 @@ export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
       role="dialog"
       aria-modal="true"
       aria-label="전체 현황"
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(58,50,38,0.45)" }}
+      className="tk-overview fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(24,24,24,0.45)" }}
       onClick={onClose}
     >
       <div
@@ -179,7 +179,7 @@ export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
                   className="flex items-center gap-2 rounded-lg border px-2 py-1.5 text-xs"
                   style={{
                     borderColor: f.id === me ? PALETTE.seal : PALETTE.inkSoft,
-                    background: f.id === me ? "rgba(163,50,38,0.08)" : "transparent",
+                    background: f.id === me ? "rgba(24,24,24,0.08)" : "transparent",
                   }}
                 >
                   <span className="w-5 shrink-0 tabular-nums opacity-50">{i + 1}</span>
