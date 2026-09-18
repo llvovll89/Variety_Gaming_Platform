@@ -34,16 +34,6 @@ export const STAR_SPAWN_CHANCE = 1;
 export const STAR_RADIUS = 11;
 export const STAR_BONUS_SCORE = 10;
 
-// Difficulty ramp — same "randomized interval, gentle bump, hard cap" philosophy as the
-// slither game's bot-population growth, so the platform's games feel consistent.
-export const SCROLL_SPEED_BASE = 220;
-export const SCROLL_SPEED_MAX = 340;
-export const SCROLL_SPEED_INCREMENT_MIN = 6;
-export const SCROLL_SPEED_INCREMENT_MAX = 14;
-export const GAP_SHRINK_PER_RAMP = 4;
-export const RAMP_INTERVAL_MIN = 6;
-export const RAMP_INTERVAL_MAX = 10;
-
 // Simulation stepping (matches hachuping-slither's engine)
 export const MAX_DT = 1 / 30;
 

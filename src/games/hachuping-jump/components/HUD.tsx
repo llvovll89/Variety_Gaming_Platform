@@ -25,8 +25,17 @@ export default function HUD({ snapshot: s }: { snapshot: UISnapshot }) {
       <div className="flex justify-between text-xs font-bold"><span>{s.stage + 1} / {STAGES.length} · {STAGES[s.stage].name}</span><span>{s.stageCleared} / {GATES_PER_STAGE}</span></div>
       <div className="mt-2 flex gap-1" aria-label={`장애물 ${GATES_PER_STAGE}개 중 ${s.stageCleared}개 통과`}>{Array.from({ length: GATES_PER_STAGE }, (_, i) => <span key={i} className={`h-1.5 flex-1 rounded-full ${i < s.stageCleared ? 'bg-[#c26f9c]' : 'bg-[#e7d9e2]'}`} />)}</div>
     </div>
-    {s.bannerTime > 0 && s.status === 'playing' && <div role="status" className="pointer-events-none absolute left-1/2 top-[29%] w-[min(85%,340px)] -translate-x-1/2 rounded-2xl border border-white/80 bg-[#fffaf0]/95 p-4 text-center text-[#68516c] shadow-lg">
-      <p className="text-[10px] font-bold tracking-[0.2em]">STAGE {s.stage + 1} {s.stage > 0 ? '· 이전 스테이지 +100점' : ''}</p><h2 className="mt-1 text-xl font-black">{STAGES[s.stage].name}</h2><p className="mt-1 text-xs">{STAGES[s.stage].subtitle}</p>
+    {s.journeyPhase === 'intro' && s.status === 'playing' && <div role="status" className="pointer-events-none absolute left-1/2 top-[29%] w-[min(85%,340px)] -translate-x-1/2 rounded-2xl border border-white/80 bg-[#fffaf0]/95 p-4 text-center text-[#68516c] shadow-lg">
+      <p className="text-[10px] font-bold tracking-[0.2em]">STAGE {s.stage + 1}</p><h2 className="mt-1 text-xl font-black">{STAGES[s.stage].name}</h2><p className="mt-1 text-xs">{STAGES[s.stage].subtitle}</p>
+    </div>}
+    {(s.journeyPhase === 'checkpoint' || s.journeyPhase === 'finale') && s.status === 'playing' && <div role="status" className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#30233a]/25 p-5 backdrop-blur-[2px]">
+      <div className="w-full max-w-sm rounded-3xl border-2 border-white bg-[#fffaf0]/95 p-6 text-center text-[#68516c] shadow-xl">
+        <p className="text-[11px] font-black tracking-[0.22em] text-[#b0648b]">{s.journeyPhase === 'finale' ? 'ALL STAGES CLEAR' : 'STAGE CLEAR'}</p>
+        <h2 className="mt-2 text-2xl font-black">{STAGES[s.stage].name} 완료!</h2>
+        <p className="mt-2 text-sm font-bold">이번 세계 +{s.lastStageScore.toLocaleString()}점</p>
+        {s.journeyPhase === 'checkpoint' ? <><div className="mx-auto my-4 h-px w-16 bg-[#dfc8d4]"/><p className="text-xs">다음 세계</p><p className="mt-1 text-lg font-black">{STAGES[s.stage + 1].name}</p></> : <p className="mt-3 text-sm">별빛 여행을 완주했어요!</p>}
+        <p className="mt-4 text-xs font-bold tabular-nums">{Math.max(1, Math.ceil(s.phaseTime))}초 뒤 자동으로 계속합니다</p>
+      </div>
     </div>}
   </>;
 }

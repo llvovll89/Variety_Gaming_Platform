@@ -21,12 +21,13 @@ export default function StartMenu({ profile, bestScore, onStart }: StartMenuProp
 
         <div className="w-full rounded-2xl bg-[#f8edf2] px-4 py-3 text-left text-xs leading-6 text-[#755d73]">
           <div>★ 황금별 <b>+10점</b> · 장애물 통과 <b>+1점</b></div>
-          <div>장애물 8개마다 다음 세계로 · 클리어 <b>+100점</b></div>
+          <div>관문 12개마다 다음 세계로 · 클리어 <b>+100점</b></div>
           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 leading-4">
             {ITEM_ORDER.map(kind => <div key={kind}><b style={{ color: ITEMS[kind].color }}>{ITEMS[kind].symbol} {ITEMS[kind].name}</b><div className="text-[10px]">{ITEMS[kind].description}</div></div>)}
           </div>
         </div>
-        <p className="text-xs leading-5 text-[#857087]">{STAGES.map(s => s.name).join(' → ')}</p>
+        <p className="text-xs leading-5 text-[#857087]">6개의 세계 · 약 2~3분의 별빛 여행</p>
+        <p className="text-[11px] leading-5 text-[#9a8498]">{STAGES.map(s => s.name).join(' → ')}</p>
 
         <CharacterPicker
           tone="light"

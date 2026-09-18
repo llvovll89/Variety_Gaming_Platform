@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const compiled = await build({ stdin: { contents: `export * from './src/games/hachuping-jump/game/rewards'; export * from './src/games/hachuping-jump/game/obstacles'; export * from './src/games/hachuping-jump/game/engine'; export * from './src/games/hachuping-jump/game/stages'; export * from './src/games/hachuping-jump/game/collision';`, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node', define: { 'import.meta.env.DEV': 'false' } });
-const { createRewards, advanceRewards, resolveRewards, createObstacle, advanceObstacles, JumpEngine, createJourney, finishStage, hitsObstacle } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const { createRewards, advanceRewards, resolveRewards, createObstacle, advanceObstacles, JumpEngine, createJourney, finishStage, advanceJourneyPhase, stageProgress, STAGES, GATES_PER_STAGE, hitsObstacle } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 const player = (y = 300) => ({ y, vy: 0, rotation: 0, alive: true });
 const obstacle = (x = 85) => ({ id: 1, x, kind: 'candy', age: 0, baseCenterY: 300, baseGapHeight: 210, gapCenterY: 300, gapHeight: 210, passed: false, star: { y: 300, collected: false }, item: null, hue: 30 });
 test('stars score once, passing scores only after fully clearing obstacle', () => {
@@ -72,14 +72,35 @@ test('slow candy slows world and gate animation without slowing effect countdown
   normal.stepWorld(.5);slow.stepWorld(.5);assert.equal(slow.distanceScrolled,normal.distanceScrolled*.6);
   advanceRewards(slow.rewards,1);assert.equal(slow.rewards.slowTime,5);
 });
-test('four stages require eight gates each, award bonuses once and finish without death', () => {
-  let completions=0;const e=engineForTest((score,won)=>{assert.equal(won,true);assert.equal(score,432);completions++});
-  for(let stage=0;stage<4;stage++) {
+test('six stages require twelve gates each, pause at checkpoints and finish after the finale', () => {
+  let completions=0;const e=engineForTest((score,won)=>{assert.equal(won,true);assert.equal(score,672);completions++});
+  e.stepTransition(2); assert.equal(e.journey.phase,'playing');
+  for(let stage=0;stage<6;stage++) {
     assert.equal(e.journey.stage,stage);
-    for(let gate=0;gate<8;gate++) {const o=obstacle(30);o.star=null;e.player.y=300;e.obstacles=[o];e.resolveScoringAndCollisions();e.stepStage(.01);}
-    assert.equal(e.rewards.score,(stage+1)*108);
+    for(let gate=0;gate<12;gate++) {const o=obstacle(30);o.star=null;e.player.y=300;e.obstacles=[o];e.resolveScoringAndCollisions();e.stepStage();}
+    assert.equal(e.rewards.score,(stage+1)*112);
+    assert.equal(e.journey.phase,stage===5?'finale':'checkpoint');
+    assert.equal(e.journey.phaseTime,3);
+    e.stepTransition(3);
   }
   assert.equal(e.player.alive,true);assert.equal(e.buildSnapshot().status,'won');
-  e.tick(1000);e.tick(2000);e.stepStage(.1);assert.equal(completions,1);assert.equal(e.rewards.score,432);
+  e.tick(1000);e.tick(2000);e.stepStage();assert.equal(completions,1);assert.equal(e.rewards.score,672);
   const reset=createJourney();assert.equal(reset.stage,0);assert.equal(finishStage(reset),false);
+});
+
+test('checkpoint freezes gameplay state and clears the board before the next stage', () => {
+  const e=engineForTest();e.stepTransition(2);e.journey.phase='checkpoint';e.journey.phaseTime=3;
+  e.rewards.shieldTime=4;e.player.y=287;e.player.vy=-40;e.obstacles=[obstacle(200)];
+  e.stepTransition(1.5);assert.equal(e.rewards.shieldTime,4);assert.equal(e.player.y,287);assert.equal(e.obstacles.length,1);
+  e.stepTransition(1.5);assert.equal(e.journey.stage,1);assert.equal(e.journey.phase,'playing');assert.equal(e.obstacles.length,0);
+  assert.equal(e.player.y,320);assert.equal(e.player.vy,0);assert.equal(e.rewards.shieldTime,4);
+});
+
+test('stage pacing ramps gently and stays inside the planned bounds', () => {
+  assert.equal(STAGES.length,6);assert.equal(GATES_PER_STAGE,12);
+  assert.deepEqual(STAGES.map(s=>[s.speedStart,s.speedEnd]),[[185,195],[195,205],[205,215],[215,225],[225,235],[235,245]]);
+  assert.deepEqual(STAGES.map(s=>[s.gapStart,s.gapEnd]),[[235,230],[230,225],[225,215],[215,210],[210,200],[200,190]]);
+  const j=createJourney();j.cleared=6;assert.equal(stageProgress(j),.5);j.cleared=99;assert.equal(stageProgress(j),1);
+  j.phase='playing';j.cleared=12;assert.equal(finishStage(j),true);assert.equal(j.phase,'checkpoint');
+  assert.equal(advanceJourneyPhase(j,3),'next');assert.equal(j.stage,1);assert.equal(j.cleared,0);
 });

@@ -1,4 +1,4 @@
-import { createJourney, finishStage, GATES_PER_STAGE, STAGES, STAGE_BONUS } from "./stages";
+import { advanceJourneyPhase, createJourney, finishStage, GATES_PER_STAGE, stageProgress, STAGES, STAGE_BONUS } from "./stages";
 import {
   FLAP_IMPULSE,
   GRAVITY,
@@ -42,6 +42,8 @@ export class JumpEngine {
   private previousCenter = 320;
   private spawnCounter = 0;
   private flapFx = 0;
+  private stageScoreStart = 0;
+  private lastStageScore = 0;
 
   private rafId: number | null = null;
   private lastTime: number | null = null;
@@ -131,11 +133,15 @@ export class JumpEngine {
     if (this.paused) return;
 
     if (this.player.alive && !this.journey.completed) {
-      advanceRewards(this.rewards, dt);
-      this.stepPhysics(dt);
-      this.stepWorld(dt);
-      this.resolveScoringAndCollisions();
-      this.stepStage(dt);
+      if (this.journey.phase === 'playing') {
+        advanceRewards(this.rewards, dt);
+        this.stepPhysics(dt);
+        this.stepWorld(dt);
+        this.resolveScoringAndCollisions();
+        this.stepStage();
+      } else {
+        this.stepTransition(dt);
+      }
     }
 
     this.flapFx = Math.max(0, this.flapFx - dt * FLAP_FX_DECAY_PER_SEC);
@@ -185,15 +191,17 @@ export class JumpEngine {
 
   private stepWorld(dt: number): void {
     const worldDt = dt * (this.rewards.slowTime > 0 ? 0.6 : 1);
-    const dx = STAGES[this.journey.stage].speed * worldDt;
+    const stage = STAGES[this.journey.stage];
+    const dx = lerp(stage.speedStart, stage.speedEnd, stageProgress(this.journey)) * worldDt;
     this.distanceScrolled += dx;
     this.obstacles = advanceObstacles(this.obstacles, dx, worldDt);
 
     this.spawnCounter += dx;
     if (this.spawnCounter >= SPAWN_INTERVAL_DISTANCE && this.journey.spawned < GATES_PER_STAGE) {
       this.spawnCounter -= SPAWN_INTERVAL_DISTANCE;
-      const stage = STAGES[this.journey.stage];
-      const obstacle = createObstacle(LOGICAL_WIDTH + PIPE_WIDTH, stage.gap, ++this.spawnSequence, stage.kinds[this.journey.spawned % stage.kinds.length], this.previousCenter);
+      const gapProgress = this.journey.spawned / Math.max(1, GATES_PER_STAGE - 1);
+      const gap = lerp(stage.gapStart, stage.gapEnd, gapProgress);
+      const obstacle = createObstacle(LOGICAL_WIDTH + PIPE_WIDTH, gap, ++this.spawnSequence, stage.kinds[this.journey.spawned % stage.kinds.length], this.previousCenter);
       this.previousCenter = obstacle.baseCenterY;
       this.obstacles.push(obstacle);
       this.journey.spawned++;
@@ -204,24 +212,34 @@ export class JumpEngine {
     resolveRewards(this.player, this.obstacles, this.rewards);
   }
 
-  private stepStage(dt: number): void {
+  private stepStage(): void {
     if (!this.player.alive) return;
-    this.journey.bannerTime = Math.max(0, this.journey.bannerTime - dt);
     this.journey.cleared = this.rewards.gates - this.journey.stage * GATES_PER_STAGE;
     if (!finishStage(this.journey)) return;
     this.rewards.score += STAGE_BONUS;
-    if (this.journey.completed) {
+    this.lastStageScore = this.rewards.score - this.stageScoreStart;
+    this.input.reset();
+    this.uiStore.publish(this.buildSnapshot());
+  }
+
+  private stepTransition(dt: number): void {
+    this.input.reset();
+    const transition = advanceJourneyPhase(this.journey, dt);
+    if (transition === 'next') {
+      this.stageScoreStart = this.rewards.score;
+      this.obstacles = [];
+      this.spawnCounter = 0;
+      this.previousCenter = 320;
+      this.player.y = 320;
+      this.player.vy = 0;
+      this.player.rotation = 0;
+      this.rewards.shieldTime = Math.max(this.rewards.shieldTime, 3);
+    } else if (transition === 'complete') {
       this.uiStore.publish(this.buildSnapshot());
       this.onDeath(this.rewards.score, true);
       return;
     }
-    this.obstacles = [];
-    this.spawnCounter = 0;
-    this.previousCenter = 320;
-    this.player.y = 320;
-    this.player.vy = 0;
-    this.rewards.shieldTime = Math.max(this.rewards.shieldTime, 3);
-    this.uiStore.publish(this.buildSnapshot());
+    if (transition !== 'none') this.uiStore.publish(this.buildSnapshot());
   }
 
   private buildSnapshot(): UISnapshot {
@@ -236,7 +254,9 @@ export class JumpEngine {
       hearts: this.rewards.hearts,
       stage: this.journey.stage,
       stageCleared: this.journey.cleared,
-      bannerTime: this.journey.bannerTime,
+      journeyPhase: this.journey.phase,
+      phaseTime: this.journey.phaseTime,
+      lastStageScore: this.lastStageScore,
       bestScore: Math.max(this.bestScoreAtStart, this.rewards.score),
       finalScore: this.player.alive && !this.journey.completed ? null : this.rewards.score,
     };

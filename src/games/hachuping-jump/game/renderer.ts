@@ -33,15 +33,15 @@ function landscape(c: CanvasRenderingContext2D, distance: number, stageIndex: nu
   const sky = c.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT); sky.addColorStop(0, stage.sky[0]); sky.addColorStop(.6, stage.sky[1]); sky.addColorStop(1, stage.sky[2]);
   c.fillStyle = sky; c.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
   oval(c, 320, 115, 42, 42, '#fff1b5'); oval(c, 320, 115, 33, 33, '#fff9d9'); face(c, 320, 116);
-  c.save(); c.globalAlpha = stageIndex === 0 ? .26 : .08; const rainbow = ['#ee8fa7', '#ffc775', '#fff8ac', '#92d6bb', '#97cde5'];
+  c.save(); c.globalAlpha = stage.theme === 'garden' ? .26 : stage.theme === 'rainbow' ? .2 : .08; const rainbow = ['#ee8fa7', '#ffc775', '#fff8ac', '#92d6bb', '#97cde5'];
   rainbow.forEach((color, i) => { c.strokeStyle = color; c.lineWidth = 9; c.beginPath(); c.arc(195, 405, 190 - i * 9, Math.PI, 0); c.stroke(); }); c.restore();
   for (let i = 0; i < 6; i++) { const x = ((i * 113 - distance * .12) % 560 + 560) % 560 - 70; cloud(c, x, 180 + (i % 3) * 95, .6 + (i % 2) * .3); }
   for (let layer = 0; layer < 2; layer++) for (let i = -1; i < 5; i++) {
     const x = i * 170 - (distance * (.15 + layer * .13)) % 170;
-    oval(c, x, GROUND_Y + 25, 125, 110 - layer * 38, stageIndex === 0 ? (layer ? '#a6d7c2' : '#c7e4d8') : stageIndex === 1 ? (layer ? '#396e64' : '#699689') : stageIndex === 2 ? (layer ? '#96c6db' : '#c6e7ec') : (layer ? '#75658f' : '#9580a5'));
-    if (layer && stageIndex === 0) { c.fillStyle = '#93c3ab'; c.fillRect(x + 30, 565, 7, 62); oval(c, x + 34, 565, 24, 35, '#b6dfb2'); oval(c, x + 25, 556, 13, 19, '#d1eabf'); }
+    oval(c, x, GROUND_Y + 25, 125, 110 - layer * 38, stage.hills[layer]);
+    if (layer && stage.theme === 'garden') { c.fillStyle = '#93c3ab'; c.fillRect(x + 30, 565, 7, 62); oval(c, x + 34, 565, 24, 35, '#b6dfb2'); oval(c, x + 25, 556, 13, 19, '#d1eabf'); }
   }
-  if (stageIndex === 1) {
+  if (stage.theme === 'forest') {
     for (let i = 0; i < 7; i++) {
       const x = i * 85 - distance * .2 % 85;
       c.fillStyle = '#e4d9b4'; c.fillRect(x - 5, 545, 10, 85);
@@ -50,14 +50,28 @@ function landscape(c: CanvasRenderingContext2D, distance: number, stageIndex: nu
     }
     for (let i = 0; i < 26; i++) oval(c, (i * 71 + Math.sin(distance * .006 + i) * 12) % 400, 220 + (i * 53) % 380, 2, 2, '#fff5a9bb');
   }
-  if (stageIndex === 2) {
+  if (stage.theme === 'ice') {
     c.save(); c.globalAlpha = .25;
     for (let i = 0; i < 3; i++) { c.strokeStyle = ['#9cf6c9','#c9adff','#a4eff5'][i]; c.lineWidth = 22; c.beginPath(); c.moveTo(-30, 150 + i * 30); c.bezierCurveTo(130, 20 + i * 40, 260, 320 - i * 40, 430, 100 + i * 40); c.stroke(); } c.restore();
     for (let i = 0; i < 6; i++) { const x = i * 90 - distance * .18 % 90; c.fillStyle = '#d9f7f1aa'; c.beginPath(); c.moveTo(x, 630); c.lineTo(x + 22, 505 - i % 2 * 45); c.lineTo(x + 44, 630); c.fill(); }
   }
-  if (stageIndex === 3) {
+  if (stage.theme === 'toy') {
+    for (let i = 0; i < 7; i++) {
+      const x = i * 78 - distance * .18 % 78;
+      c.fillStyle = i % 2 ? '#f8d27eaa' : '#dc8c88aa'; c.fillRect(x, 530, 40, 110);
+      c.fillStyle = '#fff0c9cc'; c.beginPath(); c.moveTo(x - 4, 530); c.lineTo(x + 20, 498 - i % 3 * 8); c.lineTo(x + 44, 530); c.fill();
+      oval(c, x + 20, 555, 7, 7, '#77566f');
+    }
+  }
+  if (stage.theme === 'palace') {
     for (let i = 0; i < 35; i++) star(c, (i * 67 + 13) % 400, 100 + (i * 43) % 470, i % 3 + 1, '#ffebbfaa');
     for (let i = 0; i < 6; i++) { const x = i * 95 - distance * .15 % 95; c.fillStyle = '#af98bdaa'; c.fillRect(x, 525, 32, 115); c.beginPath(); c.moveTo(x - 5,525); c.lineTo(x+16,490); c.lineTo(x+37,525); c.fill(); star(c,x+16,485,6,'#ffe5a5'); }
+  }
+  if (stage.theme === 'rainbow') {
+    c.save(); c.globalAlpha = .42;
+    for (let i = 0; i < 5; i++) { c.strokeStyle = ['#f399ad','#ffcf83','#fff3a5','#9be0c1','#9dcff2'][i]; c.lineWidth = 10; c.beginPath(); c.arc(205, 440, 210 - i * 10, Math.PI, 0); c.stroke(); }
+    c.restore();
+    for (let i = 0; i < 30; i++) star(c, (i * 83 + 29) % 420, 90 + (i * 47) % 470, i % 3 + 1, '#fff4cfbb');
   }
 
 }

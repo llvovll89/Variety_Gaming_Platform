@@ -40,7 +40,9 @@ export interface UISnapshot {
   hearts: number;
   stage: number;
   stageCleared: number;
-  bannerTime: number;
+  journeyPhase: import('./stages').JourneyPhase;
+  phaseTime: number;
+  lastStageScore: number;
 }
 
 export interface PickupFx { x: number; y: number; text: string; color: string; life: number }
