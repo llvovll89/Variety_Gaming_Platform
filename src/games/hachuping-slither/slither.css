@@ -24,3 +24,7 @@
 @media(max-height:720px) and (min-width:768px){.slither-menu{padding:18px 4vw}.slither-intro{padding:20px 0;gap:20px}.slither-preview{height:250px}.slither-copy h1>span{font-size:42px}.slither-copy>p{margin:14px 0}.slither-guide{padding:14px 0}.slither-character-picker{margin-top:16px}}
 @media(prefers-reduced-motion:no-preference){.slither-intro{animation:slither-enter .5s ease-out both}@keyframes slither-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}}
 @media(prefers-reduced-motion:reduce){.slither *{animation:none!important;transition:none!important}}
+/* Keep the ten-row ranking clear of upgrades on desktop and small screens. */
+.slither-upgrade-dock{top:290px;max-height:calc(100% - 440px)}
+@media(max-width:767px){.slither-upgrade-dock{top:340px;max-height:calc(100% - 480px)}}
+@media(max-height:560px){.slither-leaderboard{max-height:44vh;overflow:auto;pointer-events:auto}.slither-upgrade-dock{top:auto;bottom:140px;max-height:35vh}}

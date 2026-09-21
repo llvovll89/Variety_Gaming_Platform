@@ -3,9 +3,9 @@ import HachupingJumpApp from "../games/hachuping-jump/HachupingJumpApp";
 import RuneRangerApp from "../games/hachuping-dodge/survivor/SurvivorApp";
 import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp";
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
-import HachupingWhackAMoleApp from "../games/hachuping-whack-a-mole/HachupingWhackAMoleApp";
 import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
 import { lazy } from 'react';
+const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 import type { GameDefinition } from "./types";
 
@@ -55,10 +55,9 @@ export const GAMES: GameDefinition[] = [
   {
     id: "hachuping-whack-a-mole",
     title: "두더지 잡기",
-    description: "떠오르는 두더지를 탭해서 잡는 반응속도 게임",
-    thumbnail: "/art/mole.svg",
+    description: "톡! 톡! 3D 두더지와 즐기는 30초 순발력 챌린지",
+    thumbnail: "/art/mole-3d.png",
     accentColor: "#ff9020",
-    disabled: true,
     Component: HachupingWhackAMoleApp,
   },
   {

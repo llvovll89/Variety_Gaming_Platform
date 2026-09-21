@@ -8,7 +8,7 @@ export default function Leaderboard({ entries }: LeaderboardProps) {
   return (
     <div className="slither-leaderboard">
       <div className="mb-2 text-[11px] font-semibold text-[#c8d8b9]">
-        정원의 생존자
+        생존자 TOP 10
       </div>
       <ol className="flex flex-col gap-0.5">
         {entries.map((entry, i) => (

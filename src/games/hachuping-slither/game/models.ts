@@ -40,16 +40,23 @@ export function drawWorm(c: CanvasRenderingContext2D, points: Point[], radius: n
     c.drawImage(sphere(colors[Math.floor(i / 3) % colors.length]), p.x - r, p.y - r - radius * .18, r * 2, r * 2);
   }
   const head = points[0]; c.translate(head.x, head.y - radius * .18);
-  // Custom portraits become a medallion on the rounded head.
+  // Cover the entire head, then light the image as a rounded surface.
   if (portrait?.complete && portrait.naturalWidth) {
-    c.save(); c.beginPath(); c.arc(-Math.cos(heading) * radius * .28, -Math.sin(heading) * radius * .28, radius * .53, 0, TAU); c.clip();
+    const r = radius * 1.12;
+    c.save(); c.beginPath(); c.arc(0, 0, r * .96, 0, TAU); c.clip();
     const size = Math.min(portrait.naturalWidth, portrait.naturalHeight);
-    c.drawImage(portrait, (portrait.naturalWidth - size) / 2, 0, size, size,
-      -Math.cos(heading) * radius * .28 - radius * .53, -Math.sin(heading) * radius * .28 - radius * .53, radius * 1.06, radius * 1.06);
+    c.drawImage(portrait, (portrait.naturalWidth - size) / 2, (portrait.naturalHeight - size) / 2, size, size,
+      -r, -r, r * 2, r * 2);
+    const light = c.createRadialGradient(-r * .32, -r * .4, r * .08, 0, 0, r);
+    light.addColorStop(0, '#ffffff45'); light.addColorStop(.4, '#ffffff08');
+    light.addColorStop(.65, '#071a2810'); light.addColorStop(1, '#071a28ae');
+    c.fillStyle = light; c.fillRect(-r, -r, r * 2, r * 2);
+    c.beginPath(); c.ellipse(-r * .28, -r * .64, r * .36, r * .12, -.4, 0, TAU);
+    c.fillStyle = '#ffffff30'; c.fill();
     c.restore();
   }
   c.rotate(heading);
-  for (const side of [-1, 1]) {
+  for (const side of portrait?.complete && portrait.naturalWidth ? [] : [-1, 1]) {
     c.fillStyle = '#14232b66'; c.beginPath(); c.ellipse(radius * .61, side * radius * .47 + radius * .08, radius * .39, radius * .34, 0, 0, TAU); c.fill();
     c.fillStyle = '#f6f9ed'; c.beginPath(); c.ellipse(radius * .62, side * radius * .47, radius * .35, radius * .32, 0, 0, TAU); c.fill();
     c.fillStyle = '#132635'; c.beginPath(); c.arc(radius * .76, side * radius * .47, radius * .18, 0, TAU); c.fill();

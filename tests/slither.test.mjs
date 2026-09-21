@@ -1,4 +1,4 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
@@ -9,9 +9,11 @@ const compiled = await build({ stdin: { contents: `
   export * from './src/games/hachuping-slither/game/collision';
   export * from './src/games/hachuping-slither/game/spatialGrid';
   export * from './src/games/hachuping-slither/game/world';
+  export * from './src/games/hachuping-slither/game/botAI';
+  export * from './src/games/hachuping-slither/game/growth';
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
 const { createProgression, awardExperience, chooseUpgrade, pendingUpgrades, statsFor, MAX_LEVEL, xpForLevel,
-  createSnake, stepSnake, findStarPickups, SpatialHashGrid, World } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+  createSnake, stepSnake, findStarPickups, SpatialHashGrid, World, updateBotAI, radiusForScore, segmentCountForScore } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 
 test('XP carries across multiple levels and every earned upgrade is spent exactly once', () => {
   const p = createProgression(); awardExperience(p, xpForLevel(1) + xpForLevel(2) + 3);
@@ -73,4 +75,37 @@ test('early levels need sustained collection and later levels become progressive
   assert.equal(p.level, 1); awardExperience(p, 1); assert.equal(p.level, 2);
   assert.equal(xpForLevel(2), 64); assert.equal(xpForLevel(3), 96);
   for (let level = 2; level < MAX_LEVEL; level++) assert.ok(xpForLevel(level) > xpForLevel(level - 1));
+});
+
+
+test('growth stays gradual through early and late scores', () => {
+  assert.ok(radiusForScore(100) < 16);
+  assert.ok(radiusForScore(1000) < 24);
+  assert.ok(segmentCountForScore(100) <= 13);
+  assert.ok(segmentCountForScore(1000) < 80);
+  assert.ok(segmentCountForScore(22) > segmentCountForScore(8));
+});
+test('bots avoid a small rival body even when its head is far away', () => {
+  const bot = createSnake(false, 'bot', 0, 0, 80, 100);
+  bot.heading = bot.targetAngle = 0;
+  const rival = createSnake(false, 'rival', 1500, 0, 10, 8);
+  rival.pathHistory = Array.from({length: 6}, (_, i) => ({x: 100, y: (i - 3) * 12}));
+  const star = {id: 1, pos: {x: 220, y: 0}, value: 1, radius: 4, hue: 0};
+  updateBotAI(bot, .1, {snakes: [bot, rival], findNearestStar: () => star});
+  assert.ok(Math.abs(bot.targetAngle) > .3);
+  assert.equal(bot.boosting, false);
+});
+test('bots turn inward before reaching a wall', () => {
+  const bot = createSnake(false, 'bot', 4400, 0, 80, 100);
+  bot.heading = bot.targetAngle = Math.PI / 2;
+  updateBotAI(bot, .1, {snakes: [bot], findNearestStar: () => null});
+  assert.ok(Math.cos(bot.targetAngle) < 0);
+  assert.equal(bot.boosting, false);
+});
+test('world begins populated and returns ten living leaders sorted by score', () => {
+  const w = new World('player');
+  assert.equal(w.getAliveSnakes().length, 49);
+  const leaders = w.getLeaderboard(10);
+  assert.equal(leaders.length, 10);
+  assert.ok(leaders.every((s, i) => s.alive && (!i || leaders[i - 1].score >= s.score)));
 });

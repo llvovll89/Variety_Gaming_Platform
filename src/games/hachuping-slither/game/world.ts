@@ -175,7 +175,7 @@ export class World {
     for (const bot of this.snakes) {
       if (bot.isPlayer || !bot.alive) continue;
       updateBotAI(bot, dt, { findNearestStar: this.findNearestStar, snakes: this.snakes });
-      const result = stepSnake(bot, dt, false);
+      const result = stepSnake(bot, dt, bot.boosting);
       if (result.boostTrailAt) {
         this.addStar(createStar(result.boostTrailAt.x, result.boostTrailAt.y, 1));
       }

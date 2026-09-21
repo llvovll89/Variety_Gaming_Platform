@@ -1,259 +1,105 @@
-import {
-  LOGICAL_WIDTH,
-  LOGICAL_HEIGHT,
-  MOLE_GRID_COLS,
-  MOLE_GRID_ROWS,
-  GAME_TOTAL_TIME,
-  POINTS_PER_HIT,
-  HIT_FLASH_DURATION,
-  HOLE_SPACING_X,
-  HOLE_SPACING_Y,
-  MOLE_PADDING_X,
-  MOLE_PADDING_Y,
-  DIFFICULTY_CONFIGS,
-  DEFAULT_DIFFICULTY,
-  type DifficultyLevel,
-} from "./constants";
-import { UIStore } from "./uiStore";
-import type { GameState, Mole, UISnapshot } from "./types";
-import { playHitSound, playGameOverSound } from "./sound";
+﻿import { GAME_TOTAL_TIME, MOLE_GRID_COLS, MOLE_GRID_ROWS, POINTS_PER_HIT, HIT_FLASH_DURATION, DIFFICULTY_CONFIGS, DEFAULT_DIFFICULTY, type DifficultyLevel } from './constants';
+import { UIStore } from './uiStore';
+import type { GameState } from './types';
+import { playHitSound, playGameOverSound } from './sound';
 
 export class WhackAMoleEngine {
   readonly uiStore = new UIStore();
-
   private gameState: GameState;
-  private moleHitTimers: Map<number, number> = new Map(); // moleId -> flash timer
+  private hitTimers = new Map<number, number>();
   private rafId: number | null = null;
   private lastTime: number | null = null;
-  private paused = false;
-  private bestScoreAtStart: number;
-  private onGameOver: (finalScore: number) => void;
+  private resumeStatus: 'ready' | 'playing' = 'playing';
   private uiTimer = 0;
-  private UI_PUBLISH_INTERVAL = 0.016; // ~60fps
-  private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY;
-
-  constructor(
-    bestScore: number,
-    onGameOver: (finalScore: number) => void,
-    difficulty: DifficultyLevel = DEFAULT_DIFFICULTY,
-  ) {
-    this.bestScoreAtStart = bestScore;
-    this.onGameOver = onGameOver;
-    this.difficulty = difficulty;
-    this.gameState = this.initializeGameState();
-    this.updateUI();
+  private muted = false;
+  constructor(private bestScore: number, private onGameOver: (score: number) => void, private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY) {
+    this.gameState = this.initialState(); this.publish();
   }
-
-  private initializeGameState(): GameState {
-    const moles: Mole[] = [];
-    for (let y = 0; y < MOLE_GRID_ROWS; y++) {
-      for (let x = 0; x < MOLE_GRID_COLS; x++) {
-        moles.push({
-          id: y * MOLE_GRID_COLS + x,
-          gridX: x,
-          gridY: y,
-          isActive: false,
-          activeSince: 0,
-        });
-      }
-    }
-
-    return {
-      status: "idle",
-      score: 0,
-      timeRemaining: GAME_TOTAL_TIME,
-      round: 1,
-      moles,
-      totalMolesHit: 0,
-      gameOver: false,
-      finalScore: null,
-      difficulty: this.difficulty,
-    };
+  private duration(active: boolean): number {
+    const c = DIFFICULTY_CONFIGS[this.difficulty];
+    const min = active ? c.moleActiveDurationMin : c.moleInactiveDurationMin;
+    const max = active ? c.moleActiveDurationMax : c.moleInactiveDurationMax;
+    return min + Math.random() * (max - min);
   }
-
-  startGame = (): void => {
-    this.gameState = this.initializeGameState();
-    this.gameState.status = "playing";
-    this.gameState.timeRemaining = GAME_TOTAL_TIME;
-    this.moleHitTimers.clear();
-    this.uiTimer = 0;
-    this.lastTime = null;
-    this.updateUI();
-    this.rafId = requestAnimationFrame(this.gameLoop);
+  private initialState(): GameState {
+    return { status: 'idle', score: 0, timeRemaining: GAME_TOTAL_TIME, countdown: 3, round: 1,
+      totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, gameOver: false, finalScore: null, difficulty: this.difficulty,
+      moles: Array.from({length: MOLE_GRID_COLS * MOLE_GRID_ROWS}, (_, id) => ({id, gridX: id % MOLE_GRID_COLS, gridY: Math.floor(id / MOLE_GRID_COLS), isActive: false, activeSince: 0, duration: this.duration(false)})) };
+  }
+  setMuted = (muted: boolean) => { this.muted = muted; };
+  startGame = () => {
+    this.destroy(); this.gameState = this.initialState(); this.gameState.status = 'ready';
+    this.hitTimers.clear(); this.lastTime = null; this.publish(); this.rafId = requestAnimationFrame(this.loop);
   };
-
-  pauseGame = (): void => {
-    this.paused = true;
-    this.gameState.status = "paused";
-    this.updateUI();
+  pauseGame = () => {
+    if (this.gameState.status !== 'playing' && this.gameState.status !== 'ready') return;
+    this.resumeStatus = this.gameState.status; this.gameState.status = 'paused'; this.destroy(); this.publish();
   };
-
-  resumeGame = (): void => {
-    this.paused = false;
-    this.gameState.status = "playing";
-    this.lastTime = null; // Reset lastTime to avoid large dt
-    this.rafId = requestAnimationFrame(this.gameLoop);
-    this.updateUI();
+  resumeGame = () => {
+    if (this.gameState.status !== 'paused') return;
+    this.gameState.status = this.resumeStatus; this.lastTime = null; this.publish(); this.rafId = requestAnimationFrame(this.loop);
   };
-
-  endGame = (): void => {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
-    }
-    this.gameState.status = "game-over";
-    this.gameState.gameOver = true;
+  endGame = () => {
+    if (this.gameState.gameOver) return;
+    this.destroy(); this.gameState.status = 'game-over'; this.gameState.gameOver = true;
     this.gameState.finalScore = this.gameState.score;
-    playGameOverSound();
-    this.updateUI();
-    this.onGameOver(this.gameState.score);
+    if (!this.muted) playGameOverSound(); this.publish(); this.onGameOver(this.gameState.score);
   };
-
-  hitMole = (moleId: number): void => {
-    if (this.gameState.status !== "playing" || this.gameState.gameOver) return;
-
-    const mole = this.gameState.moles.find((m) => m.id === moleId);
-    if (!mole || !mole.isActive) return;
-
-    // Award points and register hit
-    this.gameState.score += POINTS_PER_HIT;
-    this.gameState.totalMolesHit++;
-
-    // Deactivate mole
-    mole.isActive = false;
-
-    // Start flash animation
-    this.moleHitTimers.set(moleId, HIT_FLASH_DURATION);
-
-    // Play hit sound
-    playHitSound();
-
-    this.updateUI();
+  hitMole = (id: number): boolean => {
+    const s = this.gameState;
+    if (s.status !== 'playing') return false;
+    const mole = s.moles.find(m => m.id === id);
+    if (!mole) return false;
+    s.attempts++;
+    if (!mole.isActive) { s.combo = 0; this.publish(); return false; }
+    s.score += POINTS_PER_HIT; s.totalMolesHit++; s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
+    mole.isActive = false; mole.activeSince = 0; mole.duration = this.duration(false);
+    this.hitTimers.set(id, HIT_FLASH_DURATION);
+    if (!this.muted) playHitSound(); this.publish(); return true;
   };
-
-  private gameLoop = (now: number): void => {
-    if (this.paused) {
-      this.rafId = requestAnimationFrame(this.gameLoop);
-      return;
-    }
-
-    // Calculate delta time
-    let dt = 0.016; // default to ~60fps
-    if (this.lastTime !== null) {
-      dt = Math.min((now - this.lastTime) / 1000, 0.05); // Cap at 50ms to prevent large jumps
-    }
-    this.lastTime = now;
-
-    // Update game state
-    this.update(dt);
-
-    // Continue loop
-    this.rafId = requestAnimationFrame(this.gameLoop);
+  private loop = (now: number) => {
+    this.rafId = null;
+    const dt = this.lastTime === null ? 0 : Math.min((now - this.lastTime) / 1000, .05);
+    this.lastTime = now; this.update(dt);
+    if (this.gameState.status === 'playing' || this.gameState.status === 'ready') this.rafId = requestAnimationFrame(this.loop);
   };
-
-  private update = (dt: number): void => {
-    if (this.gameState.status !== "playing") return;
-
-    // Decrease time remaining
-    this.gameState.timeRemaining -= dt;
-    if (this.gameState.timeRemaining <= 0) {
-      this.gameState.timeRemaining = 0;
-      this.endGame();
-      return;
+  private update(dt: number) {
+    const s = this.gameState;
+    if (s.status === 'ready') {
+      s.countdown = Math.max(0, s.countdown - dt);
+      if (!s.countdown) s.status = 'playing';
+      this.publish(); return;
     }
-
-    // Update round based on time remaining
-    this.updateRound();
-
-    // Update mole timers and hit flash animations
-    this.updateMoles(dt);
-
-    // Update hit flash timers
-    for (const [moleId, timer] of this.moleHitTimers) {
-      this.moleHitTimers.set(moleId, timer - dt);
-      if (timer - dt <= 0) {
-        this.moleHitTimers.delete(moleId);
-      }
+    if (s.status !== 'playing') return;
+    s.timeRemaining = Math.max(0, s.timeRemaining - dt);
+    if (!s.timeRemaining) { this.endGame(); return; }
+    s.round = s.timeRemaining > 20 ? 1 : s.timeRemaining > 10 ? 2 : 3;
+    for (const [id, timer] of this.hitTimers) {
+      if (timer <= dt) this.hitTimers.delete(id); else this.hitTimers.set(id, timer - dt);
     }
-
-    // Publish UI updates at regular intervals
-    this.uiTimer += dt;
-    if (this.uiTimer >= this.UI_PUBLISH_INTERVAL) {
-      this.updateUI();
-      this.uiTimer = 0;
-    }
-  };
-
-  private updateRound = (): void => {
-    // For simplicity, we keep everything in round 1 (30 second game)
-    // In the future, you could split this into 3 rounds of 10 seconds each
-    this.gameState.round = 1;
-  };
-
-  private updateMoles = (dt: number): void => {
-    const difficultyConfig = DIFFICULTY_CONFIGS[this.difficulty];
-
-    for (const mole of this.gameState.moles) {
+    let active = s.moles.filter(m => m.isActive).length;
+    // Rotate the traversal so low-index holes do not monopolize spawns.
+    const first = Math.floor(Math.random() * s.moles.length);
+    for (let i = 0; i < s.moles.length; i++) {
+      const mole = s.moles[(first + i) % s.moles.length];
+      mole.activeSince += dt;
+      if (mole.activeSince < mole.duration) continue;
       if (mole.isActive) {
-        mole.activeSince += dt;
-
-        // Randomly decide if this mole should stay active or deactivate
-        const activeDuration = Math.random() * (difficultyConfig.moleActiveDurationMax - difficultyConfig.moleActiveDurationMin) + difficultyConfig.moleActiveDurationMin;
-        if (mole.activeSince >= activeDuration) {
-          mole.isActive = false;
-          mole.activeSince = 0;
-        }
+        mole.isActive = false; active--; s.combo = 0;
       } else {
-        mole.activeSince += dt;
-
-        // Randomly activate mole based on probability
-        const inactiveDuration = Math.random() * (difficultyConfig.moleInactiveDurationMax - difficultyConfig.moleInactiveDurationMin) + difficultyConfig.moleInactiveDurationMin;
-        if (mole.activeSince >= inactiveDuration) {
-          if (Math.random() < difficultyConfig.activeProbability) {
-            // Count active moles
-            const activeMoleCount = this.gameState.moles.filter((m) => m.isActive).length;
-            if (activeMoleCount < difficultyConfig.activeMoleCount) {
-              mole.isActive = true;
-              mole.activeSince = 0;
-            }
-          }
-        }
+        if (active >= DIFFICULTY_CONFIGS[this.difficulty].activeMoleCount || this.hitTimers.has(mole.id)) continue;
+        mole.isActive = true; active++;
       }
+      mole.activeSince = 0; mole.duration = this.duration(mole.isActive);
     }
-  };
-
-  private updateUI = (): void => {
-    const snapshot: UISnapshot = {
-      status: this.gameState.status,
-      score: this.gameState.score,
-      timeRemaining: Math.max(0, this.gameState.timeRemaining),
-      round: this.gameState.round,
-      totalMolesHit: this.gameState.totalMolesHit,
-      finalScore: this.gameState.finalScore,
-      bestScore: this.bestScoreAtStart,
-    };
-    this.uiStore.publish(snapshot);
-  };
-
-  getMoleHitFlashAlpha = (moleId: number): number => {
-    const timer = this.moleHitTimers.get(moleId);
-    if (timer === undefined) return 1;
-    return 1 - (HIT_FLASH_DURATION - timer) / HIT_FLASH_DURATION;
-  };
-
-  getGameState = (): GameState => this.gameState;
-
-  getCanvasSize = () => ({ width: LOGICAL_WIDTH, height: LOGICAL_HEIGHT });
-
-  getMoleWorldPosition = (gridX: number, gridY: number) => ({
-    x: MOLE_PADDING_X + gridX * HOLE_SPACING_X + HOLE_SPACING_X / 2,
-    y: MOLE_PADDING_Y + gridY * HOLE_SPACING_Y + HOLE_SPACING_Y / 2,
-  });
-
-  destroy = (): void => {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
-    }
-  };
+    this.uiTimer += dt;
+    if (this.uiTimer >= .06) { this.uiTimer = 0; this.publish(); }
+  }
+  private publish() {
+    const {moles, gameOver: _gameOver, ...state} = this.gameState;
+    this.uiStore.publish({...state, bestScore: this.bestScore, activeMoles: moles.filter(m => m.isActive).map(m => m.id)});
+  }
+  getMoleHitFlashAlpha = (id: number) => (this.hitTimers.get(id) ?? 0) / HIT_FLASH_DURATION;
+  getGameState = () => this.gameState;
+  destroy = () => { if (this.rafId !== null) cancelAnimationFrame(this.rafId); this.rafId = null; };
 }

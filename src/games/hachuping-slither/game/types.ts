@@ -1,7 +1,7 @@
 import type { Vector2 } from "../../../utils/math";
 import type { Progression, Upgrades } from "./progression";
 
-export type SnakeAiState = "WANDER" | "SEEK_STAR" | "FLEE";
+export type SnakeAiState = "WANDER" | "SEEK_STAR" | "FLEE" | "HUNT";
 
 export interface Snake extends Progression {
   id: number;

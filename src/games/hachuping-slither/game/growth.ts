@@ -25,7 +25,7 @@ export function segmentSpacingForRadius(radius: number): number {
 }
 
 export function segmentCountForScore(score: number): number {
-  const raw = Math.floor(score / SEGMENT_SCORE_UNIT);
+  const raw = MIN_SEGMENTS + Math.floor(Math.max(0, score - 8) / SEGMENT_SCORE_UNIT);
   return clamp(raw, MIN_SEGMENTS, MAX_SEGMENTS);
 }
 

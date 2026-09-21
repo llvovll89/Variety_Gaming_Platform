@@ -1,29 +1,28 @@
+﻿import type { DifficultyLevel } from './constants';
 export interface Mole {
   id: number;
-  gridX: number; // 0-4 (5 columns)
-  gridY: number; // 0-3 (4 rows)
+  gridX: number;
+  gridY: number;
   isActive: boolean;
-  activeSince: number; // seconds since activation
+  activeSince: number;
+  duration: number;
 }
-
 export interface GameState {
-  status: "idle" | "playing" | "paused" | "game-over";
+  status: 'idle' | 'ready' | 'playing' | 'paused' | 'game-over';
   score: number;
   timeRemaining: number;
-  round: number; // 1-3, difficulty increases each round
+  countdown: number;
+  round: number;
   moles: Mole[];
   totalMolesHit: number;
+  attempts: number;
+  combo: number;
+  bestCombo: number;
   gameOver: boolean;
   finalScore: number | null;
-  difficulty: "easy" | "normal" | "hard";
+  difficulty: DifficultyLevel;
 }
-
-export interface UISnapshot {
-  status: "idle" | "playing" | "paused" | "game-over";
-  score: number;
-  timeRemaining: number;
-  round: number;
-  totalMolesHit: number;
-  finalScore: number | null;
+export interface UISnapshot extends Omit<GameState, 'moles' | 'gameOver'> {
   bestScore: number;
+  activeMoles: number[];
 }

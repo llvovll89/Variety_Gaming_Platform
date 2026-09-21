@@ -5,9 +5,9 @@ export const WALL_KILL_MARGIN = 4; // how far past the boundary before death reg
 
 // Growth / size (score === size, via a diminishing curve so it stays playable)
 export const R_MIN = 11;
-export const GROWTH_K = 1.0; // lower = size tracks score more gradually (was 2.1 — grew too fast early on)
+export const GROWTH_K = 0.38; // Length grows first; thickness increases gently.
 export const SEGMENT_SPACING_FACTOR = 0.55; // spacing between body points, relative to radius
-export const SEGMENT_SCORE_UNIT = 6; // 1 extra segment per this many score points (was 4 — body lengthened too fast)
+export const SEGMENT_SCORE_UNIT = 14;
 export const MIN_SEGMENTS = 6;
 export const MAX_SEGMENTS = 260;
 export const START_SCORE = 8;
@@ -48,16 +48,16 @@ export const STAR_GRID_CELL_SIZE = 140;
 export const SEGMENT_GRID_CELL_SIZE = 100;
 
 // Bots
-export const BOT_TARGET_COUNT_INITIAL = 13;
-export const BOT_TARGET_COUNT_MAX = 40; // population cap the random growth can reach
+export const BOT_TARGET_COUNT_INITIAL = 48;
+export const BOT_TARGET_COUNT_MAX = 72;
 export const BOT_GROWTH_INTERVAL_MIN = 18; // seconds of play time between population bumps
 export const BOT_GROWTH_INTERVAL_MAX = 35;
 export const BOT_GROWTH_AMOUNT_MIN = 1;
 export const BOT_GROWTH_AMOUNT_MAX = 3;
 export const BOT_MIN_SPAWN_DISTANCE_FROM_PLAYER = 900;
 export const BOT_RESPAWN_DELAY = 1.5;
-export const BOT_THINK_INTERVAL_MIN = 0.15;
-export const BOT_THINK_INTERVAL_MAX = 0.25;
+export const BOT_THINK_INTERVAL_MIN = 0.10;
+export const BOT_THINK_INTERVAL_MAX = 0.16;
 export const BOT_PERCEPTION_RADIUS = 520;
 export const BOT_FLEE_SIZE_RATIO = 1.35; // flee snakes at least this many times bigger
 export const BOT_WANDER_TURN_STEP = 0.6; // max random heading nudge per think-tick
@@ -75,7 +75,7 @@ export const SUBSTEP_DT_THRESHOLD = 1 / 40;
 
 // UI
 export const UI_PUBLISH_INTERVAL = 0.16; // seconds between throttled UI snapshot publishes
-export const LEADERBOARD_SIZE = 5;
+export const LEADERBOARD_SIZE = 10;
 export const MINIMAP_TRAIL_POINTS = 14; // recent path points per snake sent for the minimap "terrain" look
 
 // Rendering
