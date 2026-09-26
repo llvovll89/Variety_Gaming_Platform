@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BuildingType {
+  FARM
+  ADMINISTRATION
+  BARRACKS
+}
+
+enum HeroSlot {
+  COMMANDER
+  DEPUTY_ONE
+  DEPUTY_TWO
+}
+
+enum EquipmentSlot {
+  WEAPON
+  ARMOR
+  ACCESSORY
+}
+
+enum BattleWinner {
+  ATTACKER
+  DEFENDER
+  DRAW
+}
+
+model User {
+  // Supabase Auth user UUID. Create only after server-side token verification.
+  id        String   @id @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  castle    Castle?
+  heroes    Hero[]
+  troops    Troop[]
+  items     Item[]
+  battles   BattleLog[]
+}
+
+model Castle {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @db.Uuid
+  user          User     @relation(fields: [userId], references: [id])
+  gold          Decimal  @default(1000) @db.Decimal(18, 4)
+  food          Decimal  @default(1000) @db.Decimal(18, 4)
+  reserves      Decimal  @default(1000) @db.Decimal(18, 4)
+  lastUpdatedAt DateTime @default(now())
+  buildings     Building[]
+}
+
+model Building {
+  id       String       @id @default(uuid()) @db.Uuid
+  castleId String       @db.Uuid
+  castle   Castle       @relation(fields: [castleId], references: [id], onDelete: Cascade)
+  type     BuildingType
+  level    Int          @default(1)
+  @@unique([castleId, type])
+}
+
+model Hero {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @db.Uuid
+  user         User?    @relation(fields: [userId], references: [id])
+  name         String
+  stars        Int
+  level        Int      @default(1)
+  experience   Int      @default(0)
+  leadership   Int
+  strength     Int
+  intelligence Int
+  politics     Int
+  maxTroops    Int
+  assignment   TroopHero?
+  equipment    Item[]
+  @@index([userId])
+}
+
+model Item {
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @db.Uuid
+  user              User          @relation(fields: [userId], references: [id])
+  name              String
+  stars             Int
+  slot              EquipmentSlot
+  leadershipBonus   Int           @default(0)
+  strengthBonus     Int           @default(0)
+  intelligenceBonus Int           @default(0)
+  politicsBonus     Int           @default(0)
+  heroId            String?       @db.Uuid
+  hero              Hero?         @relation(fields: [heroId], references: [id])
+  @@unique([heroId, slot])
+  @@index([userId])
+}
+
+model Troop {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String?     @db.Uuid
+  user          User?       @relation(fields: [userId], references: [id])
+  name          String
+  isNpc         Boolean     @default(false)
+  pveGoldReward Int         @default(100)
+  currentTroops Int         @default(0)
+  heroes        TroopHero[]
+  attacks       BattleLog[] @relation("Attacker")
+  defenses      BattleLog[] @relation("Defender")
+  @@index([userId])
+}
+
+// Three enum slots enforce a maximum of three heroes; heroId prevents reuse.
+model TroopHero {
+  troopId String   @db.Uuid
+  troop   Troop    @relation(fields: [troopId], references: [id], onDelete: Cascade)
+  heroId  String   @unique @db.Uuid
+  hero    Hero     @relation(fields: [heroId], references: [id])
+  slot    HeroSlot
+  @@id([troopId, slot])
+}
+
+model BattleLog {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @db.Uuid
+  user              User         @relation(fields: [userId], references: [id])
+  requestKey        String       @db.Uuid
+  attackerId        String       @db.Uuid
+  attacker          Troop        @relation("Attacker", fields: [attackerId], references: [id])
+  defenderId        String       @db.Uuid
+  defender          Troop        @relation("Defender", fields: [defenderId], references: [id])
+  winner            BattleWinner
+  turns             Int
+  logs              String[]
+  attackerRemaining Int
+  defenderRemaining Int
+  goldReward        Int
+  experienceReward  Int
+  result            Json
+  createdAt         DateTime     @default(now())
+  @@unique([userId, requestKey])
+  @@index([attackerId, createdAt])
+  @@index([defenderId, createdAt])
+}
