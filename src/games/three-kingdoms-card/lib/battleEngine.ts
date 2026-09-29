@@ -1,11 +1,12 @@
 import type { SkillEffect, SkillKind } from "./skills";
+import { unitMultiplier, type Unit } from "./tactics";
 
 export type HeroStats = {
   name: string; leadership: number; strength: number; intelligence: number; charm?: number; skills?: SkillEffect[];
 };
 export type BattleTroop = {
   id: string; name: string; currentTroops: number;
-  commander: HeroStats; deputies: HeroStats[];
+  commander: HeroStats; deputies: HeroStats[]; unit?: Unit;
 };
 export type Side = "ATTACKER" | "DEFENDER";
 export type BattleResult = {
@@ -70,7 +71,7 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
         const morale = 1 - Math.min(0.2 + target.skills.awe * 0.2, target.stats.charm / 1500 * (1 + target.skills.awe));
         const fury = source.skills.fury > 0 && roll() < source.skills.fury;
         const multiplier = (1 + source.skills.attack) * (1 - Math.min(0.5, target.skills.guard)) * (fury ? 1.5 : 1)
-          * (turn === 1 ? 1 + source.skills.ambush : 1) * (source.soldiers <= source.start / 2 ? 1 + source.skills.desperate : 1);
+          * unitMultiplier(source.troop.unit, target.troop.unit) * (turn === 1 ? 1 + source.skills.ambush : 1) * (source.soldiers <= source.start / 2 ? 1 + source.skills.desperate : 1);
         const damage = Math.min(target.soldiers, Math.max(10, Math.floor(base * (skill ? 1.5 + source.skills.fire : 1) * morale * multiplier)));
         if (fury) logs.push(`${turn}턴: 주장 [${source.troop.commander.name}]의 맹장 일격!`);
         if (skill) logs.push(`${turn}턴: 주장 [${source.troop.commander.name}]의 화공 계략 발동!`);
@@ -86,5 +87,5 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
     : winner === "DEFENDER" ? attacker.currentTroops - a.soldiers : 0;
   logs.push(winner === "DRAW" ? "전투 종료: 무승부." : `전투 종료: ${winner === "ATTACKER" ? attacker.name : defender.name} 승리.`);
   return { winner, turns, logs, attackerRemaining: a.soldiers, defenderRemaining: d.soldiers,
-    experienceReward: Math.floor(destroyed * 0.3) };
+    experienceReward: Math.floor(destroyed * 0.5) };
 }

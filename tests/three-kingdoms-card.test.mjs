@@ -12,6 +12,7 @@ const compiled = await build({ stdin: { contents: `
   export * from './src/games/three-kingdoms-card/lib/skills';
   export * from './src/games/three-kingdoms-card/lib/battleEngine';
   export * from './src/games/three-kingdoms-card/lib/synergy';
+  export * from './src/games/three-kingdoms-card/lib/tactics';
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
 const mod = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
 const { HERO_CATALOG, createDemo, createCollectedHero, demoSchema, portraitStyle, actDemo, HERO_SKILLS, heroSkills, skillTier, simulateBattle } =
@@ -271,7 +272,7 @@ test('faction synergy: 2 same-faction officers give +, 3 give ++, and it strengt
   assert.equal(troopSynergy(['npc', 'npc']), null);
   const state = started();
   state.heroes = ['guanyu', 'zhaoyun', 'zhangfei'].map(k => createCollectedHero(k, 1, k));
-  state.troops[0].heroIds = ['guanyu', 'zhaoyun', 'zhangfei'];
+  state.troops[0].heroIds = ['guanyu', 'zhaoyun', 'zhangfei']; state.troops[0].unit = 'cavalry';
   assert.equal(aggregateSkills(playerTroop(state)).attack, full.effect.value);
 });
 
@@ -287,4 +288,88 @@ test('recruitment pity guarantees a 5-star by the 80th draw and 3-star+ in every
   assert.deepEqual(state.heroes.map(h => h.stars), [1, 1, 1, 1, 3]);
   const raw = JSON.parse(JSON.stringify(started())); delete raw.pity;
   assert.equal(demoSchema.parse(raw).pity, 0);
+});
+
+test('unit matchups: spear > cavalry > archer > spear, applied in battle', () => {
+  const { unitMultiplier } = mod;
+  assert.equal(unitMultiplier('spear', 'cavalry'), 1.25);
+  assert.equal(unitMultiplier('cavalry', 'spear'), 0.8);
+  assert.equal(unitMultiplier('archer', 'archer'), 1);
+  const troop = (id, unit) => ({ id, name: id, currentTroops: 1000, unit, commander: { name: id, leadership: 50, strength: 60, intelligence: 0, skills: [] }, deputies: [] });
+  const even = simulateBattle(troop('a', 'spear'), troop('d', 'spear'), () => 0.99);
+  const good = simulateBattle(troop('a', 'spear'), troop('d', 'cavalry'), () => 0.99);
+  assert.ok(good.defenderRemaining < even.defenderRemaining);
+});
+
+test('formation and aptitude effects are added to the commander', () => {
+  const { playerTroop, aggregateSkills } = mod;
+  const state = started();
+  state.heroes = [createCollectedHero('machao', 1, 'm')]; state.troops[0].heroIds = ['m', null, null];
+  state.troops[0].unit = 'cavalry';
+  assert.equal(aggregateSkills(playerTroop(state)).attack, 0.1);
+  state.troops[0].unit = 'spear'; state.troops[0].formation = 'circle';
+  const s = aggregateSkills(playerTroop(state));
+  assert.equal(s.guard, 0.15); assert.ok(Math.abs(s.attack + 0.1) < 1e-9);
+  const next = actDemo(state, { type: 'setFormation', formation: 'wedge' }, 0, () => 0, 'x').state;
+  assert.equal(next.troops[0].formation, 'wedge');
+  assert.ok(demoSchema.safeParse(JSON.parse(JSON.stringify(next))).success);
+});
+
+test('battleAll sends every ready troop in order until the target falls', () => {
+  let state = started();
+  state.buildings[0].level = 20;
+  state.heroes = ['a', 'b', 'c'].map(id => createCollectedHero('guanyu', 1, id));
+  state.troops.forEach((t, i) => { t.heroIds = [['a', 'b', 'c'][i], null, null]; t.currentTroops = 10; });
+  state.heroes.forEach(h => { h.maxTroops = 1e5; });
+  const target = state.targets[2];
+  state = actDemo(state, { type: 'battleAll', targetId: target.id }, 0, () => 0.5, 'all').state;
+  assert.equal(state.battles.length, 3);
+  assert.ok(state.battles.every(b => b.id.startsWith('all:')));
+});
+
+test('sweep is limited per day and requires stage 2', () => {
+  let state = started();
+  state.heroes = [createCollectedHero('guanyu', 1, 'g')]; state.troops[0].heroIds = ['g', null, null];
+  assert.throws(() => actDemo(state, { type: 'sweep' }, 0, () => 0, 'x'));
+  state.stage = 3;
+  const gold = state.castle.gold;
+  for (let i = 0; i < 3; i++) state = actDemo(state, { type: 'sweep' }, 0, () => 0, 'x').state;
+  assert.ok(state.castle.gold > gold); assert.ok(state.heroes[0].experience > 0 || state.heroes[0].level > 1);
+  assert.throws(() => actDemo(state, { type: 'sweep' }, 0, () => 0, 'x'));
+});
+
+test('dismissMany refunds each grade and refuses assigned officers', () => {
+  let state = started();
+  state.heroes = [createCollectedHero('guanyu', 1, 'a'), createCollectedHero('guanyu', 2, 'b'), createCollectedHero('guanyu', 1, 'c')];
+  state.troops[0].heroIds = ['c', null, null];
+  assert.throws(() => actDemo(state, { type: 'dismissMany', heroIds: ['a', 'c'] }, 0, () => 0, 'x'));
+  const gold = state.castle.gold;
+  state = actDemo(state, { type: 'dismissMany', heroIds: ['a', 'b'] }, 0, () => 0, 'x').state;
+  assert.equal(state.castle.gold, gold + 30 + 60); assert.deepEqual(state.heroes.map(h => h.id), ['c']);
+});
+
+test('collection rewards count officers ever met, including dismissed ones', () => {
+  let state = started(); state.castle.gold = 1e6; state.recruitmentTickets = 0;
+  for (let i = 0; i < 10; i++) {
+    const rolls = [0, (i + 0.5) / HERO_CATALOG.length];
+    state = actDemo(state, { type: 'draw' }, 0, () => rolls.shift(), `c${i}`).state;
+  }
+  assert.equal(state.collected.length, 10);
+  state = actDemo(state, { type: 'dismissMany', heroIds: state.heroes.map(h => h.id) }, 0, () => 0, 'x').state;
+  const tickets = state.recruitmentTickets;
+  state = actDemo(state, { type: 'claimCollection' }, 0, () => 0, 'x').state;
+  assert.equal(state.recruitmentTickets, tickets + 2); assert.equal(state.collectionClaimed, 1);
+  assert.throws(() => actDemo(state, { type: 'claimCollection' }, 0, () => 0, 'x'));
+  const raw = JSON.parse(JSON.stringify(started())); raw.heroes = [createCollectedHero('lubu', 1, 'l')]; delete raw.collected;
+  assert.deepEqual(demoSchema.parse(raw).collected, ['lubu']);
+});
+
+test('offline production is capped at 12 hours and summarised', () => {
+  const { syncDemo, offlineSummary, OFFLINE_CAP_SECONDS } = mod;
+  const state = started();
+  const day = syncDemo(state, 24 * 3600 * 1000);
+  const half = syncDemo(state, OFFLINE_CAP_SECONDS * 1000);
+  assert.equal(Math.floor(day.castle.gold), Math.floor(half.castle.gold));
+  const away = offlineSummary(state, day);
+  assert.equal(away.seconds, 24 * 3600); assert.ok(away.gold > 0 && away.tickets > 0);
 });

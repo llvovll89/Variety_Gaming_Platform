@@ -1,8 +1,9 @@
 import { useState, type CSSProperties } from "react";
 import { aggregateStats } from "../../lib/battleEngine";
 import { activeTroop, playerTroop, troopCapacity, type DemoHero } from "../../lib/demoGame";
-import { RARITIES } from "../../lib/heroCatalog";
+import { catalogHero, RARITIES } from "../../lib/heroCatalog";
 import { FACTION_SYNERGY, troopSynergy } from "../../lib/synergy";
+import { APTITUDE_BONUS, FORMATION_KEYS, FORMATIONS, UNIT_KEYS, UNITS } from "../../lib/tactics";
 import { HeroPortrait } from "../HeroVisual";
 import { number, TroopTabs, type Tab, type TabProps } from "./shared";
 
@@ -57,6 +58,25 @@ export default function FormationTab({ state, act, onNavigate, onInspect }: TabP
           {synergy
             ? <span>{synergy.faction} {synergy.count}명 · {synergy.name}{synergy.label} — {synergy.description}</span>
             : <span className="muted">같은 세력 장수 2명 이상 편성 시 발동 · {Object.entries(FACTION_SYNERGY).map(([f, s]) => `${f} ${s.name}`).join(" / ")}</span>}
+        </div>
+        <div className="tactic-row">
+          <strong>병종</strong>
+          <div className="segmented" role="group" aria-label="병종 선택">
+            {UNIT_KEYS.map(u => <button key={u} aria-pressed={troop.unit === u} onClick={() => act({ type: "setUnit", unit: u })}>{UNITS[u].symbol} {UNITS[u].name}</button>)}
+          </div>
+          <small className="muted">
+            {UNITS[troop.unit].name}은 {UNITS[UNITS[troop.unit].beats].name}에 강하고 {UNITS[UNIT_KEYS.find(u => UNITS[u].beats === troop.unit)!].name}에 약합니다.
+            {commander && (catalogHero(commander.templateKey).role === UNITS[troop.unit].role
+              ? ` 주장 ${commander.name}(${UNITS[troop.unit].role}) 적성 일치: 피해 +${APTITUDE_BONUS * 100}%`
+              : ` ${UNITS[troop.unit].role} 주장이면 적성 보너스 +${APTITUDE_BONUS * 100}%`)}
+          </small>
+        </div>
+        <div className="tactic-row">
+          <strong>진형</strong>
+          <div className="segmented" role="group" aria-label="진형 선택">
+            {FORMATION_KEYS.map(f => <button key={f} aria-pressed={troop.formation === f} onClick={() => act({ type: "setFormation", formation: f })}>{FORMATIONS[f].name}</button>)}
+          </div>
+          <small className="muted">{FORMATIONS[troop.formation].description}</small>
         </div>
         <p className="muted small formation-note">같은 이름의 장수도 서로 다른 카드라면 함께 편성할 수 있습니다. 주장 해제 시 부대 전체가 해제되고 병력은 예비군으로 돌아갑니다.</p>
       </div>

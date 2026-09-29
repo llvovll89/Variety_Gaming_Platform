@@ -1,7 +1,7 @@
 
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { actDemo, assignedIds, createCollectedHero, createDemo, demoSchema, production, STORAGE_KEY, syncDemo, type DemoAction, type DemoHero, type DemoState } from "../lib/demoGame";
+import { actDemo, assignedIds, OFFLINE_CAP_SECONDS, offlineSummary, createCollectedHero, createDemo, demoSchema, production, STORAGE_KEY, syncDemo, type DemoAction, type DemoHero, type DemoState } from "../lib/demoGame";
 import { HERO_CATALOG } from "../lib/heroCatalog";
 import HeroDetails from "./HeroDetails";
 import HeroRoster from "./HeroRoster";
@@ -37,6 +37,14 @@ function SaveControls({ onBackup, onRestore, onReset }: {
   </div>;
 }
 
+function awayMessage(away: ReturnType<typeof offlineSummary>) {
+  const hours = Math.floor(away.seconds / 3600); const minutes = Math.floor(away.seconds % 3600 / 60);
+  const gains = [["금", away.gold], ["식량", away.food], ["예비군", away.reserves], ["초빙장", away.tickets]]
+    .filter(([, n]) => Number(n) > 0).map(([label, n]) => `${label} +${number(Number(n))}`);
+  const capped = away.seconds > OFFLINE_CAP_SECONDS ? ` (자원은 최대 ${OFFLINE_CAP_SECONDS / 3600}시간분까지 쌓입니다)` : "";
+  return `돌아오셨군요! ${hours ? `${hours}시간 ` : ""}${minutes}분 동안 ${gains.length ? gains.join(", ") : "변화 없음"}${capped}`;
+}
+
 export default function GameDemo() {
   const [state, setState] = useState<DemoState | null>(null);
   const current = useRef<DemoState | null>(null);
@@ -70,7 +78,11 @@ export default function GameDemo() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = demoSchema.safeParse(JSON.parse(saved));
-        if (parsed.success) initial = syncDemo(parsed.data, Date.now());
+        if (parsed.success) {
+          initial = syncDemo(parsed.data, Date.now());
+          const away = offlineSummary(parsed.data, initial);
+          if (parsed.data.lordName && away.seconds >= 300) setMessage(awayMessage(away));
+        }
         else setMessage("저장 형식이 달라 새 게임을 준비했습니다. 백업 파일이 있다면 불러올 수 있습니다.");
       }
     } catch { setStorageWarning(true); }
@@ -129,7 +141,7 @@ export default function GameDemo() {
 
     {tab === "모집관" && <RecruitTab state={state} act={act} onShowCatalog={() => { setShowCatalog(true); setTab("장수 명부"); }} onPreview={preview} />}
 
-    {tab === "장수 명부" && <HeroRoster heroes={state.heroes} assignedIds={assignedIds(state)} showCatalog={showCatalog} onShowCatalog={setShowCatalog} onRecruit={() => setTab("모집관")} onInspect={hero => setInspect({ hero, owned: true })} onPreview={preview} />}
+    {tab === "장수 명부" && <HeroRoster heroes={state.heroes} assignedIds={assignedIds(state)} showCatalog={showCatalog} onShowCatalog={setShowCatalog} onRecruit={() => setTab("모집관")} onInspect={hero => setInspect({ hero, owned: true })} onPreview={preview} onDismissMany={heroIds => act({ type: "dismissMany", heroIds })} />}
 
     {tab === "부대 편성" && <FormationTab state={state} act={act} onNavigate={setTab} onInspect={hero => setInspect({ hero, owned: true })} />}
 

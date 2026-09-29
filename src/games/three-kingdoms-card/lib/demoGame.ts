@@ -4,12 +4,13 @@ import { gainExperience } from "./progression";
 import { aggregateSkills } from "./battleEngine";
 import { heroSkillEffects } from "./heroSkills";
 import { troopSynergy } from "./synergy";
+import { aptitude, FORMATION_KEYS, FORMATIONS, UNIT_KEYS, type Formation, type Unit } from "./tactics";
 import { HERO_CATALOG, HERO_ROSTER_LIMIT, baseStats, catalogHero, type HeroKey } from "./heroCatalog";
 
 export const BUILDINGS = {
   ADMINISTRATION: { name: "정방", resource: "gold", label: "금", perMinute: 10, description: "조세를 거두고 영지의 살림을 맡습니다." },
   FARM: { name: "농장", resource: "food", label: "식량", perMinute: 20, description: "백성을 먹이고 원정을 준비합니다." },
-  BARRACKS: { name: "병영", resource: "reserves", label: "예비군", perMinute: 5, description: "훈련된 병사를 부대에 보충합니다." },
+  BARRACKS: { name: "병영", resource: "reserves", label: "예비군", perMinute: 8, description: "훈련된 병사를 부대에 보충합니다." },
 } as const;
 export type BuildingType = keyof typeof BUILDINGS;
 export const MAX_BUILDING_LEVEL = 30;
@@ -40,11 +41,12 @@ const battleSchema = z.object({
   logs: z.array(z.string()), attackerRemaining: count, defenderRemaining: count,
   experienceReward: count, goldReward: count, id: z.string(), targetName: z.string(), createdAt: z.string(),
 });
-const troopSchema = z.object({ id: z.string(), name: z.string(), currentTroops: count.int().max(1e6), heroIds: z.tuple([z.string().nullable(), z.string().nullable(), z.string().nullable()]) });
+const troopSchema = z.object({ id: z.string(), name: z.string(), currentTroops: count.int().max(1e6), heroIds: z.tuple([z.string().nullable(), z.string().nullable(), z.string().nullable()]),
+  unit: z.enum(UNIT_KEYS).default("spear"), formation: z.enum(FORMATION_KEYS).default("basic") });
 type TroopState = z.infer<typeof troopSchema>;
-const dailySchema = z.object({ date: z.string().max(10), progress: z.tuple([count.int(), count.int(), count.int()]), claimed: z.tuple([z.boolean(), z.boolean(), z.boolean()]) });
-const emptyTroop = (n: number, name: string): TroopState => ({ id: uid(n), name, currentTroops: 0, heroIds: [null, null, null] });
-const freshDaily = (date: string) => ({ date, progress: [0, 0, 0] as [number, number, number], claimed: [false, false, false] as [boolean, boolean, boolean] });
+const dailySchema = z.object({ date: z.string().max(10), progress: z.tuple([count.int(), count.int(), count.int()]), claimed: z.tuple([z.boolean(), z.boolean(), z.boolean()]), sweeps: count.int().max(99).default(0) });
+const emptyTroop = (n: number, name: string): TroopState => ({ id: uid(n), name, currentTroops: 0, heroIds: [null, null, null], unit: "spear", formation: "basic" });
+const freshDaily = (date: string) => ({ date, progress: [0, 0, 0] as [number, number, number], claimed: [false, false, false] as [boolean, boolean, boolean], sweeps: 0 });
 // 부대가 하나뿐이던 저장본(troop)과 초빙장 시계·일일 과제가 없던 저장본을 현재 형식으로 옮깁니다.
 function migrateSave(raw: unknown) {
   if (!raw || typeof raw !== "object") return raw;
@@ -52,6 +54,8 @@ function migrateSave(raw: unknown) {
   if (!s.troops && s.troop) { s.troops = [s.troop, emptyTroop(4, "제2군"), emptyTroop(5, "제3군")]; delete s.troop; }
   s.ticketClock ??= s.castle?.lastUpdatedAt;
   s.daily ??= freshDaily("");
+  const heroes = Array.isArray(s.heroes) ? s.heroes as { templateKey?: unknown }[] : [];
+  s.collected ??= [...new Set(heroes.map(h => h.templateKey).filter((k): k is string => typeof k === "string"))];
   return s;
 }
 export const demoSchema = z.preprocess(migrateSave, z.object({
@@ -63,7 +67,8 @@ export const demoSchema = z.preprocess(migrateSave, z.object({
   heroes: z.array(heroSchema).max(HERO_ROSTER_LIMIT),
   troops: z.array(troopSchema).length(3), activeTroop: z.number().int().min(0).max(2).default(0),
   ticketClock: z.iso.datetime(), daily: dailySchema, pity: count.int().max(1000).default(0),
-  targets: z.array(z.object({ id: z.string(), name: z.string(), currentTroops: count.int(), goldReward: count.int(), commander: heroSchema, deputies: z.array(heroSchema).max(2).default([]) })).length(3),
+  collected: z.array(z.string()).max(1000).default([]), collectionClaimed: count.int().max(100).default(0),
+  targets: z.array(z.object({ id: z.string(), name: z.string(), currentTroops: count.int(), goldReward: count.int(), commander: heroSchema, deputies: z.array(heroSchema).max(2).default([]), unit: z.enum(UNIT_KEYS).default("spear") })).length(3),
   battles: z.array(battleSchema).max(10),
 }).refine(s => new Set(s.buildings.map(b => b.type)).size === 3
   && new Set(s.heroes.map(h => h.id)).size === s.heroes.length
@@ -74,6 +79,28 @@ export const demoSchema = z.preprocess(migrateSave, z.object({
     && t.currentTroops <= s.heroes.filter(h => t.heroIds.includes(h.id)).reduce((sum, h) => sum + h.maxTroops + h.leadership * 10, 0))));
 export type DemoState = z.infer<typeof demoSchema>;
 export type DemoBattle = z.infer<typeof battleSchema>;
+/** 자리를 비운 동안 자원은 최대 12시간분까지만 쌓입니다. */
+export const OFFLINE_CAP_SECONDS = 12 * 3600;
+export const SWEEP_LIMIT = 3;
+/** 도감(만난 장수 수) 달성 보상. 순서대로 한 번씩 받습니다. */
+export const COLLECTION_REWARDS = [
+  { count: 10, tickets: 2, gold: 1000 }, { count: 20, tickets: 3, gold: 2000 }, { count: 30, tickets: 5, gold: 3000 },
+  { count: 40, tickets: 5, gold: 5000 }, { count: 50, tickets: 8, gold: 8000 }, { count: 64, tickets: 15, gold: 15000 },
+] as const;
+/** 재접속 시 보여줄 방치 보상 요약. */
+export function offlineSummary(before: DemoState, after: DemoState) {
+  return {
+    seconds: Math.max(0, Math.floor((Date.parse(after.castle.lastUpdatedAt) - Date.parse(before.castle.lastUpdatedAt)) / 1000)),
+    gold: Math.floor(after.castle.gold - before.castle.gold), food: Math.floor(after.castle.food - before.castle.food),
+    reserves: Math.floor(after.castle.reserves - before.castle.reserves), tickets: after.recruitmentTickets - before.recruitmentTickets,
+  };
+}
+/** 소탕: 지난 단계 보상의 일부를 병력 손실 없이 받습니다. */
+export function sweepReward(state: DemoState) {
+  const previous = [0, 1, 2].map(slot => generateTarget(state.stage - 1, slot));
+  const barracks = state.buildings.find(b => b.type === "BARRACKS")!.level;
+  return { gold: Math.floor(previous.reduce((sum, t) => sum + t.goldReward, 0) * 0.5), experience: Math.floor((state.stage - 1) * 30 * (1 + barracks * 0.02)) };
+}
 /** 이 횟수 안에 5성이 반드시 나옵니다. */
 export const PITY_LIMIT = 80;
 export const TICKET_INTERVAL = 30 * 60 * 1000;
@@ -107,18 +134,20 @@ function hero(n: number, name: string, stars: number, stats: number[]): DemoHero
 export function createDemo(now: number): DemoState {
   return {
     version: 2, lordName: "", castleName: "", recruitmentTickets: 3,
-    castle: { id: uid(2), userId: uid(1), gold: 1200, food: 1800, reserves: 1000, lastUpdatedAt: new Date(now).toISOString() },
+    castle: { id: uid(2), userId: uid(1), gold: 1200, food: 1800, reserves: 1500, lastUpdatedAt: new Date(now).toISOString() },
     buildings: [{ type: "ADMINISTRATION", level: 1 }, { type: "FARM", level: 1 }, { type: "BARRACKS", level: 1 }],
     heroes: [],
     troops: [emptyTroop(3, "제1군"), emptyTroop(4, "제2군"), emptyTroop(5, "제3군")], activeTroop: 0,
-    ticketClock: new Date(now).toISOString(), daily: freshDaily(dayKey(now)), pity: 0,
+    ticketClock: new Date(now).toISOString(), daily: freshDaily(dayKey(now)), pity: 0, collected: [], collectionClaimed: 0,
     targets: [
-      { id: uid(20), name: "황건적 잔당", currentTroops: 300, goldReward: 150, commander: hero(21, "황건 두목", 1, [25, 30, 20, 10, 15]), deputies: [] },
-      { id: uid(22), name: "산적의 은신처", currentTroops: 1100, goldReward: 300, commander: hero(23, "산적 두령", 2, [58, 65, 40, 20, 30]), deputies: [] },
-      { id: uid(24), name: "흑산군 주둔지", currentTroops: 2200, goldReward: 600, commander: hero(25, "장연", 3, [78, 82, 65, 40, 45]), deputies: [] },
+      { id: uid(20), name: "황건적 잔당", currentTroops: 300, goldReward: 150, commander: hero(21, "황건 두목", 1, [25, 30, 20, 10, 15]), deputies: [], unit: "spear" },
+      { id: uid(22), name: "산적의 은신처", currentTroops: 700, goldReward: 300, commander: hero(23, "산적 두령", 2, [58, 65, 40, 20, 30]), deputies: [], unit: "cavalry" },
+      { id: uid(24), name: "흑산군 주둔지", currentTroops: 1300, goldReward: 600, commander: hero(25, "장연", 3, [78, 82, 65, 40, 45]), deputies: [], unit: "archer" },
     ], battles: [], stage: 1,
   };
 }
+/** 단계별 적 병력 배율. 지수 증가는 후반에 벽이 되어 완만한 거듭제곱 곡선을 씁니다(밸런스 시뮬레이션으로 조정). */
+export const enemyScale = (stage: number) => (1 + 0.3 * (stage - 1)) ** 1.7;
 const TARGET_NAMES = ["선봉대", "주둔군", "본진"] as const;
 /** 2단계부터의 토벌 대상. 같은 단계·슬롯이면 항상 같은 적이 나옵니다. */
 export function generateTarget(stage: number, slot: number): DemoState["targets"][number] {
@@ -126,7 +155,7 @@ export function generateTarget(stage: number, slot: number): DemoState["targets"
   const stars = Math.min(5, 1 + Math.floor(stage / 2));
   const bonus = Math.floor((stage - 1) * 3);
   const base = baseStats(template.key, stars);
-  const troops = Math.round(300 * 1.4 ** (stage - 1) * (1 + slot * 0.8) / 10) * 10;
+  const troops = Math.round(300 * enemyScale(stage) * (1 + slot * 0.6) / 10) * 10;
   const commander: DemoHero = { id: `stage-${stage}-${slot}-commander`, userId: uid(1), name: template.name, templateKey: template.key, stars,
     level: Math.min(100, stage), experience: 0, leadership: base.leadership + bonus, strength: base.strength + bonus, intelligence: base.intelligence + bonus,
     politics: base.politics, charm: base.charm + bonus, maxTroops: base.maxTroops, statPoints: 0, spent: [0, 0, 0, 0, 0] };
@@ -136,7 +165,7 @@ export function generateTarget(stage: number, slot: number): DemoState["targets"
     return { ...commander, id: `stage-${stage}-${slot}-deputy-${k}`, name: t.name, templateKey: t.key, stars: s,
       leadership: b.leadership + bonus, strength: b.strength + bonus, intelligence: b.intelligence + bonus, politics: b.politics, charm: b.charm + bonus, maxTroops: b.maxTroops };
   }).filter(d => d.templateKey !== template.key);
-  return { id: `stage-${stage}-${slot}`, name: `${template.name}의 ${TARGET_NAMES[slot]}`, currentTroops: Math.min(1e6, troops), goldReward: Math.floor(troops * 0.5), commander, deputies };
+  return { id: `stage-${stage}-${slot}`, name: `${template.name}의 ${TARGET_NAMES[slot]}`, currentTroops: Math.min(1e6, troops), goldReward: Math.floor(troops * 0.5), commander, deputies, unit: UNIT_KEYS[(stage + slot) % UNIT_KEYS.length] };
 }
 /** 모든 대상을 토벌했다면 다음 단계로 넘어갑니다(입력 불변). */
 export function advanceStage(state: DemoState): DemoState {
@@ -168,9 +197,9 @@ export function syncDemo(original: DemoState, now: number): DemoState {
   }
   const elapsed = Math.max(0, Math.floor((now - Date.parse(state.castle.lastUpdatedAt)) / 1000));
   if (!elapsed) return state;
-  const rate = production(state);
+  const rate = production(state); const productive = Math.min(elapsed, OFFLINE_CAP_SECONDS);
   const castle = { ...state.castle, lastUpdatedAt: new Date(Date.parse(state.castle.lastUpdatedAt) + elapsed * 1000).toISOString() };
-  for (const key of ["gold", "food", "reserves"] as const) castle[key] = Math.min(1e9, castle[key] + rate[key] * elapsed / 60);
+  for (const key of ["gold", "food", "reserves"] as const) castle[key] = Math.min(1e9, castle[key] + rate[key] * productive / 60);
   return { ...state, castle };
 }
 export function selectedHeroes(state: DemoState, index = state.activeTroop) {
@@ -180,18 +209,19 @@ export function troopCapacity(state: DemoState, index = state.activeTroop) {
   return selectedHeroes(state, index).reduce((sum, h) => sum + h.maxTroops + h.leadership * 10, 0);
 }
 /** 특수능력을 붙이고, 세력 시너지는 주장 능력에 더합니다. */
-function withSynergy(troop: { id: string; name: string; currentTroops: number; commander: DemoHero; deputies: DemoHero[] }): BattleTroop {
+function withSynergy(troop: { id: string; name: string; currentTroops: number; commander: DemoHero; deputies: DemoHero[]; unit?: Unit; formation?: Formation }): BattleTroop {
   const withSkills = (h: DemoHero) => ({ ...h, skills: heroSkillEffects(h.templateKey, h.stars) });
   const commander = withSkills(troop.commander);
   const synergy = troopSynergy([troop.commander, ...troop.deputies].map(h => h.templateKey));
-  if (synergy) commander.skills = [...commander.skills, synergy.effect];
-  return { ...troop, commander, deputies: troop.deputies.map(withSkills) };
+  const fit = troop.unit ? aptitude(HERO_CATALOG.find(t => t.key === troop.commander.templateKey)?.role, troop.unit) : null;
+  commander.skills = [...commander.skills, ...(synergy ? [synergy.effect] : []), ...(fit ? [fit] : []), ...FORMATIONS[troop.formation ?? "basic"].effects];
+  return { id: troop.id, name: troop.name, currentTroops: troop.currentTroops, commander, deputies: troop.deputies.map(withSkills), unit: troop.unit };
 }
 export function playerTroop(state: DemoState, index = state.activeTroop): BattleTroop {
   const troop = state.troops[index];
   const commander = state.heroes.find(h => h.id === troop.heroIds[0]);
   if (!commander) throw new Error("먼저 장수를 모집하고 주장으로 편성하세요.");
-  return withSynergy({ id: troop.id, name: troop.name, currentTroops: troop.currentTroops, commander,
+  return withSynergy({ id: troop.id, name: troop.name, currentTroops: troop.currentTroops, commander, unit: troop.unit, formation: troop.formation,
     deputies: selectedHeroes(state, index).filter(h => h.id !== commander.id) });
 }
 export function createCollectedHero(key: HeroKey, stars: number, id: string): DemoHero {
@@ -220,7 +250,13 @@ export type DemoAction =
   | { type: "dismiss"; heroId: string }
   | { type: "selectTroop"; index: number }
   | { type: "claimDaily"; index: number }
-  | { type: "battle"; targetId: string };
+  | { type: "battle"; targetId: string }
+  | { type: "battleAll"; targetId: string }
+  | { type: "sweep" }
+  | { type: "setUnit"; unit: Unit }
+  | { type: "setFormation"; formation: Formation }
+  | { type: "dismissMany"; heroIds: string[] }
+  | { type: "claimCollection" };
 export function actDemo(original: DemoState, action: DemoAction, now: number, random: () => number, id: string): { state: DemoState; message: string } {
   const state = structuredClone(syncDemo(original, now));
   const pay = (gold: number, food = 0) => {
@@ -228,6 +264,36 @@ export function actDemo(original: DemoState, action: DemoAction, now: number, ra
     state.castle.gold -= gold; state.castle.food -= food;
   };
   const troop = state.troops[state.activeTroop];
+  const barracks = state.buildings.find(b => b.type === "BARRACKS")!.level;
+  const grantExperience = (heroes: DemoHero[], experience: number) => {
+    const sorted = [...heroes].sort((a, b) => a.id.localeCompare(b.id));
+    sorted.forEach((h, index) => {
+      const reward = Math.floor(experience / sorted.length) + (index < experience % sorted.length ? 1 : 0);
+      const tutor = heroSkillEffects(h.templateKey, h.stars).filter(e => e.kind === "tutor").reduce((sum, e) => sum + e.value, 0);
+      const growth = gainExperience(h.level, h.experience, Math.floor(reward * (1 + tutor)));
+      h.level = growth.level; h.experience = growth.experience;
+      h.statPoints += growth.levelsGained * STAT_POINTS_PER_LEVEL; h.maxTroops += growth.levelsGained * 50;
+    });
+  };
+  /** index 부대로 target을 공격합니다. 전투 기록·보상·단계 진행까지 처리합니다. */
+  const fight = (index: number, target: DemoState["targets"][number], battleId: string) => {
+    const attacker = state.troops[index];
+    const result: BattleResult = simulateBattle(playerTroop(state, index), withSynergy(target), random);
+    const won = result.winner === "ATTACKER";
+    const plunder = 1 + aggregateSkills(playerTroop(state, index)).plunder;
+    const goldReward = won ? Math.min(Math.floor(target.goldReward * plunder), Math.floor(1e9 - state.castle.gold)) : 0;
+    state.castle.gold += goldReward; attacker.currentTroops = result.attackerRemaining; target.currentTroops = result.defenderRemaining;
+    const experience = won ? Math.floor((result.experienceReward + state.stage * 40) * (1 + barracks * 0.02)) : 0;
+    if (won) {
+      state.recruitmentTickets = Math.min(999, state.recruitmentTickets + 1); state.daily.progress[0]++;
+      grantExperience(selectedHeroes(state, index), experience);
+    }
+    const cleared = won && state.targets.every(t => t.currentTroops <= 0);
+    if (cleared) { state.recruitmentTickets = Math.min(999, state.recruitmentTickets + 2); Object.assign(state, advanceStage(state)); }
+    state.battles.unshift({ ...result, experienceReward: experience, goldReward, id: battleId, targetName: `${target.name} (${attacker.name})`, createdAt: new Date(now).toISOString() });
+    state.battles = state.battles.slice(0, 10);
+    return { result, won, cleared, goldReward };
+  };
   let message = "";
   switch (action.type) {
     case "selectTroop": {
@@ -332,36 +398,64 @@ export function actDemo(original: DemoState, action: DemoAction, now: number, ra
         state.pity = stars === 5 ? 0 : state.pity + 1; drawn.push(stars);
         const template = HERO_CATALOG[Math.floor(roll() * HERO_CATALOG.length)];
         state.heroes.push(createCollectedHero(template.key, stars, `${id}:${i}`));
+        if (!state.collected.includes(template.key)) state.collected.push(template.key);
       }
       message = `${amount}명의 장수가 새롭게 합류했습니다.`; break;
+    }
+    case "battleAll": {
+      const target = state.targets.find(t => t.id === action.targetId);
+      if (!target || target.currentTroops <= 0) throw new Error("이미 토벌했거나 없는 대상입니다.");
+      const lines: string[] = [];
+      for (let index = 0; index < troopSlots(state) && target.currentTroops > 0; index++) {
+        const t = state.troops[index];
+        if (!t.heroIds[0] || t.currentTroops <= 0) continue;
+        const { result, won, cleared } = fight(index, target, `${id}:${index}`);
+        lines.push(`${t.name} ${won ? "승리" : result.winner === "DRAW" ? "무승부" : "패배"}`);
+        if (cleared) lines.push(`${state.stage}단계 개방`);
+      }
+      if (!lines.length) throw new Error("출정할 수 있는 부대가 없습니다. 주장과 병력을 확인하세요.");
+      message = `전군 출정: ${lines.join(" → ")}`; break;
+    }
+    case "sweep": {
+      if (state.stage < 2) throw new Error("1단계를 모두 토벌하면 소탕할 수 있습니다.");
+      if (state.daily.sweeps >= SWEEP_LIMIT) throw new Error(`오늘의 소탕 횟수(${SWEEP_LIMIT}회)를 모두 사용했습니다.`);
+      if (!troop.heroIds[0]) throw new Error("주장을 편성한 부대로 소탕할 수 있습니다.");
+      const reward = sweepReward(state);
+      state.castle.gold = Math.min(1e9, state.castle.gold + reward.gold); grantExperience(selectedHeroes(state), reward.experience);
+      state.daily.sweeps++;
+      message = `${state.stage - 1}단계 소탕 완료! 금 ${reward.gold}, 경험치 ${reward.experience}를 얻었습니다. (${state.daily.sweeps}/${SWEEP_LIMIT})`; break;
+    }
+    case "setUnit": {
+      if (!UNIT_KEYS.includes(action.unit)) throw new Error("없는 병종입니다.");
+      troop.unit = action.unit; message = "병종을 변경했습니다."; break;
+    }
+    case "setFormation": {
+      if (!FORMATION_KEYS.includes(action.formation)) throw new Error("없는 진형입니다.");
+      troop.formation = action.formation; message = `${FORMATIONS[action.formation].name}으로 진형을 바꿨습니다.`; break;
+    }
+    case "dismissMany": {
+      const ids = new Set(action.heroIds);
+      if (!ids.size) throw new Error("방출할 장수를 선택하세요.");
+      const targets = state.heroes.filter(h => ids.has(h.id));
+      if (targets.length !== ids.size) throw new Error("보유하지 않은 장수가 포함되어 있습니다.");
+      if (targets.some(h => assignedIds(state).includes(h.id))) throw new Error("편성 중인 장수는 방출할 수 없습니다.");
+      const refund = targets.reduce((sum, h) => sum + DISMISS_REFUND[h.stars - 1], 0);
+      state.heroes = state.heroes.filter(h => !ids.has(h.id)); state.castle.gold = Math.min(1e9, state.castle.gold + refund);
+      message = `${targets.length}명을 방출하고 금 ${refund}을 받았습니다.`; break;
+    }
+    case "claimCollection": {
+      const reward = COLLECTION_REWARDS[state.collectionClaimed];
+      if (!reward) throw new Error("모든 도감 보상을 받았습니다.");
+      if (state.collected.length < reward.count) throw new Error(`장수 ${reward.count}명을 만나면 받을 수 있습니다.`);
+      state.collectionClaimed++; state.recruitmentTickets = Math.min(999, state.recruitmentTickets + reward.tickets);
+      state.castle.gold = Math.min(1e9, state.castle.gold + reward.gold);
+      message = `도감 ${reward.count}명 달성 보상: 초빙장 ${reward.tickets}장, 금 ${reward.gold}`; break;
     }
     case "battle": {
       const target = state.targets.find(t => t.id === action.targetId);
       if (!target || target.currentTroops <= 0) throw new Error("이미 토벌했거나 없는 대상입니다.");
       if (troop.currentTroops <= 0) throw new Error("먼저 부대에 병력을 보충하세요.");
-      const enemy = withSynergy(target);
-      const result: BattleResult = simulateBattle(playerTroop(state), enemy, random);
-      const won = result.winner === "ATTACKER";
-      const plunder = 1 + aggregateSkills(playerTroop(state)).plunder;
-      const goldReward = won ? Math.min(Math.floor(target.goldReward * plunder), Math.floor(1e9 - state.castle.gold)) : 0;
-      state.castle.gold += goldReward; troop.currentTroops = result.attackerRemaining; target.currentTroops = result.defenderRemaining;
-      const barracks = state.buildings.find(b => b.type === "BARRACKS")!.level;
-      const experience = won ? Math.floor((result.experienceReward + state.stage * 20) * (1 + barracks * 0.02)) : 0;
-      if (won) {
-        state.recruitmentTickets = Math.min(999, state.recruitmentTickets + 1); state.daily.progress[0]++;
-        const heroes = selectedHeroes(state).sort((a, b) => a.id.localeCompare(b.id));
-        heroes.forEach((h, index) => {
-          const reward = Math.floor(experience / heroes.length) + (index < experience % heroes.length ? 1 : 0);
-          const tutor = heroSkillEffects(h.templateKey, h.stars).filter(e => e.kind === "tutor").reduce((sum, e) => sum + e.value, 0);
-          const growth = gainExperience(h.level, h.experience, Math.floor(reward * (1 + tutor)));
-          h.level = growth.level; h.experience = growth.experience;
-          h.statPoints += growth.levelsGained * STAT_POINTS_PER_LEVEL; h.maxTroops += growth.levelsGained * 50;
-        });
-      }
-      const cleared = won && state.targets.every(t => t.currentTroops <= 0);
-      if (cleared) { state.recruitmentTickets = Math.min(999, state.recruitmentTickets + 2); Object.assign(state, advanceStage(state)); }
-      state.battles.unshift({ ...result, experienceReward: experience, goldReward, id, targetName: target.name, createdAt: new Date(now).toISOString() });
-      state.battles = state.battles.slice(0, 10);
+      const { result, won, cleared, goldReward } = fight(state.activeTroop, target, id);
       message = won ? `${target.name} 토벌 승리! 금 ${goldReward}, 초빙장 1장을 얻었습니다.${cleared ? ` ${state.stage}단계가 열렸습니다! (초빙장 +2)` : ""}` : result.winner === "DRAW" ? "무승부입니다. 병력을 보충하고 다시 도전하세요." : "패배했습니다. 장수 편성과 병력을 점검하세요.";
       break;
     }

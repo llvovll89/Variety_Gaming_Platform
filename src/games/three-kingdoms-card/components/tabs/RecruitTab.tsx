@@ -1,4 +1,4 @@
-import { nextTicketIn, PITY_LIMIT, recruitmentCost } from "../../lib/demoGame";
+import { COLLECTION_REWARDS, nextTicketIn, PITY_LIMIT, recruitmentCost } from "../../lib/demoGame";
 import { HERO_CATALOG, HERO_ROSTER_LIMIT, RARITIES, type HeroKey } from "../../lib/heroCatalog";
 import { HeroPortrait } from "../HeroVisual";
 import { number, type TabProps } from "./shared";
@@ -6,7 +6,8 @@ import { number, type TabProps } from "./shared";
 const FEATURED: readonly string[] = ["guanyu", "zhaoyun", "liubei", "zhangfei", "simayi", "zhangliao", "sunquan", "zhouyu", "huangyueying", "ganning", "diaochan", "yuanshao"];
 
 export default function RecruitTab({ state, act, onShowCatalog, onPreview }: TabProps & { onShowCatalog: () => void; onPreview: (key: HeroKey) => void }) {
-  const ownedCount = new Set(state.heroes.map(h => h.templateKey)).size;
+  const ownedCount = state.collected.length;
+  const nextReward = COLLECTION_REWARDS[state.collectionClaimed];
   const ticketWait = nextTicketIn(state, Date.now());
   const fiveCost = recruitmentCost(state, 5);
   const ticketsForFive = Math.min(5, state.recruitmentTickets);
@@ -54,6 +55,15 @@ export default function RecruitTab({ state, act, onShowCatalog, onPreview }: Tab
           <small>각 등급 내 장수 {HERO_CATALOG.length}명은 균등 확률입니다.<br />{PITY_LIMIT}회 안에 5성 1명이 확정되며, 5회 모집에는 3성 이상 1명이 보장됩니다.</small>
         </div>
       </details>
+    </div>
+    <div className="collection-panel">
+      <div>
+        <strong>도감 보상</strong>
+        <small>{nextReward ? `장수 ${nextReward.count}명을 만나면 초빙장 ${nextReward.tickets}장 · 금 ${number(nextReward.gold)}` : "모든 도감 보상을 받았습니다."}</small>
+      </div>
+      <progress aria-label="도감 진행도" value={Math.min(ownedCount, nextReward?.count ?? HERO_CATALOG.length)} max={nextReward?.count ?? HERO_CATALOG.length} />
+      <span>{ownedCount} / {nextReward?.count ?? HERO_CATALOG.length}</span>
+      <button className="outline-button" disabled={!nextReward || ownedCount < nextReward.count} onClick={() => act({ type: "claimCollection" })}>보상 받기</button>
     </div>
     <div className="section-heading">
       <div><h2>당신의 부름을 기다리는 장수</h2></div>
