@@ -7,10 +7,19 @@ import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColo
 import { lazy } from 'react';
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
+const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: "three-kingdoms-card",
+    title: "삼국 영지",
+    description: "장수를 모집하고 부대를 편성해 나만의 영지를 키우는 삼국지 카드 전략",
+    thumbnail: "/art/three-kingdoms-card/valley.png",
+    accentColor: "#d4b678",
+    Component: ThreeKingdomsCardApp,
+  },
   {
     id: "three-kingdoms",
     title: "삼국지 패업 PK",
