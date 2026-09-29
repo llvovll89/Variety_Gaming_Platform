@@ -15,7 +15,8 @@ export function Stars({ stars }: { stars: number }) {
 export function HeroCard({ hero, onClick, assigned = false }: { hero: DemoHero; onClick?: () => void; assigned?: boolean }) {
   const template = catalogHero(hero.templateKey);
   return <button className={`hero-card rarity-${hero.stars}`} style={rarityStyle(hero.stars)} onClick={onClick} aria-label={`${hero.stars}성 ${hero.name} 상세 보기`}>
-    <div className="card-art"><HeroPortrait templateKey={hero.templateKey} /><span className="faction-seal">{template.faction}</span><span className="card-rarity">{RARITIES[hero.stars - 1].name}</span>{assigned && <span className="assigned-ribbon">출전 편성</span>}</div>
-    <div className="card-caption"><Stars stars={hero.stars} /><div className="card-name"><strong>{hero.name}</strong><span>Lv.{hero.level}</span></div><p>{template.title}</p><div className="card-statline"><span>통 <b>{hero.leadership}</b></span><span>무 <b>{hero.strength}</b></span><span>지 <b>{hero.intelligence}</b></span><span>정 <b>{hero.politics}</b></span></div></div>
+    <div className="card-art"><HeroPortrait templateKey={hero.templateKey} /><span className="faction-seal">{template.faction}</span><span className="card-rarity">{RARITIES[hero.stars - 1].name}</span>{assigned && <span className="assigned-ribbon">출전 중</span>}
+      <div className="card-nameplate"><Stars stars={hero.stars} /><strong>{hero.name}</strong><small>{template.title}</small></div></div>
+    <div className="card-caption"><div className="card-meta"><span>{template.role}</span><span>Lv.{hero.level}</span></div><dl className="card-statline">{([["통솔", hero.leadership], ["무력", hero.strength], ["지력", hero.intelligence], ["정치", hero.politics]] as const).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>
   </button>;
 }

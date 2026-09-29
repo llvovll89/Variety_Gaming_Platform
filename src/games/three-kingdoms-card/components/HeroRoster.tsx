@@ -28,7 +28,7 @@ export default function HeroRoster({ heroes, assignedIds, showCatalog, onShowCat
   const resetFilters = () => { setQuery(""); setFaction("전체"); setGrade(0); };
 
   return <section>
-    <div className="page-title"><div><p className="eyebrow">인연이 모여 세력이 되다</p><h1>{showCatalog ? "천하의 장수 도감" : "나의 장수 명부"}</h1></div><button className="gold-button" onClick={onRecruit}>장수 모집하러 가기</button></div>
+    <div className="page-title"><div><h1>{showCatalog ? "천하의 장수 도감" : "나의 장수 명부"}</h1></div><button className="seal-button" onClick={onRecruit}>장수 모집하러 가기</button></div>
     <div className="roster-toolbar"><div className="segmented">
       <button aria-pressed={!showCatalog} onClick={() => onShowCatalog(false)}>보유 장수 {heroes.length}/{HERO_ROSTER_LIMIT}</button>
       <button aria-pressed={showCatalog} onClick={() => onShowCatalog(true)}>장수 도감 {HERO_CATALOG.length}명</button>
@@ -39,7 +39,7 @@ export default function HeroRoster({ heroes, assignedIds, showCatalog, onShowCat
     </div>
     <div className="faction-tabs" role="group" aria-label="세력 필터">{["전체", ...FACTIONS].map(value => <button key={value} aria-pressed={faction === value} onClick={() => setFaction(value)}><span>{value}</span><small>{value === "전체" ? pool.length : pool.filter(h => catalogHero(h.templateKey).faction === value).length}</small></button>)}</div>
     <p className="roster-result" role="status">{visible.length}명 표시{showCatalog ? " · 대표 5성 초상입니다. 각 장수는 1~5성으로 모집할 수 있습니다." : " · 카드를 누르면 능력치와 편성을 확인할 수 있습니다."}</p>
-    {!showCatalog && heroes.length === 0 ? <div className="empty-state"><div className="empty-card" aria-hidden="true"><span>將</span></div><h2>아직 비어 있는 장수 명부</h2><p>천하의 {HERO_CATALOG.length}명 중 첫 번째 인연을 만나세요.</p><button className="gold-button" onClick={onRecruit}>첫 장수 모집하기</button></div>
+    {!showCatalog && heroes.length === 0 ? <div className="empty-state"><div className="empty-card" aria-hidden="true"><span>將</span></div><h2>아직 비어 있는 장수 명부</h2><p>천하의 {HERO_CATALOG.length}명 중 첫 번째 인연을 만나세요.</p><button className="seal-button" onClick={onRecruit}>첫 장수 모집하기</button></div>
       : visible.length === 0 ? <div className="empty-state compact"><h2>조건에 맞는 장수가 없습니다</h2><p>이름이나 세력·등급을 바꿔 보세요.</p><button className="outline-button" onClick={resetFilters}>검색 조건 초기화</button></div>
       : <div className="hero-grid">{visible.map(hero => <div className="roster-entry" key={hero.id}>
         <HeroCard hero={hero} assigned={!showCatalog && assignedIds.includes(hero.id)} onClick={() => showCatalog ? onPreview(hero.templateKey as HeroKey) : onInspect(hero)} />
