@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#4f9a68" stop-opacity=".55"/><stop offset=".55" stop-color="#12261f"/><stop offset="1" stop-color="#070a12"/></radialGradient>
+<linearGradient id="rim" x1="0" x2="1"><stop offset="0" stop-color="#d9b56a" stop-opacity=".9"/><stop offset=".4" stop-color="#d9b56a" stop-opacity="0"/><stop offset=".7" stop-color="#d9b56a" stop-opacity="0"/><stop offset="1" stop-color="#8fd0a3" stop-opacity=".8"/></linearGradient>
+<filter id="mist"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="834"/><feColorMatrix values="0 0 0 0 .8  0 0 0 0 .85  0 0 0 0 1  0 0 0 .22 0"/></filter>
+</defs>
+<rect width="512" height="512" fill="url(#bg)"/>
+<rect width="512" height="512" filter="url(#mist)"/>
+<text x="256" y="270" text-anchor="middle" font-family="'Noto Serif KR','Noto Serif CJK KR','Batang','SimSun','MS Mincho',serif" font-weight="700" font-size="200" fill="#8fd0a3" opacity=".13" letter-spacing="-10">馬謖</text>
+<g opacity=".7"><path d="M90 380 Q120 300 170 330 Q140 400 90 380 Z" fill="#8fd0a3"/><line x1="130" y1="356" x2="150" y2="440" stroke="#8fd0a3" stroke-width="5"/></g>
+<path d="M89.24327509850264 512 Q129.24327509850264 330 210 306 L256 330 L302 306 Q382.75672490149736 330 422.75672490149736 512 Z" fill="#0c0f16"/>
+<path d="M89.24327509850264 512 Q129.24327509850264 330 210 306 L256 330 L302 306 Q382.75672490149736 330 422.75672490149736 512" fill="none" stroke="url(#rim)" stroke-width="4"/>
+<path d="M226 300 L256 360 L286 300" stroke="#4f9a68" stroke-width="10" fill="none"/>
+<rect x="228" y="250" width="56" height="64" fill="#0c0f16"/>
+<ellipse cx="256" cy="210" rx="54.29380750656128" ry="64" fill="#0c0f16" stroke="url(#rim)" stroke-width="3"/>
+<g transform="rotate(1.5858263969421387 256 176)"><path d="M206 176 Q208 118 256 108 Q304 118 306 176 Z" fill="#0c0f16"/><rect x="232" y="84" width="48" height="40" rx="6" fill="#0c0f16"/><rect x="186" y="150" width="140" height="8" rx="4" fill="#8fd0a3" opacity=".75"/><path d="M232 90 H280" stroke="#8fd0a3" stroke-width="3" opacity=".6"/></g>
+<rect x="14" y="14" width="484" height="484" fill="none" stroke="#d9b56a" stroke-opacity=".35" stroke-width="2"/>
+<g transform="translate(446 440)"><rect x="-26" y="-26" width="52" height="52" rx="6" fill="#a8322a"/><text y="12" text-anchor="middle" font-family="'Noto Serif KR','Batang','SimSun',serif" font-size="34" font-weight="700" fill="#f4e6c8">馬</text></g>
+</svg>

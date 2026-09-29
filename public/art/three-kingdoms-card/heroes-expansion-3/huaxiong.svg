@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#c29a3c" stop-opacity=".55"/><stop offset=".55" stop-color="#261f12"/><stop offset="1" stop-color="#070a12"/></radialGradient>
+<linearGradient id="rim" x1="0" x2="1"><stop offset="0" stop-color="#d9b56a" stop-opacity=".9"/><stop offset=".4" stop-color="#d9b56a" stop-opacity="0"/><stop offset=".7" stop-color="#d9b56a" stop-opacity="0"/><stop offset="1" stop-color="#f0d58e" stop-opacity=".8"/></linearGradient>
+<filter id="mist"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="576"/><feColorMatrix values="0 0 0 0 .8  0 0 0 0 .85  0 0 0 0 1  0 0 0 .22 0"/></filter>
+</defs>
+<rect width="512" height="512" fill="url(#bg)"/>
+<rect width="512" height="512" filter="url(#mist)"/>
+<text x="256" y="270" text-anchor="middle" font-family="'Noto Serif KR','Noto Serif CJK KR','Batang','SimSun','MS Mincho',serif" font-weight="700" font-size="200" fill="#f0d58e" opacity=".13" letter-spacing="-10">華雄</text>
+<line x1="108" y1="512" x2="90" y2="70" stroke="#0c0f16" stroke-width="12"/><path d="M90 70 l-12 40 h24 z" fill="#f0d58e" opacity=".85"/>
+<path d="M95.29985851049423 512 Q135.29985851049423 330 210 306 L256 330 L302 306 Q376.70014148950577 330 416.70014148950577 512 Z" fill="#0c0f16"/>
+<path d="M95.29985851049423 512 Q135.29985851049423 330 210 306 L256 330 L302 306 Q376.70014148950577 330 416.70014148950577 512" fill="none" stroke="url(#rim)" stroke-width="4"/>
+<path d="M226 300 L256 360 L286 300" stroke="#c29a3c" stroke-width="10" fill="none"/>
+<rect x="228" y="250" width="56" height="64" fill="#0c0f16"/>
+<ellipse cx="256" cy="210" rx="54.43357062339783" ry="64" fill="#0c0f16" stroke="url(#rim)" stroke-width="3"/>
+<g transform="rotate(-0.2963268756866455 256 176)"><path d="M198 190 Q196 112 256 102 Q316 112 314 190 L300 176 Q256 158 212 176 Z" fill="#0c0f16"/><path d="M256 102 V 150" stroke="#f0d58e" stroke-width="4" opacity=".7"/><path d="M256 104 Q269.33342695236206 19.489439964294434 313.35039615631104 37.74471998214722" stroke="#c29a3c" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M186 186 Q256 160 326 186" stroke="#f0d58e" stroke-width="5" fill="none" opacity=".8"/></g>
+<rect x="14" y="14" width="484" height="484" fill="none" stroke="#d9b56a" stroke-opacity=".35" stroke-width="2"/>
+<g transform="translate(446 440)"><rect x="-26" y="-26" width="52" height="52" rx="6" fill="#a8322a"/><text y="12" text-anchor="middle" font-family="'Noto Serif KR','Batang','SimSun',serif" font-size="34" font-weight="700" fill="#f4e6c8">華</text></g>
+</svg>

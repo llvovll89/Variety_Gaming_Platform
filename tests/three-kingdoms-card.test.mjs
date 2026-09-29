@@ -9,7 +9,7 @@ const compiled = await build({ stdin: { contents: `
   export * from './src/games/three-kingdoms-card/lib/demoGame';
   export * from './src/games/three-kingdoms-card/lib/heroPortrait';
 `, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
-const { HERO_CATALOG, createDemo, createCollectedHero, demoSchema, portraitStyle } =
+const { HERO_CATALOG, createDemo, createCollectedHero, demoSchema, portraitStyle, actDemo } =
   await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
 
 test('card layout retains body class rules inside the shadow root', () => {
@@ -23,9 +23,10 @@ test('card layout retains body class rules inside the shadow root', () => {
   assert.ok(rules.find(rule => rule.selector === '.hero-detail-body').nodes.some(n => n.prop === 'padding'));
 });
 
-test('all 48 heroes have distinct keys, valid portraits and serializable cards at every grade', () => {
-  assert.equal(HERO_CATALOG.length, 48);
-  assert.equal(new Set(HERO_CATALOG.map(h => h.key)).size, 48);
+test('all 64 heroes have distinct keys, valid portraits and serializable cards at every grade', () => {
+  assert.equal(HERO_CATALOG.length, 64);
+  assert.equal(new Set(HERO_CATALOG.map(h => h.key)).size, 64);
+  assert.equal(new Set(HERO_CATALOG.map(h => h.name)).size, 64);
   const portraits = new Set();
   for (const hero of HERO_CATALOG) {
     const style = portraitStyle(hero.key);
@@ -39,7 +40,24 @@ test('all 48 heroes have distinct keys, valid portraits and serializable cards a
       assert.ok(demoSchema.safeParse(JSON.parse(JSON.stringify(state))).success, `${hero.key}/${stars}`);
     }
   }
-  assert.equal(portraits.size, 48);
+  assert.equal(portraits.size, 64);
+});
+
+test('each new officer can be recruited and restored in an existing formation', () => {
+  for (let index = 48; index < HERO_CATALOG.length; index++) {
+    const state = createDemo(0);
+    state.lordName = '군주';
+    state.castleName = '영지';
+    state.heroes = [createCollectedHero('guanyu', 3, 'existing-officer')];
+    state.troop.heroIds = ['existing-officer', null, null];
+    const rolls = [0.99, (index + 0.5) / HERO_CATALOG.length];
+    const recruited = actDemo(state, { type: 'draw' }, 0, () => rolls.shift(), `new-${index}`).state;
+    assert.equal(recruited.heroes[1].templateKey, HERO_CATALOG[index].key);
+    assert.equal(recruited.heroes[1].stars, 5);
+    recruited.troop.heroIds[1] = recruited.heroes[1].id;
+    assert.deepEqual(demoSchema.parse(JSON.parse(JSON.stringify(recruited))), recruited);
+    assert.deepEqual(recruited.heroes[0], state.heroes[0]);
+  }
 });
 
 test('pre-expansion v2 saves retain owned officers and formation', () => {

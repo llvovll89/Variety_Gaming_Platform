@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+<radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#c1503f" stop-opacity=".55"/><stop offset=".55" stop-color="#2a1418"/><stop offset="1" stop-color="#070a12"/></radialGradient>
+<linearGradient id="rim" x1="0" x2="1"><stop offset="0" stop-color="#d9b56a" stop-opacity=".9"/><stop offset=".4" stop-color="#d9b56a" stop-opacity="0"/><stop offset=".7" stop-color="#d9b56a" stop-opacity="0"/><stop offset="1" stop-color="#f0a08e" stop-opacity=".8"/></linearGradient>
+<filter id="mist"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="221"/><feColorMatrix values="0 0 0 0 .8  0 0 0 0 .85  0 0 0 0 1  0 0 0 .22 0"/></filter>
+</defs>
+<rect width="512" height="512" fill="url(#bg)"/>
+<rect width="512" height="512" filter="url(#mist)"/>
+<text x="256" y="270" text-anchor="middle" font-family="'Noto Serif KR','Noto Serif CJK KR','Batang','SimSun','MS Mincho',serif" font-weight="700" font-size="200" fill="#f0a08e" opacity=".13" letter-spacing="-10">徐盛</text>
+<path d="M392 150 Q463.484169960022 300 392 450" stroke="#f0a08e" stroke-width="7" fill="none" opacity=".75"/><line x1="392" y1="150" x2="392" y2="450" stroke="#f0a08e" stroke-width="1.5" opacity=".5"/>
+<path d="M74.88648211956024 512 Q114.88648211956024 330 210 306 L256 330 L302 306 Q397.11351788043976 330 437.11351788043976 512 Z" fill="#0c0f16"/>
+<path d="M74.88648211956024 512 Q114.88648211956024 330 210 306 L256 330 L302 306 Q397.11351788043976 330 437.11351788043976 512" fill="none" stroke="url(#rim)" stroke-width="4"/>
+<path d="M226 300 L256 360 L286 300" stroke="#c1503f" stroke-width="10" fill="none"/>
+<rect x="228" y="250" width="56" height="64" fill="#0c0f16"/>
+<ellipse cx="256" cy="210" rx="52.1166033744812" ry="64" fill="#0c0f16" stroke="url(#rim)" stroke-width="3"/>
+<g transform="rotate(-1.641533374786377 256 176)"><path d="M198 190 Q196 112 256 102 Q316 112 314 190 L300 176 Q256 158 212 176 Z" fill="#0c0f16"/><path d="M256 102 V 150" stroke="#f0a08e" stroke-width="4" opacity=".7"/><path d="M256 104 Q288.59389781951904 29.020322799682617 305.20779609680176 42.51016139984131" stroke="#c1503f" stroke-width="14" fill="none" stroke-linecap="round"/><path d="M186 186 Q256 160 326 186" stroke="#f0a08e" stroke-width="5" fill="none" opacity=".8"/></g>
+<rect x="14" y="14" width="484" height="484" fill="none" stroke="#d9b56a" stroke-opacity=".35" stroke-width="2"/>
+<g transform="translate(446 440)"><rect x="-26" y="-26" width="52" height="52" rx="6" fill="#a8322a"/><text y="12" text-anchor="middle" font-family="'Noto Serif KR','Batang','SimSun',serif" font-size="34" font-weight="700" fill="#f4e6c8">徐</text></g>
+</svg>
