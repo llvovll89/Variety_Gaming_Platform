@@ -86,5 +86,5 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
     : winner === "DEFENDER" ? attacker.currentTroops - a.soldiers : 0;
   logs.push(winner === "DRAW" ? "전투 종료: 무승부." : `전투 종료: ${winner === "ATTACKER" ? attacker.name : defender.name} 승리.`);
   return { winner, turns, logs, attackerRemaining: a.soldiers, defenderRemaining: d.soldiers,
-    experienceReward: Math.floor(destroyed * 0.1) };
+    experienceReward: Math.floor(destroyed * 0.3) };
 }

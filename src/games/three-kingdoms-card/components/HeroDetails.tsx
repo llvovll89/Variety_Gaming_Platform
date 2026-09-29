@@ -1,12 +1,12 @@
 
 import { useEffect, useRef } from "react";
-import { resetStatsCost, STAT_CAP, STAT_KEYS, STAT_POINTS_PER_LEVEL, type DemoAction, type DemoHero } from "../lib/demoGame";
+import { DISMISS_REFUND, promoteCost, resetStatsCost, STAT_CAP, STAT_KEYS, STAT_POINTS_PER_LEVEL, type DemoAction, type DemoHero } from "../lib/demoGame";
 import { heroSkills } from "../lib/heroSkills";
 import { SKILL_KINDS, skillLabel, skillTier } from "../lib/skills";
 import { baseStats, catalogHero, RARITIES } from "../lib/heroCatalog";
 import { HeroPortrait, rarityStyle, Stars } from "./HeroVisual";
 
-export default function HeroDetails({ hero, owned, gold, onAct, onClose, onFormation }: { hero: DemoHero; owned: boolean; gold: number; onAct: (action: DemoAction) => unknown; onClose: () => void; onFormation: () => void }) {
+export default function HeroDetails({ hero, owned, gold, heroes = [], troopIds = [], onAct, onClose, onFormation }: { hero: DemoHero; owned: boolean; gold: number; heroes?: DemoHero[]; troopIds?: readonly (string | null)[]; onAct: (action: DemoAction) => unknown; onClose: () => void; onFormation: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const template = catalogHero(hero.templateKey);
   useEffect(() => { dialog.current?.showModal(); }, []);
@@ -18,6 +18,16 @@ export default function HeroDetails({ hero, owned, gold, onAct, onClose, onForma
       {owned && <div className="stat-alloc"><div className="stat-alloc-head"><strong>남은 포인트 {hero.statPoints}</strong><small>레벨업마다 {STAT_POINTS_PER_LEVEL}포인트 · 능력치 최대 {STAT_CAP}</small></div>
         <div className="stat-alloc-row">{STAT_KEYS.map((key, i) => <div key={key}><span>{["통솔", "무력", "지력", "정치", "매력"][i]}</span><button className="outline-button" aria-label={`${["통솔", "무력", "지력", "정치", "매력"][i]} 1 올리기`} disabled={hero.statPoints < 1 || hero[key] >= STAT_CAP} onClick={() => onAct({ type: "allocate", heroId: hero.id, stat: key, amount: 1 })}>＋1</button><button className="outline-button" aria-label={`${["통솔", "무력", "지력", "정치", "매력"][i]} 5 올리기`} disabled={hero.statPoints < 1 || hero[key] >= STAT_CAP} onClick={() => onAct({ type: "allocate", heroId: hero.id, stat: key, amount: Math.min(5, hero.statPoints, STAT_CAP - hero[key]) })}>＋5</button></div>)}</div>
         <button className="outline-button" disabled={!hero.spent.some(n => n > 0) || gold < resetStatsCost(hero.level)} onClick={() => onAct({ type: "resetStats", heroId: hero.id })}>능력치 초기화 (금 {resetStatsCost(hero.level)})</button></div>}
+      {owned && (() => {
+        const materials = heroes.filter(h => h.id !== hero.id && h.templateKey === hero.templateKey && h.stars === hero.stars && !troopIds.includes(h.id));
+        const material = [...materials].sort((a, b) => a.level - b.level)[0];
+        const inTroop = troopIds.includes(hero.id);
+        return <div className="hero-manage">
+          <button className="seal-button" disabled={hero.stars >= 5 || !material || gold < promoteCost(hero.stars)} onClick={() => material && onAct({ type: "promote", heroId: hero.id, materialId: material.id })}>{hero.stars >= 5 ? "최고 등급" : `${hero.stars + 1}성 승급 (재료 ${materials.length}장 · 금 ${promoteCost(hero.stars)})`}</button>
+          <button className="outline-button" disabled={inTroop} title={inTroop ? "편성 중인 장수는 방출할 수 없습니다." : undefined} onClick={() => { if (window.confirm(`${hero.name}(${hero.stars}성)을 방출하고 금 ${DISMISS_REFUND[hero.stars - 1]}을 받을까요?`)) onAct({ type: "dismiss", heroId: hero.id }); }}>방출 (금 +{DISMISS_REFUND[hero.stars - 1]})</button>
+          <small className="muted">같은 장수·같은 등급 카드 1장을 재료로 등급을 올립니다. 레벨과 배분 능력치는 유지됩니다.</small>
+        </div>;
+      })()}
       <h3 className="comparison-title">특수능력</h3>
       {heroSkills(hero.templateKey, hero.stars).length === 0 ? <p className="muted small">{hero.stars}성은 특수능력이 없습니다. 3성부터 발현됩니다.</p>
         : <ul className="skill-list">{heroSkills(hero.templateKey, hero.stars).map(s => <li key={s.name}><strong>{s.name}{s.label}</strong><span>{s.common ? "공용" : "고유"}</span><small>{s.description}</small></li>)}</ul>}
