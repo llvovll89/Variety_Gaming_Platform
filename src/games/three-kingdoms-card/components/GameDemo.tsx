@@ -51,7 +51,8 @@ export default function GameDemo() {
   const [showCatalog, setShowCatalog] = useState(false);
   const [onboardError, setOnboardError] = useState("");
 
-  useEffect(() => { window.scrollTo(0, 0); }, [tab]);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { contentRef.current?.closest('.tkw-root')?.scrollTo(0, 0); }, [tab]);
 
   function persist(next: DemoState) {
     current.current = next; setState(next);
@@ -121,7 +122,7 @@ export default function GameDemo() {
   const ownedCount = new Set(state.heroes.map(h => h.templateKey)).size;
   const preview = (key: typeof HERO_CATALOG[number]["key"]) => setInspect({ hero: createCollectedHero(key, 5, `preview-${key}`), owned: false });
 
-  return <div className="game-shell"><aside className="side-rail"><a className="brand-lockup" href="#main"><span className="brand-seal">三</span><span>삼국 영지<small>인연으로 쓰는 천하</small></span></a><div className="lord-profile"><span>{state.lordName.slice(0, 1)}</span><div><strong>{state.lordName}</strong><small>{state.castleName}의 군주</small></div></div><nav aria-label="게임 메뉴">{menus.map(menu => <button key={menu.name} aria-current={tab === menu.name ? "page" : undefined} onClick={() => { setTab(menu.name); setMessage(""); }}><span className="nav-symbol" aria-hidden="true">{menu.symbol}</span><span>{menu.name}<small>{menu.caption}</small></span></button>)}</nav><div className="rail-bottom"><div className="local-indicator"><i />로컬 자동 저장</div><SaveControls onBackup={backup} onRestore={restore} onReset={reset} /></div></aside>
+  return <div className="game-shell" ref={contentRef}><aside className="side-rail"><a className="brand-lockup" href="#main"><span className="brand-seal">三</span><span>삼국 영지<small>인연으로 쓰는 천하</small></span></a><div className="lord-profile"><span>{state.lordName.slice(0, 1)}</span><div><strong>{state.lordName}</strong><small>{state.castleName}의 군주</small></div></div><nav aria-label="게임 메뉴">{menus.map(menu => <button key={menu.name} aria-current={tab === menu.name ? "page" : undefined} onClick={() => { setTab(menu.name); setMessage(""); }}><span className="nav-symbol" aria-hidden="true">{menu.symbol}</span><span>{menu.name}<small>{menu.caption}</small></span></button>)}</nav><div className="rail-bottom"><div className="local-indicator"><i />로컬 자동 저장</div><SaveControls onBackup={backup} onRestore={restore} onReset={reset} /></div></aside>
     <div className="game-body"><header className="resource-header"><div className="current-location"><span>{state.castleName}</span><small>나의 영지</small></div><div className="resource-items">{(["gold", "food", "reserves"] as const).map((key, i) => <div className="resource" key={key}><span className={`resource-symbol symbol-${key}`} aria-hidden="true">{["金", "糧", "兵"][i]}</span><div><small>{["금", "식량", "예비군"][i]}</small><strong>{number(state.castle[key])}</strong></div><span className="resource-rate">+{rates[key].toFixed(1)}/분</span></div>)}</div><div className="ticket-count"><span aria-hidden="true">令</span><small>초빙장</small><strong>{state.recruitmentTickets}</strong></div></header>
     <main id="main" className="game-main">{message && <div className={`toast ${error ? "toast-error" : ""}`} role="status">{message}<button aria-label="알림 닫기" onClick={() => setMessage("")}>×</button></div>}{storageWarning && <p className="error-text" role="alert">저장소를 사용할 수 없습니다. 종료 전에 백업 파일을 내려받으세요.</p>}
 
