@@ -1,0 +1,78 @@
+import { SKILL_KINDS, makeSkill, type HeroSkill, type SkillEffect, type SkillKind } from "./skills";
+
+// 무장별 [고유 능력 이름, 고유 능력 종류, 공용 능력 종류]. 고유와 공용은 항상 다른 종류입니다.
+export const HERO_SKILLS: Record<string, readonly [string, SkillKind, SkillKind]> = {
+  guanyu: ["청룡언월", "awe", "attack"],
+  zhaoyun: ["일기당천", "guard", "initiative"],
+  lubu: ["천하무쌍", "fury", "attack"],
+  zhugeliang: ["팔진도", "tactics", "initiative"],
+  caocao: ["난세의간웅", "awe", "fiscal"],
+  sunshangxiang: ["규방의궁술", "fury", "initiative"],
+  liubei: ["인덕", "tutor", "guard"],
+  zhangfei: ["장판교의호통", "awe", "attack"],
+  machao: ["비마", "ambush", "fury"],
+  huangzhong: ["백발백중", "fury", "guard"],
+  pangtong: ["연환계", "fire", "recover"],
+  jiangwei: ["북벌의의지", "desperate", "tactics"],
+  weiyan: ["반골", "desperate", "fury"],
+  huangyueying: ["기관술", "tactics", "fiscal"],
+  simayi: ["늑대의눈", "tactics", "guard"],
+  xiahoudun: ["독안", "counter", "attack"],
+  xiahouyuan: ["신속", "ambush", "fury"],
+  zhangliao: ["소요진", "awe", "initiative"],
+  xuchu: ["호치", "counter", "attack"],
+  dianwei: ["악래", "counter", "fury"],
+  xuhuang: ["장구", "plunder", "guard"],
+  zhanghe: ["교묘", "tactics", "initiative"],
+  xunyu: ["왕좌지재", "fiscal", "tactics"],
+  guojia: ["귀재", "tactics", "initiative"],
+  zhenji: ["낙신부", "tutor", "recover"],
+  sunquan: ["강동의주인", "fiscal", "guard"],
+  sunce: ["소패왕", "awe", "fury"],
+  zhouyu: ["적벽의불꽃", "fire", "attack"],
+  luxun: ["화공", "fire", "guard"],
+  lumeng: ["백의도강", "ambush", "tactics"],
+  ganning: ["백기야습", "ambush", "initiative"],
+  huanggai: ["고육지책", "desperate", "guard"],
+  daqiao: ["국색", "tutor", "recover"],
+  xiaoqiao: ["경국", "tutor", "fiscal"],
+  diaochan: ["연환미인계", "tactics", "tutor"],
+  yuanshao: ["사세삼공", "fiscal", "guard"],
+  xushu: ["지략", "tactics", "tutor"],
+  fazheng: ["기모", "tactics", "initiative"],
+  guanping: ["부전자전", "counter", "attack"],
+  caoren: ["철벽", "counter", "recover"],
+  jiaxu: ["독사", "tactics", "initiative"],
+  pangde: ["관을든결의", "desperate", "attack"],
+  lusu: ["동맹", "fiscal", "tutor"],
+  taishici: ["신의", "attack", "initiative"],
+  zhoutai: ["불굴", "desperate", "guard"],
+  dongzhuo: ["폭정", "awe", "fury"],
+  zhangjiao: ["태평도", "recover", "tactics"],
+  menghuo: ["칠종칠금", "counter", "recover"],
+  madai: ["추격", "ambush", "attack"],
+  wangping: ["지형파악", "guard", "initiative"],
+  masu: ["탁상병법", "tactics", "tutor"],
+  guanxing: ["청룡의후예", "attack", "fury"],
+  caopi: ["문무겸비", "fiscal", "tutor"],
+  dengai: ["음평기습", "ambush", "attack"],
+  yujin: ["군율", "guard", "initiative"],
+  xunyou: ["침묵의계책", "tactics", "recover"],
+  chengpu: ["원로", "guard", "tutor"],
+  lingtong: ["질풍", "ambush", "fury"],
+  zhugejin: ["온후", "fiscal", "recover"],
+  xusheng: ["장강방어", "guard", "tactics"],
+  yuanshu: ["오만", "plunder", "attack"],
+  gongsunzan: ["백마의용", "plunder", "attack"],
+  huaxiong: ["관문수비", "counter", "fury"],
+  yanliang: ["선봉", "ambush", "initiative"],
+};
+
+/** 등급에 맞게 제한된 특수능력 목록(1~2성은 빈 배열). */
+export function heroSkills(key: string, stars: number): HeroSkill[] {
+  const entry = HERO_SKILLS[key];
+  if (!entry) return [];
+  const [name, unique, common] = entry;
+  return [makeSkill(name, unique, false, stars), makeSkill(SKILL_KINDS[common].common, common, true, stars)].filter((s): s is HeroSkill => s !== null);
+}
+export function heroSkillEffects(key: string, stars: number): SkillEffect[] { return heroSkills(key, stars).map(s => s.effect); }

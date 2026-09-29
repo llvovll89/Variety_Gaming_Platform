@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { simulateBattle, type BattleTroop, type BattleResult } from "./battleEngine";
 import { gainExperience } from "./progression";
+import { aggregateSkills } from "./battleEngine";
+import { heroSkillEffects } from "./heroSkills";
 import { HERO_CATALOG, HERO_ROSTER_LIMIT, baseStats, catalogHero, type HeroKey } from "./heroCatalog";
 
 export const BUILDINGS = {
@@ -11,11 +13,21 @@ export const BUILDINGS = {
 export type BuildingType = keyof typeof BUILDINGS;
 const count = z.number().finite().nonnegative();
 const stat = z.number().int().min(0).max(10000);
-const heroSchema = z.object({
+const heroObject = z.object({
   id: z.string(), userId: z.string(), name: z.string(), templateKey: z.string(), stars: z.number().int().min(1).max(5),
   level: z.number().int().min(1).max(100), experience: count.int(), leadership: stat,
-  strength: stat, intelligence: stat, politics: stat, maxTroops: count.int(),
+  strength: stat, intelligence: stat, politics: stat, charm: stat, maxTroops: count.int(),
+  statPoints: count.int().max(100000), spent: z.tuple([stat, stat, stat, stat, stat]),
 });
+// 매력 도입 이전 저장본은 카탈로그 기준 값으로 채웁니다.
+const heroSchema = z.preprocess(raw => {
+  if (raw && typeof raw === "object") {
+    const h = raw as { templateKey?: string; stars?: number; charm?: number; statPoints?: number; spent?: number[] };
+    const known = HERO_CATALOG.some(t => t.key === h.templateKey) && Number.isInteger(h.stars) && h.stars! >= 1 && h.stars! <= 5;
+    return { ...raw, charm: h.charm ?? (known ? baseStats(h.templateKey!, h.stars!).charm : 0), statPoints: h.statPoints ?? 0, spent: h.spent ?? [0, 0, 0, 0, 0] };
+  }
+  return raw;
+}, heroObject);
 export type DemoHero = z.infer<typeof heroSchema>;
 const battleSchema = z.object({
   winner: z.enum(["ATTACKER", "DEFENDER", "DRAW"]), turns: z.number().int().min(0).max(10),
@@ -44,7 +56,7 @@ export const STORAGE_KEY = "three-kingdoms-local-v2";
 const uid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 function hero(n: number, name: string, stars: number, stats: number[]): DemoHero {
   return { id: uid(n), userId: uid(1), name, templateKey: "npc", stars, level: 1, experience: 0,
-    leadership: stats[0], strength: stats[1], intelligence: stats[2], politics: stats[3], maxTroops: stars * 300 };
+    leadership: stats[0], strength: stats[1], intelligence: stats[2], politics: stats[3], charm: stats[4] ?? 0, maxTroops: stars * 300, statPoints: 0, spent: [0, 0, 0, 0, 0] };
 }
 export function createDemo(now: number): DemoState {
   return {
@@ -54,14 +66,20 @@ export function createDemo(now: number): DemoState {
     heroes: [],
     troop: { id: uid(3), name: "제1군", currentTroops: 0, heroIds: [null, null, null] },
     targets: [
-      { id: uid(20), name: "황건적 잔당", currentTroops: 300, goldReward: 150, commander: hero(21, "황건 두목", 1, [25, 30, 20, 10]) },
-      { id: uid(22), name: "산적의 은신처", currentTroops: 1100, goldReward: 300, commander: hero(23, "산적 두령", 2, [58, 65, 40, 20]) },
-      { id: uid(24), name: "흑산군 주둔지", currentTroops: 2200, goldReward: 600, commander: hero(25, "장연", 3, [78, 82, 65, 40]) },
+      { id: uid(20), name: "황건적 잔당", currentTroops: 300, goldReward: 150, commander: hero(21, "황건 두목", 1, [25, 30, 20, 10, 15]) },
+      { id: uid(22), name: "산적의 은신처", currentTroops: 1100, goldReward: 300, commander: hero(23, "산적 두령", 2, [58, 65, 40, 20, 30]) },
+      { id: uid(24), name: "흑산군 주둔지", currentTroops: 2200, goldReward: 600, commander: hero(25, "장연", 3, [78, 82, 65, 40, 45]) },
     ], battles: [],
   };
 }
+/** 영지 효과 계산용: 주장 100% + 부장 30% (주장이 없으면 빈 부대). */
+function troopForSkills(state: DemoState) {
+  const [lead, ...rest] = selectedHeroes(state).map(h => ({ ...h, skills: heroSkillEffects(h.templateKey, h.stars) }));
+  return { id: "", name: "", currentTroops: 0, commander: lead ?? { name: "", leadership: 0, strength: 0, intelligence: 0 }, deputies: rest };
+}
 export function production(state: DemoState) {
-  const bonus = 1 + Math.max(0, ...state.heroes.map(h => h.politics)) / 1000;
+  const skills = aggregateSkills(troopForSkills(state));
+  const bonus = (1 + Math.max(0, ...state.heroes.map(h => h.politics)) / 1000) * (1 + skills.fiscal);
   const result = { gold: 0, food: 0, reserves: 0 };
   state.buildings.forEach(b => { const rule = BUILDINGS[b.type]; result[rule.resource] = b.level * rule.perMinute * bonus; });
   return result;
@@ -84,21 +102,29 @@ export function troopCapacity(state: DemoState) {
 export function playerTroop(state: DemoState): BattleTroop {
   const commander = state.heroes.find(h => h.id === state.troop.heroIds[0]);
   if (!commander) throw new Error("먼저 장수를 모집하고 주장으로 편성하세요.");
-  return { id: state.troop.id, name: state.troop.name, currentTroops: state.troop.currentTroops, commander,
-    deputies: selectedHeroes(state).filter(h => h.id !== commander.id) };
+  const withSkills = (h: DemoHero) => ({ ...h, skills: heroSkillEffects(h.templateKey, h.stars) });
+  return { id: state.troop.id, name: state.troop.name, currentTroops: state.troop.currentTroops, commander: withSkills(commander),
+    deputies: selectedHeroes(state).filter(h => h.id !== commander.id).map(withSkills) };
 }
 export function createCollectedHero(key: HeroKey, stars: number, id: string): DemoHero {
   if (!Number.isInteger(stars) || stars < 1 || stars > 5) throw new Error("장수 등급은 1~5성입니다.");
-  return { id, userId: uid(1), templateKey: key, name: catalogHero(key).name, stars, level: 1, experience: 0, ...baseStats(key, stars) };
+  return { id, userId: uid(1), templateKey: key, name: catalogHero(key).name, stars, level: 1, experience: 0, ...baseStats(key, stars), statPoints: 0, spent: [0, 0, 0, 0, 0] };
 }
 export function recruitmentCost(state: DemoState, amount: number) { return Math.max(0, amount - state.recruitmentTickets) * 300; }
 export function upgradeCost(level: number) { return { gold: level * 200, food: level * 100 }; }
+export const STAT_KEYS = ["leadership", "strength", "intelligence", "politics", "charm"] as const;
+export type StatKey = typeof STAT_KEYS[number];
+export const STAT_POINTS_PER_LEVEL = 3;
+export const STAT_CAP = 200;
+export const resetStatsCost = (level: number) => level * 50;
 export type DemoAction =
   | { type: "start"; lordName: string; castleName: string }
   | { type: "upgrade"; building: BuildingType }
   | { type: "reinforce"; count: number }
   | { type: "assign"; slot: number; heroId: string | null }
   | { type: "draw"; amount?: number }
+  | { type: "allocate"; heroId: string; stat: StatKey; amount: number }
+  | { type: "resetStats"; heroId: string }
   | { type: "battle"; targetId: string };
 export function actDemo(original: DemoState, action: DemoAction, now: number, random: () => number, id: string): { state: DemoState; message: string } {
   const state = structuredClone(syncDemo(original, now));
@@ -114,6 +140,24 @@ export function actDemo(original: DemoState, action: DemoAction, now: number, ra
       if (!lordName || lordName.length > 12 || !castleName || castleName.length > 12) throw new Error("군주와 영지 이름을 각각 1~12자로 입력하세요.");
       state.lordName = lordName; state.castleName = castleName; state.castle.lastUpdatedAt = new Date(now).toISOString();
       message = `${lordName} 군주님, 초빙장으로 첫 인연을 만나세요.`; break;
+    }
+    case "allocate": {
+      const h = state.heroes.find(x => x.id === action.heroId); const index = STAT_KEYS.indexOf(action.stat);
+      if (!h || index < 0) throw new Error("장수 또는 능력치를 찾을 수 없습니다.");
+      if (!Number.isInteger(action.amount) || action.amount < 1) throw new Error("배분할 포인트는 1 이상의 정수여야 합니다.");
+      if (action.amount > h.statPoints) throw new Error("남은 포인트가 부족합니다.");
+      if (h[action.stat] + action.amount > STAT_CAP) throw new Error(`능력치는 ${STAT_CAP}을 넘을 수 없습니다.`);
+      h[action.stat] += action.amount; h.spent[index] += action.amount; h.statPoints -= action.amount;
+      message = `${h.name}의 능력치를 강화했습니다.`; break;
+    }
+    case "resetStats": {
+      const h = state.heroes.find(x => x.id === action.heroId);
+      if (!h) throw new Error("장수를 찾을 수 없습니다.");
+      const refund = h.spent.reduce((a, b) => a + b, 0);
+      if (!refund) throw new Error("초기화할 배분 포인트가 없습니다.");
+      pay(resetStatsCost(h.level));
+      STAT_KEYS.forEach((k, i) => { h[k] -= h.spent[i]; h.spent[i] = 0; });
+      h.statPoints += refund; message = `${h.name}의 능력치를 초기화했습니다. ${refund}포인트를 돌려받았습니다.`; break;
     }
     case "upgrade": {
       const building = state.buildings.find(b => b.type === action.building)!;
@@ -160,16 +204,17 @@ export function actDemo(original: DemoState, action: DemoAction, now: number, ra
       if (state.troop.currentTroops <= 0) throw new Error("먼저 부대에 병력을 보충하세요.");
       const result: BattleResult = simulateBattle(playerTroop(state), { ...target, deputies: [] }, random);
       const won = result.winner === "ATTACKER";
-      const goldReward = won ? Math.min(target.goldReward, Math.floor(1e9 - state.castle.gold)) : 0;
+      const plunder = 1 + aggregateSkills(playerTroop(state)).plunder;
+      const goldReward = won ? Math.min(Math.floor(target.goldReward * plunder), Math.floor(1e9 - state.castle.gold)) : 0;
       state.castle.gold += goldReward; state.troop.currentTroops = result.attackerRemaining; target.currentTroops = result.defenderRemaining;
       if (won) {
         const heroes = selectedHeroes(state).sort((a, b) => a.id.localeCompare(b.id));
         heroes.forEach((h, index) => {
           const reward = Math.floor(result.experienceReward / heroes.length) + (index < result.experienceReward % heroes.length ? 1 : 0);
-          const growth = gainExperience(h.level, h.experience, reward);
+          const tutor = heroSkillEffects(h.templateKey, h.stars).filter(e => e.kind === "tutor").reduce((sum, e) => sum + e.value, 0);
+          const growth = gainExperience(h.level, h.experience, Math.floor(reward * (1 + tutor)));
           h.level = growth.level; h.experience = growth.experience;
-          h.leadership += growth.levelsGained; h.strength += growth.levelsGained; h.intelligence += growth.levelsGained;
-          h.politics += growth.levelsGained; h.maxTroops += growth.levelsGained * 50;
+          h.statPoints += growth.levelsGained * STAT_POINTS_PER_LEVEL; h.maxTroops += growth.levelsGained * 50;
         });
       }
       state.battles.unshift({ ...result, experienceReward: won ? result.experienceReward : 0, goldReward, id, targetName: target.name, createdAt: new Date(now).toISOString() });
