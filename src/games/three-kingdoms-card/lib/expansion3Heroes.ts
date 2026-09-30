@@ -1,4 +1,4 @@
-// Fictional game balance and dialogue; portraits are per-officer SVGs keyed by `key`.
+// Fictional game balance and dialogue; portrait atlas order is left-to-right, top-to-bottom.
 export const EXPANSION3_HEROES = [
   { key: 'madai', name: '마대', hanja: '馬岱', title: '서량의 그림자 창', faction: '촉', role: '기장', quote: '명을 받았으니 끝까지 뒤쫓겠소.', stats: [74, 82, 58, 50, 58] },
   { key: 'wangping', name: '왕평', hanja: '王平', title: '가정의 신중한 장수', faction: '촉', role: '지휘관', quote: '지형을 먼저 보고 진을 치십시오.', stats: [82, 74, 70, 62, 64] },

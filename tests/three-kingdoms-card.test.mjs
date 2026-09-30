@@ -29,10 +29,10 @@ test('card layout retains body class rules inside the shadow root', () => {
   assert.ok(rules.find(rule => rule.selector === '.hero-detail-body').nodes.some(n => n.prop === 'padding'));
 });
 
-test('all 64 heroes have distinct keys, valid portraits and serializable cards at every grade', () => {
-  assert.equal(HERO_CATALOG.length, 64);
-  assert.equal(new Set(HERO_CATALOG.map(h => h.key)).size, 64);
-  assert.equal(new Set(HERO_CATALOG.map(h => h.name)).size, 64);
+test('all 72 heroes have distinct keys, valid portraits and serializable cards at every grade', () => {
+  assert.equal(HERO_CATALOG.length, 72);
+  assert.equal(new Set(HERO_CATALOG.map(h => h.key)).size, 72);
+  assert.equal(new Set(HERO_CATALOG.map(h => h.name)).size, 72);
   const portraits = new Set();
   for (const hero of HERO_CATALOG) {
     const style = portraitStyle(hero.key);
@@ -46,7 +46,21 @@ test('all 64 heroes have distinct keys, valid portraits and serializable cards a
       assert.ok(demoSchema.safeParse(JSON.parse(JSON.stringify(state))).success, `${hero.key}/${stars}`);
     }
   }
-  assert.equal(portraits.size, 64);
+  assert.equal(portraits.size, 72);
+});
+
+test('replacement and new officers use complete raster atlases with unique in-bounds crops', () => {
+  for (const [atlas, rows, expected] of [['expansion3', 4, 16], ['expansion4', 2, 8]]) {
+    const heroes = HERO_CATALOG.filter(h => h.atlas === atlas);
+    assert.equal(heroes.length, expected);
+    assert.deepEqual(heroes.map(h => h.tile), Array.from({ length: expected }, (_, i) => i));
+    const asset = portraitStyle(heroes[0].key).backgroundImage.match(/url\('([^']+)'\)/)[1];
+    const bytes = readFileSync(`public${asset}`);
+    assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
+    const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
+    assert.ok(Math.abs(width / 4 - height / rows) < 1, `${atlas}: square portrait cells`);
+    assert.ok(width / 4 >= 256, `${atlas}: usable portrait resolution`);
+  }
 });
 
 test('each new officer can be recruited and restored in an existing formation', () => {

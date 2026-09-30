@@ -66,6 +66,14 @@ export const HERO_SKILLS: Record<string, readonly [string, SkillKind, SkillKind]
   gongsunzan: ["백마의용", "plunder", "attack"],
   huaxiong: ["관문수비", "counter", "fury"],
   yanliang: ["선봉", "ambush", "initiative"],
+  zhangbao: ["맹호계승", "fury", "attack"],
+  jiangwan: ["후방의버팀목", "fiscal", "recover"],
+  zhonghui: ["검각의계략", "tactics", "ambush"],
+  wangyuanji: ["통찰의혜안", "tutor", "fiscal"],
+  sunjian: ["강동맹호", "awe", "attack"],
+  dingfeng: ["설중돌격", "ambush", "guard"],
+  wenchou: ["하북쌍벽", "fury", "initiative"],
+  zhurong: ["남중의화염", "fire", "attack"],
 };
 
 /** 등급에 맞게 제한된 특수능력 목록(1~2성은 빈 배열). */

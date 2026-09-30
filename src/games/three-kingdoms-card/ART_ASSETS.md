@@ -16,3 +16,37 @@ The 16 existing individual SVG portraits in `public/art/three-kingdoms-card/hero
 - Wei: Cao Pi, Deng Ai, Yu Jin, Xun You.
 - Wu: Cheng Pu, Ling Tong, Zhuge Jin, Xu Sheng.
 - Other warlords: Yuan Shu, Gongsun Zan, Hua Xiong, Yan Liang.
+
+## Portrait replacement and fourth expansion, 2026-09-30
+
+The third expansion's 16 silhouette SVGs are superseded in the game by
+`public/art/three-kingdoms-card/heroes-expansion-3.png` (4 columns × 4 rows).
+The original SVG files remain as source assets; they are no longer used by portraitStyle.
+Tile order follows EXPANSION3_HEROES exactly, preserving all existing officer keys and saves.
+
+`public/art/three-kingdoms-card/heroes-expansion-4.png` (4 columns × 2 rows)
+adds eight illustrated officers, bringing the catalog to 72:
+
+1. Zhang Bao / 장포 — Shu warrior, green-black armor and spear.
+2. Jiang Wan / 장완 — Shu minister, emerald robes, court hat and documents.
+3. Zhong Hui / 종회 — Wei strategist, navy and silver robes, scholar cap.
+4. Wang Yuanji / 왕원희 — Wei administrator, navy and ivory silk, gold hairpin.
+5. Sun Jian / 손견 — Wu commander, tiger helmet and crimson armor.
+6. Ding Feng / 정봉 — Wu veteran, gray beard, red armor and snow.
+7. Wen Chou / 문추 — other warlords cavalry officer, purple armor, beard and spear.
+8. Zhu Rong / 축융 — other warlords warrior, braided hair, bronze and woven armor.
+
+Both images were created with the built-in imagegen tool. Prompt set: production
+Three Kingdoms portrait atlases with exact equal square tiles, no gutters, frames,
+names or watermarks; distinct fully visible East Asian adult faces; realistic
+painterly finish, intricate Han-inspired silk and armor, bronze rim lighting and
+dark smoky backgrounds. Each head and torso must stay within its own tile.
+The replacement atlas specifies, in order: Ma Dai, Wang Ping, Ma Su, Guan Xing;
+Cao Pi, Deng Ai, Yu Jin, Xun You; Cheng Pu, Ling Tong, Zhuge Jin, Xu Sheng;
+Yuan Shu, Gongsun Zan, Hua Xiong, Yan Liang. Faction clothing uses green, blue,
+red and purple respectively, with white armor for Gongsun Zan. The new atlas
+uses the eight subjects and costume descriptions above in row-major order.
+
+New officers have dedicated named abilities using existing battle effect types.
+All 72 officers remain recruitable at grades 1–5; rarity chances are unchanged.
+Abilities, stats, titles and dialogue are fictional game content.

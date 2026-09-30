@@ -3,7 +3,7 @@ import { HERO_CATALOG, HERO_ROSTER_LIMIT, RARITIES, type HeroKey } from "../../l
 import { HeroPortrait } from "../HeroVisual";
 import { number, type TabProps } from "./shared";
 
-const FEATURED: readonly string[] = ["guanyu", "zhaoyun", "liubei", "zhangfei", "simayi", "zhangliao", "sunquan", "zhouyu", "huangyueying", "ganning", "diaochan", "yuanshao"];
+const FEATURED: readonly string[] = ["zhangbao", "jiangwan", "zhonghui", "wangyuanji", "sunjian", "dingfeng", "wenchou", "zhurong"];
 
 export default function RecruitTab({ state, act, onShowCatalog, onPreview }: TabProps & { onShowCatalog: () => void; onPreview: (key: HeroKey) => void }) {
   const ownedCount = state.collected.length;
@@ -66,7 +66,7 @@ export default function RecruitTab({ state, act, onShowCatalog, onPreview }: Tab
       <button className="outline-button" disabled={!nextReward || ownedCount < nextReward.count} onClick={() => act({ type: "claimCollection" })}>보상 받기</button>
     </div>
     <div className="section-heading">
-      <div><h2>당신의 부름을 기다리는 장수</h2></div>
+      <div><h2>새로 합류한 장수 8명</h2></div>
       <button className="quiet-button" onClick={onShowCatalog}>전체 {HERO_CATALOG.length}명 보기</button>
     </div>
     <div className="catalog-strip">
