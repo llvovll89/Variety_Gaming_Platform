@@ -5,6 +5,7 @@ import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp"
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
 import { lazy } from 'react';
+const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
@@ -12,6 +13,14 @@ import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: "echo-maze",
+    title: "메아리 미로",
+    description: "내 사진으로 떠나는 2.5D 미로 탐험 · 기억 닻과 시간 조각을 이용해 탈출하세요",
+    thumbnail: "/art/echo-maze.svg",
+    accentColor: "#a3a3a3",
+    Component: EchoMazeApp,
+  },
   {
     id: "three-kingdoms-card",
     title: "삼국 영지",
