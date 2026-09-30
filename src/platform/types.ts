@@ -13,6 +13,12 @@ export interface GameDefinition {
   description: string;
   thumbnail: string;
   accentColor: string; // CSS color used for the card's glow/accent
+  genres: readonly GameGenre[];
+  tags: readonly string[];
+  featuredText?: string;
+  releaseStatus?: "available" | "coming-soon";
   disabled?: boolean;
   Component: ComponentType<GameProps>;
 }
+
+export type GameGenre = "전략" | "액션" | "캐주얼" | "키즈";

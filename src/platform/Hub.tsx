@@ -1,122 +1,211 @@
-import { PlusIcon } from "@phosphor-icons/react/dist/icons/Plus";
-import type { GameDefinition } from "./types";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { MagnifyingGlassIcon, PlayIcon, XIcon } from "@phosphor-icons/react";
+import type { GameDefinition, GameGenre } from "./types";
+import { availableGames, comingSoonGames, filterHubGames, HUB_GENRES, readableInk, readRecentGameIds } from "./hubCatalog";
+import "./hub.css";
 
 interface HubProps {
   games: GameDefinition[];
   onSelect: (gameId: string) => void;
+  profile: { name: string; characterImage: string };
 }
 
-export default function Hub({ games, onSelect }: HubProps) {
+const FEATURED_DEFAULT_ID = "three-kingdoms-card";
+
+const shellStyle = (game: GameDefinition) =>
+  ({ "--shell": game.accentColor }) as CSSProperties;
+
+export default function Hub({ games, onSelect, profile }: HubProps) {
+  const [query, setQuery] = useState("");
+  const [genre, setGenre] = useState<"전체" | GameGenre>("전체");
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const playableAll = useMemo(() => availableGames(games), [games]);
+  const playable = useMemo(() => filterHubGames(games, query, genre), [games, query, genre]);
+  const upcoming = useMemo(() => comingSoonGames(games), [games]);
+  const recent = useMemo(
+    () => readRecentGameIds(games)
+      .map(id => games.find(game => game.id === id))
+      .filter((game): game is GameDefinition => Boolean(game)),
+    [games],
+  );
+
+  const [stageId, setStageId] = useState(
+    () => (playableAll.find(game => game.id === FEATURED_DEFAULT_ID) ?? playableAll[0])?.id,
+  );
+  const stage = playableAll.find(game => game.id === stageId) ?? playableAll[0];
+
+  const clearFilters = () => {
+    setQuery("");
+    setGenre("전체");
+    searchRef.current?.focus();
+  };
+  const jumpToSearch = () => {
+    document.querySelector("#hub-shelf")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => searchRef.current?.focus({ preventScroll: true }), 400);
+  };
+
   return (
-    <div className="absolute inset-0 overflow-y-auto bg-[#0f1419] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(3rem,env(safe-area-inset-top))] pb-[max(3rem,env(safe-area-inset-bottom))] text-white select-none">
-      {/* Premium ambient gradient */}
-      <div
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.04), transparent 60%)",
-        }}
-      />
-      
-      <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-12">
-        {/* Header Section */}
-        <div className="motion-safe:animate-card-in text-center space-y-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl bg-clip-text bg-gradient-to-b from-white to-white/80">
-            종합 게임 플랫폼
-          </h1>
-          <div className="flex items-center justify-center gap-2">
-            <div className="h-px w-8 bg-gradient-to-r from-transparent to-white/40" />
-            <span className="text-lg font-semibold text-white/80">GH</span>
-            <div className="h-px w-8 bg-gradient-to-l from-transparent to-white/40" />
-          </div>
-          <p className="text-sm font-medium text-white/50 mt-4">
-            재미있는 게임들을 즐겨보세요
-          </p>
-        </div>
+    <div className="hub">
+      <header className="hub-top">
+        <span className="hub-logo">GH ARCADE</span>
+        <button type="button" className="hub-find" onClick={jumpToSearch}>
+          <MagnifyingGlassIcon size={18} weight="bold" />
+          <span>게임 찾기</span>
+        </button>
+        <span className="hub-me">
+          <img src={profile.characterImage} alt="" />
+          <span>{profile.name || "플레이어"}</span>
+        </span>
+      </header>
 
-        {/* Game Grid */}
-        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {games.map((game, i) => (
-            <button
-              key={game.id}
-              type="button"
-              disabled={game.disabled}
-              aria-label={game.disabled ? `${game.title} 비활성화됨` : game.title}
-              onClick={() => !game.disabled && onSelect(game.id)}
-              style={{ animationDelay: `${i * 50}ms` }}
-              className="motion-safe:animate-card-in group relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 enabled:hover:scale-105 enabled:hover:shadow-[0_20px_48px_-12px] enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:grayscale"
-            >
-              {/* Card Background */}
-              <div className="absolute inset-0" style={{
-                background: `linear-gradient(135deg, rgba(${parseInt(game.accentColor.slice(1,3), 16)},${parseInt(game.accentColor.slice(3,5), 16)},${parseInt(game.accentColor.slice(5,7), 16)}, 0.08) 0%, rgba(255,255,255,0.02) 100%)`
-              }} />
-              
-              {/* Accent Border */}
-              <div
-                className="absolute inset-0 rounded-2xl pointer-events-none transition-all duration-300 group-hover:opacity-100"
-                style={{
-                  border: `2px solid ${game.accentColor}33`,
-                  boxShadow: `inset 0 0 20px ${game.accentColor}11, 0 0 20px ${game.accentColor}22`,
-                  opacity: 0.7
-                }}
-              />
-
-              {/* Content */}
-              <div className="relative z-10 flex flex-col gap-3 p-5">
-                {/* Image */}
-                <div className="relative h-40 overflow-hidden rounded-xl">
-                  <img
-                    src={game.thumbnail}
-                    alt={game.title}
-                    className="h-full w-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                  
-                  {/* Game badge */}
-                  <div
-                    className="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-bold text-white transform group-hover:scale-110 transition-transform duration-300"
-                    style={{ backgroundColor: `${game.accentColor}dd` }}
-                  >
-                    {game.disabled ? "준비 중" : game.id === "echo-maze" ? "미로 탐험" : game.id === "hachuping-slither" ? "성장" : game.id === "hachuping-jump" ? "점프" : game.id === "three-kingdoms-card" ? "카드 전략" : game.id === "three-kingdoms" ? "전략" : "생존 RPG"}
-                  </div>
-                </div>
-
-                {/* Text Content */}
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-2 w-2 rounded-full transform group-hover:scale-150 transition-transform duration-300"
-                      style={{ backgroundColor: game.accentColor }}
-                    />
-                    <h3 className="text-base font-bold text-white truncate">{game.title}</h3>
-                  </div>
-                  <p className="text-xs text-white/60 leading-relaxed line-clamp-2">
-                    {game.description}
-                  </p>
-                </div>
-
-                {/* CTA */}
-                <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-white/70 group-hover:text-white transition">
-                  {game.disabled ? "현재 이용할 수 없어요" : "지금 시작하기"}
-                  {!game.disabled && <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>}
-                </div>
-              </div>
-            </button>
-          ))}
-
-          {/* Coming Soon */}
-          <div
-            style={{ animationDelay: `${games.length * 50}ms` }}
-            className="motion-safe:animate-card-in flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-white/10 p-8 text-center text-white/40 hover:border-white/20 hover:text-white/50 transition"
-          >
-            <PlusIcon size={28} weight="bold" />
-            <div>
-              <div className="text-sm font-semibold">새로운 게임</div>
-              <div className="text-xs">준비 중입니다</div>
+      <main className="hub-main">
+        {stage && (
+          <section className="console" style={shellStyle(stage)} aria-label="추천 게임">
+            <div className="console-screen">
+              <span className="console-led" aria-hidden="true" />
+              <img key={stage.id} className="console-art" src={stage.thumbnail} alt={`${stage.title} 화면`} />
             </div>
+
+            <div className="console-info">
+              <h1 key={stage.id}>{stage.title}</h1>
+              <p>{stage.featuredText ?? stage.description}</p>
+              <ul className="console-tags" aria-label="태그">
+                {stage.tags.slice(0, 4).map(tag => <li key={tag}>{tag}</li>)}
+              </ul>
+              <button type="button" className="console-start" onClick={() => onSelect(stage.id)}>
+                <PlayIcon size={20} weight="fill" />
+                시작하기
+              </button>
+            </div>
+
+            <div className="console-slots" role="group" aria-label="게임 고르기">
+              {playableAll.map(game => (
+                <button
+                  key={game.id}
+                  type="button"
+                  className="slot"
+                  aria-pressed={game.id === stage.id}
+                  onClick={() => setStageId(game.id)}
+                  style={shellStyle(game)}
+                >
+                  <img src={game.thumbnail} alt="" />
+                  <span>{game.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {recent.length > 0 && (
+          <section className="hub-block" aria-labelledby="recent-title">
+            <h2 id="recent-title" className="hub-h2">이어서 하기</h2>
+            <div className="recent-row">
+              {recent.map(game => (
+                <button key={game.id} type="button" className="recent" onClick={() => onSelect(game.id)}>
+                  <img src={game.thumbnail} alt="" />
+                  <span>{game.title}</span>
+                  <PlayIcon size={16} weight="fill" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section id="hub-shelf" className="hub-block shelf" aria-labelledby="shelf-title">
+          <div className="shelf-head">
+            <h2 id="shelf-title" className="hub-h2">게임 전체</h2>
+            <label className="shelf-search">
+              <MagnifyingGlassIcon size={18} weight="bold" />
+              <span className="sr-only">게임 검색</span>
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="게임 이름이나 태그로 찾기"
+              />
+              {query && (
+                <button type="button" onClick={() => setQuery("")} aria-label="검색어 지우기">
+                  <XIcon size={14} weight="bold" />
+                </button>
+              )}
+            </label>
           </div>
-        </div>
-      </div>
+
+          <div className="shelf-genres" role="group" aria-label="장르">
+            {HUB_GENRES.map(item => (
+              <button key={item} type="button" aria-pressed={genre === item} onClick={() => setGenre(item)}>
+                {item}
+                <small>{filterHubGames(games, "", item).length}</small>
+              </button>
+            ))}
+          </div>
+
+          <p className="sr-only" role="status">게임 {playable.length}개</p>
+
+          {playable.length > 0 ? (
+            <div className="shelf-grid">
+              {playable.map(game => <Cartridge key={game.id} game={game} onSelect={onSelect} />)}
+            </div>
+          ) : (
+            <div className="shelf-empty">
+              <p>
+                {query ? `‘${query}’에 맞는 ${genre === "전체" ? "" : `${genre} `}게임이 없어요.` : `${genre} 게임이 아직 없어요.`}
+                <br />검색어를 지우거나 다른 장르를 골라 보세요.
+              </p>
+              <button type="button" onClick={clearFilters}>검색 초기화</button>
+            </div>
+          )}
+        </section>
+
+        {upcoming.length > 0 && (
+          <section className="hub-block" aria-labelledby="soon-title">
+            <h2 id="soon-title" className="hub-h2">준비 중인 게임</h2>
+            <div className="soon-row">
+              {upcoming.map(game => (
+                <article key={game.id} className="soon">
+                  <img src={game.thumbnail} alt="" />
+                  <div>
+                    <h3>{game.title}</h3>
+                    <p>{game.description}</p>
+                  </div>
+                  <span className="soon-sticker">준비 중</span>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="hub-foot">
+        <span className="hub-logo">GH ARCADE</span>
+        <p>지금 할 수 있는 게임 {playableAll.length}개, 준비 중인 게임 {upcoming.length}개</p>
+      </footer>
     </div>
+  );
+}
+
+function Cartridge({ game, onSelect }: { game: GameDefinition; onSelect: (id: string) => void }) {
+  return (
+    <button
+      type="button"
+      className={`cart cart-${readableInk(game.accentColor)}`}
+      style={shellStyle(game)}
+      onClick={() => onSelect(game.id)}
+      aria-label={`${game.title} 시작하기`}
+    >
+      <span className="cart-grip" aria-hidden="true" />
+      <span className="cart-label">
+        <img src={game.thumbnail} alt="" />
+      </span>
+      <span className="cart-body">
+        <span className="cart-genres">
+          {game.genres.map(item => <span key={item}>{item}</span>)}
+        </span>
+        <strong>{game.title}</strong>
+        <span className="cart-desc">{game.description}</span>
+      </span>
+    </button>
   );
 }

@@ -3,11 +3,16 @@ import Hub from "./platform/Hub";
 import { GAMES, getGameById } from "./platform/gameRegistry";
 import { useProfile } from "./shared/profile/useProfile";
 import { DEFAULT_CHARACTER_ID, GAME_CHARACTER_IMAGES } from "./shared/profile/characters";
+import { recordRecentGame } from "./platform/hubCatalog";
 
 export default function App() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
   const activeGame = activeGameId ? getGameById(activeGameId) : undefined;
   const profile = useProfile();
+  const selectGame = (gameId: string) => {
+    recordRecentGame(gameId, GAMES);
+    setActiveGameId(gameId);
+  };
 
   if (activeGame) {
     const { Component } = activeGame;
@@ -24,7 +29,7 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full">
-      <Hub games={GAMES} onSelect={setActiveGameId} />
+      <Hub games={GAMES} onSelect={selectGame} profile={{ name: profile.name, characterImage: profile.characterImage }} />
     </div>
   );
 }
