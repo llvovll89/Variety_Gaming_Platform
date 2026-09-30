@@ -26,6 +26,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const bodyPalette = useBodyPalette();
+  const [usePortrait, setUsePortrait] = useState(false);
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
@@ -64,7 +65,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
         <GameCanvas
           key={playKey}
           playerName={profile.name}
-          characterImageUrl={profile.characterImage}
+          characterImageUrl={usePortrait ? profile.characterImage : ''}
           bodyPaletteColors={bodyPalette.colors}
           onDeath={handleDeath}
           onReady={setEngine}
@@ -91,6 +92,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
             bodyPaletteId={bodyPalette.paletteId}
             onSelectBodyPalette={bodyPalette.setPaletteId}
             onStart={handleStart}
+            usePortrait={usePortrait}
+            onTogglePortrait={setUsePortrait}
           />
         </>
       )}

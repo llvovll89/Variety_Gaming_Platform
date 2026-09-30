@@ -7,7 +7,7 @@ export interface BodyPalette {
 }
 
 export const BODY_PALETTES: BodyPalette[] = [
-  { id: "classic", name: "클래식", colors: [] },
+  { id: "classic", name: "클래식", colors: ["#d9dc68"] },
   { id: "rainbow", name: "레인보우", colors: ["#ff6b6b", "#ffa94d", "#ffd43b", "#69db7c", "#4dabf7", "#9775fa"] },
   { id: "mint-berry", name: "민트베리", colors: ["#6ee7b7", "#f472b6"] },
   { id: "sunset", name: "선셋", colors: ["#ff9a76", "#ff6fa5", "#c084fc"] },

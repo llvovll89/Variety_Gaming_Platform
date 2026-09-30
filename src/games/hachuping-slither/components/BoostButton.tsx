@@ -42,7 +42,7 @@ export default function BoostButton({ engine, canBoost }: BoostButtonProps) {
       onPointerLeave={end}
       onContextMenu={(e) => e.preventDefault()}
       aria-label="부스트"
-      className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-[max(1rem,env(safe-area-inset-left))] z-10 flex h-16 w-16 touch-none select-none items-center justify-center rounded-full text-white transition active:scale-90 sm:h-20 sm:w-20"
+      className="slither-touch-boost absolute z-10 flex h-14 w-14 touch-none select-none items-center justify-center rounded-full text-white transition active:scale-90"
       style={{
         background: canBoost
           ? "linear-gradient(135deg, #c8e69c, #6e9e76)"

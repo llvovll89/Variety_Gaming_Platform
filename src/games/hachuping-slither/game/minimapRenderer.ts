@@ -22,8 +22,8 @@ export function drawMinimap(
   ctx.clip();
 
   const bg = ctx.createRadialGradient(center, center, 0, center, center, radius);
-  bg.addColorStop(0, "rgba(20,22,38,0.9)");
-  bg.addColorStop(1, "rgba(8,9,17,0.92)");
+  bg.addColorStop(0, "rgba(104,119,139,0.22)");
+  bg.addColorStop(1, "rgba(88,104,125,0.17)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, size, size);
 
@@ -42,7 +42,7 @@ export function drawMinimap(
     y: ((y + half) / snapshot.worldSize) * size,
   });
 
-  ctx.strokeStyle = "rgba(200,210,230,0.4)";
+  ctx.strokeStyle = "rgba(210,220,234,0.65)";
   ctx.lineWidth = 1;
   ctx.lineJoin = "round";
   for (const trail of snapshot.trails) {
@@ -57,22 +57,14 @@ export function drawMinimap(
     ctx.stroke();
   }
 
-  if (snapshot.viewport) {
-    const tl = toMap(snapshot.viewport.x, snapshot.viewport.y);
-    const w = (snapshot.viewport.w / snapshot.worldSize) * size;
-    const h = (snapshot.viewport.h / snapshot.worldSize) * size;
-    ctx.strokeStyle = "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(tl.x, tl.y, w, h);
-  }
 
   if (snapshot.player) {
     const p = toMap(snapshot.player.x, snapshot.player.y);
-    ctx.fillStyle = "rgba(255,111,165,0.35)";
+    ctx.fillStyle = "rgba(255,255,235,0.2)";
     ctx.beginPath();
     ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#ff6fa5";
+    ctx.fillStyle = "#ffffeb";
     ctx.beginPath();
     ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
     ctx.fill();
@@ -80,7 +72,7 @@ export function drawMinimap(
 
   ctx.restore();
 
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.strokeStyle = "rgba(190,204,225,0.12)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, Math.PI * 2);

@@ -7,20 +7,15 @@ interface LeaderboardProps {
 export default function Leaderboard({ entries }: LeaderboardProps) {
   return (
     <div className="slither-leaderboard">
-      <div className="mb-2 text-[11px] font-semibold text-[#c8d8b9]">
-        생존자 TOP 10
-      </div>
+      <h2>Leaderboard</h2>
       <ol className="flex flex-col gap-0.5">
         {entries.map((entry, i) => (
           <li
             key={entry.id}
-            className={`flex justify-between gap-2 text-[11px] sm:text-xs ${
-              entry.isPlayer ? "font-bold text-[#c8e69c]" : "text-white/85"
-            }`}
+            className={entry.isPlayer ? 'is-player' : ''}
+            style={{ color: entry.isPlayer ? '#f1f3ba' : ['#c69be8', '#999ee8', '#e6a0ad', '#91a5e7', '#87a8d9', '#d49aa5', '#a99bdb', '#99b1d4', '#b5a2d6', '#9fcea7'][i % 10] }}
           >
-            <span className="truncate">
-              {i + 1}. {entry.name}
-            </span>
+            <span className="slither-rank">#{i + 1}</span><span className="slither-rank-name">{entry.name}</span>
             <span>{entry.score}</span>
           </li>
         ))}

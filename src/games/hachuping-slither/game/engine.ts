@@ -54,7 +54,7 @@ export class GameEngine {
     this.onDeath = onDeath;
 
     this.playerImage = new Image();
-    this.playerImage.src = characterImageUrl;
+    if (characterImageUrl) this.playerImage.src = characterImageUrl;
 
     if (import.meta.env.DEV) {
       (window as unknown as { __engine: GameEngine }).__engine = this;
