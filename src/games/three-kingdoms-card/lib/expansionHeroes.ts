@@ -3,7 +3,7 @@ export const EXPANSION_HEROES = [
   { key: 'xushu', name: '서서', title: '검을 거둔 지략가', faction: '촉', role: '책사', quote: '칼보다 먼저 형세를 살피겠습니다.', stats: [80, 62, 94, 80, 78], tile: 0 },
   { key: 'fazheng', name: '법정', title: '한중의 묘책', faction: '촉', role: '책사', quote: '적이 믿는 안전한 길이 우리의 기회입니다.', stats: [76, 30, 94, 82, 62], tile: 1 },
   { key: 'guanping', name: '관평', title: '의기를 잇는 칼', faction: '촉', role: '무장', quote: '물려받은 의리는 끝까지 지키겠습니다.', stats: [76, 84, 60, 54, 68], tile: 2 },
-  { key: 'caoren', name: '조인', title: '흔들리지 않는 성벽', faction: '위', role: '지휘관', quote: '이 성에 우리 깃발이 있는 한 물러서지 않는다.', stats: [88, 86, 64, 56, 64], tile: 3 },
+  { key: 'caoren', name: '조인', title: '흔들리지 않는 성벽', faction: '위', role: '지휘관', quote: '이 성에 우리 깃발이 있는 한 물러서지 않는다.', stats: [93, 88, 70, 56, 64], tile: 3 },
   { key: 'jiaxu', name: '가후', title: '침묵 속의 승부수', faction: '위', role: '책사', quote: '승산이 보이면 한 수면 충분하지요.', stats: [74, 28, 96, 84, 45], tile: 4 },
   { key: 'pangde', name: '방덕', title: '백마의 결의', faction: '위', role: '기장', quote: '이 돌격에 나의 모든 것을 걸겠다.', stats: [82, 93, 52, 42, 66], tile: 5 },
   { key: 'lusu', name: '노숙', title: '동맹을 잇는 지혜', faction: '오', role: '내정관', quote: '함께 걸을 길을 찾는 것도 승리입니다.', stats: [76, 42, 90, 94, 86], tile: 6 },
