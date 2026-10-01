@@ -99,3 +99,14 @@ test('shield absorbs real damage and slow expires without permanently changing b
   for(let i=0;i<62;i++)stepWorld(frozen,.05,still);
   assert.equal(frozen.job.slow[foe.id],undefined);assert.equal(foe.speed,50);
 });
+
+test('additive rune bonuses preserve career multipliers in either selection order',()=>{
+  for(const [hero,path] of [['ranger','sniper'],['knight','berserker'],['witch','pyromancer']]){
+    const a=world(hero),b=world(hero);
+    const rune=w=>{w.status='upgrade';w.choices=['damage'];chooseUpgrade(w,'damage');};
+    for(let i=0;i<5;i++)rune(a);
+    advance(a,path);advance(b,path);
+    for(let i=0;i<5;i++)rune(b);
+    assert.ok(Math.abs(a.player.damage-b.player.damage)<1e-9);
+  }
+});

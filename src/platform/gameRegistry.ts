@@ -16,11 +16,11 @@ export const GAMES: GameDefinition[] = [
   {
     id: "echo-maze",
     title: "메아리 미로",
-    description: "내 사진으로 떠나는 2.5D 미로 탐험 · 기억 닻과 시간 조각을 이용해 탈출하세요",
+    description: "내 사진으로 떠나는 3D 미로 탐험 · 기억 닻과 시간 조각을 이용해 탈출하세요",
     thumbnail: "/art/echo-maze.svg",
-    accentColor: "#a3a3a3",
+    accentColor: "#78b79b",
     genres: ["캐주얼"],
-    tags: ["미로", "2.5D", "사진 캐릭터", "시간 제한"],
+    tags: ["미로", "3D", "사진 캐릭터", "시간 제한"],
     Component: EchoMazeApp,
   },
   {

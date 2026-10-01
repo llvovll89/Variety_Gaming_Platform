@@ -37,8 +37,9 @@ export interface Attack { x: number; y: number; angle: number; range: number; li
 export type Status = 'menu' | 'playing' | 'paused' | 'upgrade' | 'promotion' | 'clear' | 'dead' | 'victory';
 export type Kind = 'soldier' | 'mage' | 'brute' | 'elite' | 'boss' | 'slime' | 'bat' | 'golem';
 export type Upgrade = 'damage' | 'haste' | 'vitality' | 'speed' | 'multishot' | 'magnet';
+export const MAX_DAMAGE_RUNES = 8;
 export const UPGRADES: Record<Upgrade, { name: string; description: string; symbol: string }> = {
-  damage: { name: '룬 강화', description: '모든 무기 공격력 +25%', symbol: 'ATK' },
+  damage: { name: '룬 강화', description: '기본 공격력의 +25% · 합산 적용 (최대 8)', symbol: 'ATK' },
   haste: { name: '전투 가속', description: '공격 속도 +20%', symbol: 'SPD' },
   vitality: { name: '수호자의 심장', description: '최대 체력 +30 · 체력 45 회복', symbol: 'HP' },
   speed: { name: '바람의 발걸음', description: '이동 속도 +12% · 체력 15 회복', symbol: 'MOV' },
@@ -73,7 +74,7 @@ export function spawnEnemy(w: World, kind: Kind): Enemy {
   let y = clamp(p.y + Math.sin(angle) * 490, 40, HEIGHT - 25);
   if (distance({x,y}, p) < 280) { x = p.x < WIDTH / 2 ? WIDTH - 35 : 35; y = p.y < HEIGHT / 2 ? HEIGHT - 35 : 35; }
   const difficulty = DIFFICULTIES[w.difficulty];
-  const hp = Math.round(({ soldier: 30, mage: 25, brute: 85, elite: 430, boss: 1100, slime: 38, bat: 18, golem: 140 }[kind]) * (1 + w.stage * .5) * difficulty.hp);
+  const hp = Math.round(({ soldier: 30, mage: 25, brute: 85, elite: 430, boss: 1100, slime: 38, bat: 18, golem: 140 }[kind]) * (1 + w.stage * .5 + w.stage * w.stage * .12) * difficulty.hp);
   const enemy: Enemy = { id: w.nextId++, kind, x, y, hp, maxHp: hp, radius: { soldier: 19, mage: 18, brute: 26, elite: 35, boss: 49, slime: 23, bat: 16, golem: 32 }[kind] * UNIT_SCALE, speed: ({ soldier: 65, mage: 46, brute: 40, elite: 62, boss: 42, slime: 48, bat: 115, golem: 28 }[kind] + w.stage * 5) * difficulty.speed, cooldown: 2.5 * difficulty.cooldown, flash: 0, angle: 0, charge: 0 };
   w.enemies.push(enemy); return enemy;
 }
@@ -118,14 +119,17 @@ function offerUpgrade(w: World) {
   w.xp -= w.xpNext; w.level++; w.xpNext = levelExperience(w.level);
   if(w.level===MAX_LEVEL)w.xp=0;
   w.player.hp = Math.min(w.player.maxHp, w.player.hp + 10);
-  const pool = (Object.keys(UPGRADES) as Upgrade[]).filter(k => k !== 'multishot' || w.player.shots < 5);
+  const pool = (Object.keys(UPGRADES) as Upgrade[]).filter(k => (k !== 'multishot' || w.player.shots < 5) && (k !== 'damage' || w.upgrades.damage < MAX_DAMAGE_RUNES));
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   w.choices = pool.slice(0, 3); w.status = 'upgrade'; offerPromotion(w);
 }
 export function chooseUpgrade(w: World, key: Upgrade) {
   if (w.status !== 'upgrade' || !w.choices.includes(key)) return;
+  if (key === 'damage' && w.upgrades.damage >= MAX_DAMAGE_RUNES) return;
   const p = w.player;
-  if (key === 'damage') p.damage *= 1.25;
+  // Remove the previous additive bonus before applying the new one. This
+  // preserves promotion multipliers regardless of when a rune is selected.
+  if (key === 'damage') p.damage *= (1 + (w.upgrades.damage + 1) * .25) / (1 + w.upgrades.damage * .25);
   if (key === 'haste') p.interval /= 1.2;
   if (key === 'vitality') { p.maxHp += 30; p.hp = Math.min(p.maxHp, p.hp + 45); }
   if (key === 'speed') { p.speed *= 1.12; p.hp = Math.min(p.maxHp, p.hp + 15); }

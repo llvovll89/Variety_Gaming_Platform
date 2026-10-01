@@ -107,3 +107,25 @@ test('smaller bodies use smaller hitboxes and fast bullets cannot tunnel through
   w.shots=[{x:e.x-30,y:e.y,vx:1200,vy:0,life:1,damage:100,hostile:false,radius:3}];
   stepWorld(w,.05,still);assert.equal(w.kills,1);
 });
+
+test('damage runes grow additively, cap at eight and stop appearing in choices',()=>{
+  const w=isolated();
+  for(let i=0;i<8;i++){
+    w.status='upgrade';w.choices=['damage'];chooseUpgrade(w,'damage');
+    assert.ok(Math.abs(w.player.damage-18*(1+(i+1)*.25))<1e-9);
+  }
+  assert.equal(w.upgrades.damage,8);
+  w.status='upgrade';w.choices=['damage'];chooseUpgrade(w,'damage');
+  assert.equal(w.upgrades.damage,8);assert.ok(Math.abs(w.player.damage-54)<1e-9);
+  w.status='playing';w.xp=w.xpNext;stepWorld(w,.01,still);
+  assert.equal(w.status,'upgrade');assert.ok(!w.choices.includes('damage'));
+});
+test('late region armored enemies survive a fully strengthened basic weapon attack',()=>{
+  for(const difficulty of Object.keys(DIFFICULTIES))for(const weapon of ['sword','rifle','laser','shotgun']){
+    const w=createWorld('playing',difficulty,{hero:'witch',weapon,tint:'mint'});
+    for(let i=0;i<8;i++){w.status='upgrade';w.choices=['damage'];chooseUpgrade(w,'damage');}
+    w.stage=5;const enemy=spawnEnemy(w,'golem');
+    const multiplier=weapon==='sword'?2.8*1.6:weapon==='laser'?1.7*1.25:weapon==='shotgun'?.65*5:1;
+    assert.ok(enemy.hp>w.player.damage*multiplier,`${difficulty} ${weapon}`);
+  }
+});
