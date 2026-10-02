@@ -5,6 +5,7 @@ import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp"
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
 import { lazy } from 'react';
+const FantasyTacticsApp = lazy(() => import('../games/fantasy-tactics/FantasyTacticsApp'));
 const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
@@ -13,6 +14,17 @@ import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: 'fantasy-tactics',
+    title: '별빛 원정대',
+    description: '네 동료와 떠나는 쿼터뷰 전술 RPG · 검과 마법으로 별의 등대를 되찾으세요',
+    thumbnail: '/art/fantasy-tactics/cover.png',
+    accentColor: '#416d79',
+    genres: ['전략'],
+    tags: ['턴제', 'RPG', '판타지', '스토리', '전술'],
+    featuredText: '작은 약속이 모험이 되는 순간. 네 동료를 지휘해 숲과 언덕을 건너 별빛을 되찾으세요.',
+    Component: FantasyTacticsApp,
+  },
   {
     id: "echo-maze",
     title: "메아리 미로",
