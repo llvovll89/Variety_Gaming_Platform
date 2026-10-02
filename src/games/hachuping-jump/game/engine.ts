@@ -31,6 +31,8 @@ export class JumpEngine {
   private ctx: CanvasRenderingContext2D;
   private input: FlapInputController;
   private playerImage: HTMLImageElement;
+  private worldImage: HTMLImageElement;
+  private reducedMotion: boolean;
   private transform: LetterboxTransform = computeLetterboxTransform(1, 1);
 
   private player: PlayerState = { y: LOGICAL_HEIGHT / 2, vy: 0, rotation: 0, alive: true };
@@ -70,6 +72,9 @@ export class JumpEngine {
 
     this.playerImage = new Image();
     this.playerImage.src = characterImageUrl;
+    this.worldImage = new Image();
+    this.worldImage.src = '/art/jump-diorama.jpg';
+    this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (import.meta.env.DEV) {
       (window as unknown as { __jumpEngine: JumpEngine }).__jumpEngine = this;
@@ -172,6 +177,8 @@ export class JumpEngine {
       this.flapFx,
       this.rewards,
       this.journey,
+      this.worldImage,
+      this.reducedMotion,
     );
   }
 

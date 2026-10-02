@@ -1,56 +1,26 @@
-import CharacterPicker from "../../../shared/profile/CharacterPicker";
-import type { Profile } from "../../../shared/profile/useProfile";
-import { ITEMS, ITEM_ORDER } from "../game/items";
-import { STAGES } from "../game/stages";
-
-interface StartMenuProps {
-  profile: Profile;
-  bestScore: number;
-  onStart: () => void;
-}
-
-export default function StartMenu({ profile, bestScore, onStart }: StartMenuProps) {
-  return (
-    <div className="absolute inset-0 flex flex-col items-center overflow-y-auto bg-linear-to-b from-[#bce4ee] via-[#f7e4ef] to-[#fff0d6] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(3.5rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="motion-safe:animate-panel-in my-auto flex w-full shrink-0 max-w-md flex-col items-center gap-4 rounded-3xl border border-white bg-[#fffaf6]/95 p-6 text-center text-[#58415c] shadow-xl backdrop-blur-sm">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#ad547e]">구름 위 별빛 점프</h1>
-        <p className="text-sm text-[#857087]">
-          탭하거나 스페이스바를 눌러 날아올라요. 사탕 구름 사이로 별을 모아볼까요?
-        </p>
-        {bestScore > 0 && <p className="-mt-2 text-xs text-[#857087]">최고 기록 {bestScore}</p>}
-
-        <div className="w-full rounded-2xl bg-[#f8edf2] px-4 py-3 text-left text-xs leading-6 text-[#755d73]">
-          <div>★ 황금별 <b>+10점</b> · 장애물 통과 <b>+1점</b></div>
-          <div>관문 12개마다 다음 세계로 · 클리어 <b>+100점</b></div>
-          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 leading-4">
-            {ITEM_ORDER.map(kind => <div key={kind}><b style={{ color: ITEMS[kind].color }}>{ITEMS[kind].symbol} {ITEMS[kind].name}</b><div className="text-[10px]">{ITEMS[kind].description}</div></div>)}
-          </div>
-        </div>
-        <p className="text-xs leading-5 text-[#857087]">6개의 세계 · 약 2~3분의 별빛 여행</p>
-        <p className="text-[11px] leading-5 text-[#9a8498]">{STAGES.map(s => s.name).join(' → ')}</p>
-
-        <CharacterPicker
-          tone="light"
-          defaultImage={profile.defaultCharacterImage}
-          selectedId={profile.characterId}
-          onSelect={profile.selectCharacter}
-          customImage={profile.customImage}
-          onUploadFile={profile.uploadPhoto}
-        />
-
-        <input
-          value={profile.name}
-          onChange={(e) => profile.setName(e.target.value.slice(0, 12))}
-          placeholder="이름을 입력하세요"
-          className="w-full rounded-xl border border-[#dfc8d4] bg-white px-3 py-2.5 text-center text-[#58415c] placeholder-[#a08b9a] outline-none focus:border-[#d779a6]"
-        />
-        <button
-          onClick={onStart}
-          className="w-full rounded-full bg-[#f4b8d1] px-6 py-3 text-base font-bold text-[#65394f] transition hover:brightness-105 active:scale-95"
-        >
-          시작하기
-        </button>
-      </div>
-    </div>
-  );
+import { StarIcon } from '@phosphor-icons/react/dist/icons/Star';
+import { PlayIcon } from '@phosphor-icons/react/dist/icons/Play';
+import { CloudIcon } from '@phosphor-icons/react/dist/icons/Cloud';
+import { TrophyIcon } from '@phosphor-icons/react/dist/icons/Trophy';
+import CharacterPicker from '../../../shared/profile/CharacterPicker';
+import type { Profile } from '../../../shared/profile/useProfile';
+import { ITEMS, ITEM_ORDER } from '../game/items';
+import { GATES_PER_STAGE, STAGES } from '../game/stages';
+export default function StartMenu({ profile, bestScore, onStart }: { profile: Profile; bestScore: number; onStart: () => void }) {
+  return <div className="jump-menu"><div className="jump-menu-layout">
+    <section className="jump-world" aria-label="별빛 점프의 구름 세계">
+      <div className="jump-world-copy"><h1>구름 위<br/>별빛 점프</h1><p>폭신한 구름 사이로, 별을 모으는 작은 모험.</p></div>
+      <div className="jump-toy" key={profile.characterId}><span className="jump-toy-wing jump-toy-wing-left"/><span className="jump-toy-wing jump-toy-wing-right"/><div className="jump-toy-body"><img src={profile.characterImage} alt="선택한 모험 친구"/></div><span className="jump-toy-shadow"/></div>
+      <div className="jump-world-caption"><CloudIcon weight="fill" size={20}/>6개의 세계에서 만나는 작은 행복</div>
+    </section>
+    <section className="jump-preparation" aria-labelledby="jump-ready-title">
+      <div className="jump-preparation-heading"><div><h2 id="jump-ready-title">함께 날아볼까요?</h2><p>오늘의 모험 친구를 골라주세요.</p></div><StarIcon size={32} weight="duotone"/></div>
+      <div className="jump-character-picker"><CharacterPicker tone="light" defaultImage={profile.defaultCharacterImage} selectedId={profile.characterId} onSelect={profile.selectCharacter} customImage={profile.customImage} onUploadFile={profile.uploadPhoto}/></div>
+      <label className="jump-name-label" htmlFor="jump-name">친구 이름</label><input id="jump-name" value={profile.name} onChange={e => profile.setName(e.target.value.slice(0,12))} maxLength={12} placeholder="이름을 입력하세요" className="jump-name"/>
+      <div className="jump-how"><span><kbd>Space</kbd> 또는 화면 탭</span><b>누를 때마다 폴짝!</b><p>사탕 문을 피하고 황금별을 모아요.</p></div>
+      <button onClick={onStart} className="jump-button jump-button-primary"><PlayIcon size={19} weight="fill"/>시작하기</button>
+      <div className="jump-record"><TrophyIcon size={18} weight="duotone"/><span>최고 기록</span><b>{bestScore.toLocaleString()}점</b></div>
+      <details className="jump-guide"><summary>모험 안내와 아이템</summary><div className="jump-guide-content"><p>황금별 +10점 / 관문 통과 +1점<br/>관문 {GATES_PER_STAGE}개마다 다음 세계로, 클리어 +100점</p><div className="jump-items">{ITEM_ORDER.map(kind => <div key={kind}><b>{ITEMS[kind].symbol} {ITEMS[kind].name}</b><p>{ITEMS[kind].description}</p></div>)}</div><p>약 4~5분의 여행</p><ol>{STAGES.map(s => <li key={s.name}>{s.name}</li>)}</ol></div></details>
+    </section>
+  </div></div>;
 }

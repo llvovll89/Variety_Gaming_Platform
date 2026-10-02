@@ -4,9 +4,9 @@ import Victory from "./components/Victory";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
-import GameOverScreen from "../../shared/components/GameOverScreen";
-import PauseButton from "../../shared/components/PauseButton";
-import PauseOverlay from "../../shared/components/PauseOverlay";
+import { PauseIcon } from '@phosphor-icons/react/dist/icons/Pause';
+import { CloudIcon } from '@phosphor-icons/react/dist/icons/Cloud';
+import './jump.css';
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
 import { emptySnapshot } from "./game/uiStore";
@@ -16,7 +16,6 @@ import type { JumpEngine } from "./game/engine";
 type Screen = "menu" | "playing" | "dead" | "won";
 
 const GAME_ID = "hachuping-jump";
-const ACCENT_COLOR = "#4fd8ff";
 const FALLBACK_SNAPSHOT = emptySnapshot();
 
 export default function HachupingJumpApp({ onExit, profile }: GameProps) {
@@ -62,7 +61,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
   const isPaused = snapshot.status === "paused";
 
   return (
-    <div className="relative h-full w-full">
+    <div className="jump-app relative h-full w-full">
       {gameActive && (
         <GameCanvas
           key={playKey}
@@ -75,8 +74,8 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
       {gameActive && engine && (
         <>
           <HUD snapshot={snapshot} />
-          {(snapshot.status === "playing" || snapshot.status === "paused") && (
-            <PauseButton paused={isPaused} onClick={handleTogglePause} />
+          {snapshot.status === "playing" && (
+            <button className="jump-pause" aria-label="일시정지" onClick={handleTogglePause}><PauseIcon size={22} weight="fill"/></button>
           )}
         </>
       )}
@@ -84,7 +83,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
         <>
           <button
             onClick={onExit}
-            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
+            className="jump-exit"
           >
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
@@ -93,22 +92,11 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
         </>
       )}
       {isPaused && (
-        <PauseOverlay
-          score={snapshot.score}
-          accentColor={ACCENT_COLOR}
-          onResume={handleTogglePause}
-          onMainMenu={handleMainMenu}
-        />
+        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-pause-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-pause-title">구름 위에서 잠깐 쉬어요</h2><p className="jump-final-score">{snapshot.score.toLocaleString()}<small> 점</small></p><button autoFocus className="jump-button jump-button-primary" onClick={handleTogglePause}>계속하기</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button></div></div>
       )}
       {screen === "won" && <Victory score={finalScore ?? 0} onRestart={handleRestart} onMenu={handleMainMenu} />}
       {screen === "dead" && finalScore !== null && (
-        <GameOverScreen
-          finalScore={finalScore}
-          bestScore={highScore}
-          accentColor={ACCENT_COLOR}
-          onRestart={handleRestart}
-          onMainMenu={handleMainMenu}
-        />
+        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {highScore.toLocaleString()}점</p><button autoFocus className="jump-button jump-button-primary" onClick={handleRestart}>다시 시작</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button></div></div>
       )}
     </div>
   );

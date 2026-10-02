@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const compiled = await build({ stdin: { contents: `export * from './src/games/hachuping-jump/game/rewards'; export * from './src/games/hachuping-jump/game/obstacles'; export * from './src/games/hachuping-jump/game/engine'; export * from './src/games/hachuping-jump/game/stages'; export * from './src/games/hachuping-jump/game/collision';`, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node', define: { 'import.meta.env.DEV': 'false' } });
@@ -72,19 +72,19 @@ test('slow candy slows world and gate animation without slowing effect countdown
   normal.stepWorld(.5);slow.stepWorld(.5);assert.equal(slow.distanceScrolled,normal.distanceScrolled*.6);
   advanceRewards(slow.rewards,1);assert.equal(slow.rewards.slowTime,5);
 });
-test('six stages require twelve gates each, pause at checkpoints and finish after the finale', () => {
-  let completions=0;const e=engineForTest((score,won)=>{assert.equal(won,true);assert.equal(score,672);completions++});
+test('six stages require twenty-four gates each, pause at checkpoints and finish after the finale', () => {
+  let completions=0;const e=engineForTest((score,won)=>{assert.equal(won,true);assert.equal(score,744);completions++});
   e.stepTransition(2); assert.equal(e.journey.phase,'playing');
   for(let stage=0;stage<6;stage++) {
     assert.equal(e.journey.stage,stage);
-    for(let gate=0;gate<12;gate++) {const o=obstacle(30);o.star=null;e.player.y=300;e.obstacles=[o];e.resolveScoringAndCollisions();e.stepStage();}
-    assert.equal(e.rewards.score,(stage+1)*112);
+    for(let gate=0;gate<24;gate++) {const o=obstacle(30);o.star=null;e.player.y=300;e.obstacles=[o];e.resolveScoringAndCollisions();e.stepStage();}
+    assert.equal(e.rewards.score,(stage+1)*124);
     assert.equal(e.journey.phase,stage===5?'finale':'checkpoint');
     assert.equal(e.journey.phaseTime,3);
     e.stepTransition(3);
   }
   assert.equal(e.player.alive,true);assert.equal(e.buildSnapshot().status,'won');
-  e.tick(1000);e.tick(2000);e.stepStage();assert.equal(completions,1);assert.equal(e.rewards.score,672);
+  e.tick(1000);e.tick(2000);e.stepStage();assert.equal(completions,1);assert.equal(e.rewards.score,744);
   const reset=createJourney();assert.equal(reset.stage,0);assert.equal(finishStage(reset),false);
 });
 
@@ -97,10 +97,36 @@ test('checkpoint freezes gameplay state and clears the board before the next sta
 });
 
 test('stage pacing ramps gently and stays inside the planned bounds', () => {
-  assert.equal(STAGES.length,6);assert.equal(GATES_PER_STAGE,12);
+  assert.equal(STAGES.length,6);assert.equal(GATES_PER_STAGE,24);
   assert.deepEqual(STAGES.map(s=>[s.speedStart,s.speedEnd]),[[185,195],[195,205],[205,215],[215,225],[225,235],[235,245]]);
   assert.deepEqual(STAGES.map(s=>[s.gapStart,s.gapEnd]),[[235,230],[230,225],[225,215],[215,210],[210,200],[200,190]]);
-  const j=createJourney();j.cleared=6;assert.equal(stageProgress(j),.5);j.cleared=99;assert.equal(stageProgress(j),1);
-  j.phase='playing';j.cleared=12;assert.equal(finishStage(j),true);assert.equal(j.phase,'checkpoint');
+  const j=createJourney();j.cleared=12;assert.equal(stageProgress(j),.5);j.cleared=99;assert.equal(stageProgress(j),1);
+  j.phase='playing';j.cleared=12;assert.equal(finishStage(j),false);j.cleared=24;assert.equal(finishStage(j),true);assert.equal(j.phase,'checkpoint');
   assert.equal(advanceJourneyPhase(j,3),'next');assert.equal(j.stage,1);assert.equal(j.cleared,0);
+});
+
+test('every themed model leaves its opening safe and collides with its visible body', () => {
+  const kinds = [...new Set(STAGES.flatMap(s => s.kinds))];
+  assert.deepEqual(kinds.sort(), ['candy','castle','cloud','crystal','flower','mushroom','toy','waffle']);
+  for (const kind of kinds) {
+    const o = {...obstacle(),kind};
+    assert.equal(hitsObstacle(300,o),false,`${kind}: open route`);
+    assert.equal(hitsObstacle(450,o),true,`${kind}: lower body`);
+    assert.equal(hitsObstacle(150,o),!['flower','mushroom'].includes(kind),`${kind}: upper body`);
+  }
+  for (const kind of ['castle','crystal']) {
+    const o = {...obstacle(118),kind};
+    assert.equal(hitsObstacle(408,o),false,`${kind}: empty space beside a tapered tip`);
+    assert.equal(hitsObstacle(460,o),true,`${kind}: solid side below the tip`);
+  }
+});
+
+test('a world keeps spawning after twelve gates and stops at twenty-four', () => {
+  const e=engineForTest();e.stepTransition(2);
+  for(let i=0;i<500;i++)e.stepWorld(.1);
+  assert.equal(e.journey.spawned,24);
+  assert.equal(e.journey.phase,'playing');
+  const sequence=e.spawnSequence;
+  for(let i=0;i<500;i++)e.stepWorld(.1);
+  assert.equal(e.spawnSequence,sequence);
 });

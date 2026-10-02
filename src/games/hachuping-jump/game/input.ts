@@ -13,6 +13,8 @@ export class FlapInputController {
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if (e.code !== "Space" || e.repeat) return;
+    // Keep Space available to keyboard users activating menu and dialog controls.
+    if (e.target instanceof HTMLElement && e.target.closest('button, input, textarea, select, summary, [contenteditable="true"]')) return;
     e.preventDefault();
     this.pending = true;
   };

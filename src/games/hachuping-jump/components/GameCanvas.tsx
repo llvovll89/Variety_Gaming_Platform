@@ -15,7 +15,7 @@ export default function GameCanvas({ characterImageUrl, bestScore, onDeath, onRe
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <canvas ref={canvasRef} className="block h-full w-full touch-none select-none" />
+      <canvas ref={canvasRef} aria-label="별빛 점프 게임. 화면을 탭하거나 스페이스바로 점프하세요." className="block h-full w-full touch-none select-none" />
     </div>
   );
 }

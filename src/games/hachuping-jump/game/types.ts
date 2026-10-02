@@ -1,5 +1,5 @@
 import type { ItemKind } from "./items";
-export type ObstacleKind = "candy" | "mushroom" | "cloud" | "crystal";
+export type ObstacleKind = "candy" | "mushroom" | "cloud" | "crystal" | "waffle" | "flower" | "toy" | "castle";
 export interface BonusStar {
   y: number;
   collected: boolean;
