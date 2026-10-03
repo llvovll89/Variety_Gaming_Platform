@@ -196,3 +196,6 @@
 .maze-view-switch button{padding:7px 11px;border:0;background:transparent;font-size:10px;border-radius:8px}
 .maze-view-switch button[aria-pressed=true]{background:#dcebcf;color:#254e3e}
 @media(max-width:700px){.maze-view-switch{bottom:37px;right:12px}.maze-view-switch button{font-size:9px;padding:6px 9px}}
+.maze-board{touch-action:none}
+.maze-dpad button{min-width:48px;min-height:48px;-webkit-touch-callout:none}
+@media(max-width:700px){.maze-in-game{padding-bottom:150px}.maze-dpad{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));right:16px;z-index:5;padding:10px;background:#fffdf2ed;border:1px solid #bdd1b6;border-radius:18px;box-shadow:0 6px 24px #214b4229;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,50px)}.maze-legend{flex-wrap:wrap;gap:6px 12px}.maze-run-stats{flex-wrap:wrap}}

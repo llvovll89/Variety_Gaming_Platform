@@ -15,6 +15,8 @@ export class MazeScene {
   private anchor: THREE.Mesh;
   private exit = new THREE.Group();
   private crystals = new Map<string, THREE.Mesh>();
+  private seals = new Map<string, THREE.Mesh>();
+  private traps = new Map<string, THREE.Mesh>();
   private dummy = new THREE.Object3D();
   private width = 0; private height = 0; private time = 0;
   private reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -87,6 +89,15 @@ export class MazeScene {
       const crystal = add(new THREE.OctahedronGeometry(.22), new THREE.MeshStandardMaterial({ color: '#ffc866', emissive: '#b67d19', emissiveIntensity: .3, roughness: .3 }), x - center, .65, z - center);
       this.crystals.set(id, crystal);
     }
+    for (const id of run.seals) {
+      const [x,z] = id.split(',').map(Number);
+      this.seals.set(id, add(new THREE.TorusGeometry(.26,.09,8,16), mat('#9865d3'), x-center,.65,z-center));
+    }
+    for (const id of run.traps) {
+      const [x,z] = id.split(',').map(Number);
+      const trap = add(new THREE.ConeGeometry(.3,.12,3), mat('#d65546'), x-center,.1,z-center);
+      this.traps.set(id, trap);
+    }
   }
   setPortrait(source: string) {
     if (source === this.imageSource) return;
@@ -143,6 +154,16 @@ export class MazeScene {
     for (const [id, crystal] of this.crystals) {
       const [x, z] = id.split(',').map(Number); crystal.visible = run.shards.has(id) && visible(x, z);
       if (!this.reduced) { crystal.rotation.y = this.time; crystal.position.y = .65 + Math.sin(this.time * 2 + x) * .07; }
+    }
+    for (const [id, seal] of this.seals) {
+      const [x,z] = id.split(',').map(Number);
+      seal.visible = run.seals.has(id) && visible(x,z);
+      if (!this.reduced) seal.rotation.y = this.time;
+    }
+    for (const [id, trap] of this.traps) {
+      const [x,z] = id.split(',').map(Number);
+      trap.visible = visible(x,z);
+      (trap.material as THREE.MeshStandardMaterial).color.set(run.trapsActive ? '#d65546' : '#81958b');
     }
     this.renderer.render(this.scene, this.camera);
   }
