@@ -13,7 +13,7 @@ const MONTH_HANJA = ["", "一", "二", "三", "四", "五", "六", "七", "八",
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <span className="flex items-baseline gap-1">
+    <span className="tk-resource flex items-baseline gap-1">
       <span className="text-[11px] opacity-60">{label}</span>
       {/* The global `* { transition }` rule cross-fades every changing number; turn it off
           here so monthly figures snap instead of smearing. */}
@@ -29,19 +29,19 @@ export function TopBar({ snapshot, onEndTurn, onSkip, onOverview, onExit }: Prop
   return (
     <div
       className="tk-topbar pointer-events-auto flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]"
-      style={{ background: "rgba(250,250,250,0.94)", borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
+      style={{ borderColor: PALETTE.inkSoft }}
     >
-      <span className="flex items-center gap-2">
+      <span className="tk-player-badge flex items-center gap-2">
         <span
           className="flex h-7 w-7 items-center justify-center rounded text-xs font-bold text-white"
-          style={{ background: PALETTE.ink, fontFamily: HANJA_FONT }}
+          style={{ background: p?.color ?? PALETTE.ink, fontFamily: HANJA_FONT }}
         >
           {p?.name.slice(0, 1) ?? "—"}
         </span>
         <span className="text-sm font-semibold">{p?.name ?? ""}</span>
       </span>
 
-      <span className="text-sm font-semibold tabular-nums" style={{ fontFamily: HANJA_FONT, transition: "none" }}>
+      <span className="tk-date text-sm font-semibold tabular-nums" style={{ fontFamily: HANJA_FONT, transition: "none" }}>
         {snapshot.year}년 {MONTH_HANJA[snapshot.month]}월 {snapshot.day === 21 ? '하순' : snapshot.day === 11 ? '중순' : '상순'}
       </span>
 
@@ -58,25 +58,27 @@ export function TopBar({ snapshot, onEndTurn, onSkip, onOverview, onExit }: Prop
           className="rounded-lg border px-3 py-1 text-xs transition-colors hover:bg-black/5"
           style={{ borderColor: PALETTE.inkSoft }}
         >
-          현황
+          세력 현황
         </button>
         {/* While the month is playing out the same slot becomes the skip control, so the
             player is never stuck watching rival armies shuffle around. */}
         <button
           type="button"
           onClick={snapshot.busy ? onSkip : onEndTurn}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:-translate-y-px"
+          disabled={snapshot.result !== 'playing'}
+          className="tk-advance rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:-translate-y-px"
           style={{ background: snapshot.busy ? "#4a4a42" : PALETTE.seal }}
         >
-          {snapshot.busy ? "가속 ▶▶" : "진행 · 10일"}
+          {snapshot.busy ? "진행 가속 ▶▶" : "10일 진행 ▷"}
         </button>
         <button
           type="button"
           onClick={onExit}
+          disabled={snapshot.busy}
           className="rounded-lg border px-3 py-1 text-xs transition-colors hover:bg-black/5"
           style={{ borderColor: PALETTE.inkSoft }}
         >
-          나가기
+          저장 후 나가기
         </button>
       </span>
     </div>

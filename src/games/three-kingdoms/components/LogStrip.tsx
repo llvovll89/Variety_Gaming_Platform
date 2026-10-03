@@ -30,8 +30,8 @@ export function LogStrip({ log, onFocus }: Props) {
 
   return (
     <div
-      className="pointer-events-auto border-t text-xs"
-      style={{ background: "rgba(250,250,250,0.9)", borderColor: PALETTE.inkFaint, color: PALETTE.ink }}
+      className="tk-log-strip pointer-events-auto border-t text-xs"
+      style={{ background: PALETTE.paper, borderColor: PALETTE.inkFaint, color: PALETTE.ink }}
     >
       <button
         type="button"
@@ -39,7 +39,7 @@ export function LogStrip({ log, onFocus }: Props) {
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left transition-colors hover:bg-black/5"
       >
-        <span className="shrink-0 opacity-45">기록</span>
+        <span className="shrink-0">軍報 · 군보</span>
         <span className="min-w-0 flex-1 truncate" style={{ color: latest ? KIND_COLOR[latest.kind] : undefined }}>
           {latest?.text ?? "—"}
         </span>

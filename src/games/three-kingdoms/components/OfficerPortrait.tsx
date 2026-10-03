@@ -1,42 +1,25 @@
-import { useEffect, useRef } from "react";
-import { archetypeOf, drawPortrait } from "../game/portrait";
+import { officerPortraitStyle } from '../game/officerPortraits';
 import { HANJA_FONT, PALETTE } from "../game/constants";
 import type { GameState, Officer } from "../game/types";
 
 interface Props {
   officer: Officer;
   state: GameState;
-  /** Logical width in CSS pixels; height follows the 0.82 portrait aspect. */
+  /** Square art thumbnail; the same crop is used in lists and officer details. */
   size?: number;
   showName?: boolean;
 }
 
-/** Portrait bust. Redraws only when the officer or the faction colour actually changes. */
+/** Illustrated portraits shared with 삼국영지, extended for the complete PK roster. */
 export function OfficerPortrait({ officer, state, size = 56, showName = false }: Props) {
-  const ref = useRef<HTMLCanvasElement | null>(null);
   const faction = officer.faction ? state.factions[officer.faction] : null;
   const color = faction?.color ?? PALETTE.neutral;
-  const isLord = faction?.leaderId === officer.id;
-  const h = Math.round(size / 0.82);
-
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(size * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size, h);
-    drawPortrait(ctx, size, h, officer, color, archetypeOf(officer, isLord));
-  }, [officer, color, isLord, size, h]);
 
   return (
-    <span className="inline-flex flex-col items-center gap-0.5">
-      <canvas
-        ref={ref}
-        style={{ width: size, height: h, borderRadius: 3 }}
+    <span className="tk-officer-portrait inline-flex flex-col items-center gap-0.5">
+      <span
+        className="tk-portrait-art"
+        style={{ ...officerPortraitStyle(officer.id), width: size, height: size, borderColor:color }}
         role="img"
         aria-label={`${officer.name} 초상`}
       />

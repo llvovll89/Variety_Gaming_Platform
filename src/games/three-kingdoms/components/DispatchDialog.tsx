@@ -3,6 +3,7 @@ import { HANJA_FONT, PALETTE, UNIT_TYPES } from "../game/constants";
 import { dispatchCost, validateDispatch } from "../game/commands";
 import { officersInCity } from "../game/state";
 import { OfficerPortrait } from "./OfficerPortrait";
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import type { GameEngine } from "../game/engine";
 import type { City, GameState, OfficerId, UnitType } from "../game/types";
 
@@ -17,6 +18,7 @@ const TYPES: UnitType[] = ["spear", "cavalry", "archer"];
 
 /** 출진 editor. Shows the bill before it is paid, so nothing is a surprise. */
 export function DispatchDialog({ engine, state, city, onClose }: Props) {
+  const dialogRef = useDialogFocus(onClose);
   const roster = officersInCity(state, city.id).filter((o) => o.duty === "idle");
   const [picked, setPicked] = useState<OfficerId[]>(() => roster.slice(0, 1).map((o) => o.id));
   const [type, setType] = useState<UnitType>("spear");
@@ -46,6 +48,8 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="출진 편성"

@@ -214,3 +214,140 @@
 }
 .tk-dispatch-roster { max-height: min(280px, 30dvh); overflow-y: auto; overscroll-behavior: contain; padding: 2px; }
 .tk-game input[type="range"], .tk-game input[type="checkbox"] { accent-color: #171717; }
+
+/* The command desk: ink, aged paper, bronze frames and vermilion seals. */
+:is(.tk-start,.tk-game,.tk-editor,.tk-battle-dialog,.tk-replay){--tk-ink:#303a32;--tk-muted:#716f5d;--tk-paper:#eee6d3;--tk-line:#b8a986;--tk-bronze:#bba16b;--tk-dark:#202d29;--tk-red:#8d352c; font-family:Pretendard,sans-serif;}
+:is(.tk-start,.tk-game,.tk-editor,.tk-battle-dialog,.tk-replay) button{border-radius:3px;transition:background .15s,border-color .15s;}
+:is(.tk-start,.tk-game,.tk-editor,.tk-battle-dialog,.tk-replay) button:focus-visible,.tk-start .tk-atlas-city:focus-visible,.tk-game input:focus-visible{outline:3px solid #ad7835;outline-offset:3px;}
+:is(.tk-start,.tk-game,.tk-editor,.tk-battle-dialog,.tk-replay) button:disabled{opacity:.5;cursor:default;}
+.tk-start{height:100%;overflow-y:auto;color:var(--tk-ink);padding:0 clamp(18px,4vw,72px);background:radial-gradient(ellipse at 25% 38%,#f5eedc,transparent 66%),repeating-linear-gradient(90deg,#b2a27b06 0px,#b2a27b06 1px,transparent 1px,transparent 5px),#e4dac1;border:8px solid var(--tk-dark);box-shadow:inset 0 0 0 1px #a48e60;}
+.tk-titlebar{max-width:1440px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:66px;border-bottom:1px solid #b6a782;}
+.tk-titlebar>span{font-size:10px;letter-spacing:3px;color:#746748;}
+.tk-titlebar button{padding:10px 0;font-size:12px;cursor:pointer;}
+.tk-start-layout{max-width:1440px;margin:34px auto 38px;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(330px,1fr);gap:clamp(30px,5vw,80px);align-items:start;}
+.tk-title-lockup{display:flex;align-items:center;gap:22px;margin:10px 0 38px;}
+.tk-title-lockup p{font-size:12px;letter-spacing:3px;color:#716b53;margin:0 0 10px;}
+.tk-title-lockup h1{font-family:Batang,'Songti SC',serif;font-size:clamp(46px,5.4vw,80px);line-height:1.1;letter-spacing:-4px;font-weight:800;margin:0 0 14px;color:#26382d;}
+.tk-title-lockup h1>span{font-size:.52em;letter-spacing:-1px;margin-left:16px;}
+.tk-title-lockup h1>small{font-family:serif;font-size:15px;letter-spacing:0;vertical-align:top;display:inline-block;margin:10px 0 0 8px;border-top:1px solid #9b834e;border-bottom:1px solid #9b834e;padding:3px 0;color:#8f743a;}
+.tk-title-sub{font-size:11px;color:#756b52;letter-spacing:2px;}
+.tk-seal-mark{color:#f6ead1;background:#873b30;border:3px double #eee0bf;outline:1px solid #873b30;writing-mode:vertical-rl;font-family:Batang,serif;font-size:30px;padding:14px 9px;transform:rotate(-3deg);}
+.tk-scenario-heading{display:flex;align-items:center;gap:16px;padding:14px 0;border-top:1px solid #b6a782;}
+.tk-scenario-heading>span{font-family:Georgia,serif;font-size:34px;color:#a18a58;}
+.tk-scenario-heading h2{font-family:Batang,serif;font-size:23px;font-weight:700;margin:0 0 4px;}
+.tk-scenario-heading p{font-size:11px;color:#7d755d;}
+.tk-scenario-heading>b{margin-left:auto;font-size:10px;font-weight:500;border:1px solid #a8946a;padding:5px 9px;color:#746243;}
+.tk-atlas-frame{background:radial-gradient(ellipse,#f4eedb,#e4d8b8);border:1px solid #b8a882;box-shadow:0 4px 18px #493f2212,inset 0 0 0 6px #f6eed54d;position:relative;}
+.tk-campaign-atlas{display:block;width:100%;max-height:440px;}
+.tk-atlas-city{cursor:pointer;outline:none;}
+.tk-atlas-city:hover rect,.tk-atlas-city:focus-visible rect{stroke:#ad7835;stroke-width:2px;}
+.tk-atlas-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;border-top:1px solid #b8a88280;color:#736744;font-size:10px;}
+.tk-atlas-caption>span:first-child{font-family:Batang,serif;letter-spacing:4px;}
+.tk-scenario-story{font-size:12px;line-height:1.95;color:#66674f;max-width:640px;margin:18px 0;}
+.tk-scenario-facts{display:flex;gap:28px;padding-top:14px;border-top:1px solid #b6a78280;color:#7b7056;font-size:10px;flex-wrap:wrap;}
+.tk-scenario-facts b{font:24px Georgia,serif;color:#3c493a;margin-right:6px;}
+.tk-faction-setup{padding:24px;background:#f8f1df;border:1px solid #b5a47c;box-shadow:0 7px 0 -3px #d4c6a5,0 12px 28px #423b2010;}
+.tk-section-heading{position:relative;border-bottom:1px solid #c9bc9c;padding-bottom:16px;margin-bottom:14px;}
+.tk-section-heading>span{position:absolute;right:0;top:3px;color:#b39a69;font-size:11px;font-family:Batang,serif;writing-mode:vertical-rl;letter-spacing:3px;}
+.tk-section-heading h2{font-family:Batang,serif;font-size:22px;font-weight:700;margin:0 0 8px;}
+.tk-section-heading p{font-size:11px;color:#7a735e;}
+.tk-faction-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.tk-faction-list button{display:flex;align-items:center;gap:8px;min-height:46px;border:1px solid #cfbea0;padding:8px;background:#f5eddc;text-align:left;}
+.tk-faction-list button:last-child{grid-column:1/-1;}
+.tk-faction-list button:hover{background:#e9dfc7;}
+.tk-faction-list button[aria-pressed=true]{background:#26382f;color:#f3e9d0;border-color:#26382f;box-shadow:inset 0 0 0 1px #bda87866;}
+.tk-faction-emblem{width:26px;height:29px;display:grid;place-items:center;font-family:Batang,serif;color:#fff2d7;font-size:15px;flex-shrink:0;border:1px solid #ffffff35;}
+.tk-faction-list strong{font-size:12px;white-space:nowrap;}
+.tk-faction-list small{font-size:9px;opacity:.72;}
+.tk-choice-mark{margin-left:auto;font-size:10px;color:#ab915c;}
+.tk-lord-summary{margin-top:18px;padding-top:18px;border-top:1px solid #c9bc9c;}
+.tk-lord-heading{display:flex;align-items:center;gap:18px;}
+.tk-lord-heading>span{border:1px solid #b8a883;background:#d5c7a6;padding:3px;}
+.tk-lord-heading small{font-size:10px;color:#8d352c;border-left:2px solid #8d352c;padding-left:7px;}
+.tk-lord-heading h3{font-family:Batang,serif;font-size:28px;font-weight:700;margin:7px 0;}
+.tk-lord-heading h3>span{font-size:14px;color:#9d8a60;margin-left:8px;}
+.tk-lord-heading p{font-size:11px;color:#7a735e;}
+.tk-faction-blurb{font-size:12px;line-height:1.8;color:#656650;margin:14px 0;min-height:44px;}
+.tk-start-resources{display:grid;grid-template-columns:repeat(3,1fr);padding:12px 0;border-block:1px solid #c9bc9c;margin:0;}
+.tk-start-resources>div{border-right:1px solid #c9bc9c;padding-left:14px;}
+.tk-start-resources>div:first-child{padding-left:0;}.tk-start-resources>div:last-child{border:0;}
+.tk-start-resources dt{font-size:10px;color:#7a735e;}.tk-start-resources dd{font-family:Georgia,serif;font-size:23px;font-variant-numeric:tabular-nums;margin-top:4px;}
+.tk-start-generals{margin-top:14px;}.tk-start-generals>span{font-size:10px;color:#7a735e;}
+.tk-start-generals>div{display:flex;gap:16px;margin-top:10px;}.tk-start-generals>div>div{display:flex;flex-direction:column;align-items:center;gap:4px;}.tk-start-generals>div>div>span:last-child{font-size:10px;}
+.tk-campaign-start{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding:16px 18px;background:#8d352c;color:#fff1d8;border:1px solid #67291f;box-shadow:inset 0 0 0 2px #b779532b;font-size:14px;font-family:Batang,serif;font-weight:700;}
+.tk-campaign-start:hover{background:#a34737;}
+.tk-resume{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:12px 0 0;width:100%;font-size:11px;color:#3a5846;}.tk-resume>span{font-size:10px;color:#77725b;}
+.tk-start-note{font-size:10px;line-height:1.8;color:#8b8067;margin-top:16px;}
+.tk-start-footer{max-width:1440px;display:flex;justify-content:space-between;gap:18px;margin:0 auto;padding:18px 0 24px;border-top:1px solid #b6a78280;font-size:10px;color:#847658;letter-spacing:1px;}
+
+.tk-game{background:var(--tk-dark);color:#e8dec4;border:5px solid #202d29;box-shadow:inset 0 0 0 1px #907a4c;}
+.tk-toolbar{background:#202d29;color:#e8dec4;border-bottom:1px solid #746845;padding:10px 16px;gap:12px;}
+.tk-toolbar strong{font-size:22px;color:#eadcbc;letter-spacing:2px;}.tk-toolbar strong>span{font-size:15px;letter-spacing:0;}.tk-toolbar b{color:#c3a873;}
+.tk-toolbar .tk-mode{margin-right:auto;margin-left:6px;color:#b1b399;letter-spacing:1px;font-size:10px;}
+.tk-toolbar button{background:#303e35;color:#e4d8bb;border-color:#716747;font-size:11px;padding:6px 12px;min-height:34px;}.tk-toolbar button:hover{background:#415044;}
+.tk-topbar{background:linear-gradient(#eee4cc,#e2d4b6);color:#344032;gap:14px;padding:10px 16px;border-bottom:3px double #aa9565;}
+.tk-player-badge{padding-right:14px;border-right:1px solid #b4a17b;}.tk-player-badge>span:first-child{border-radius:2px;border:1px solid #fff7df80;width:32px;height:32px;font-family:Batang,serif;font-size:16px;}
+.tk-date{color:#756240;margin-right:12px;font-size:13px;}
+.tk-resource{flex-direction:column;gap:2px;min-width:48px;}.tk-resource>span:first-child{font-size:9px;color:#756c54;opacity:1;letter-spacing:1px;}.tk-resource>span:last-child{font-family:Georgia,serif;font-size:18px;color:#303d30;line-height:1.1;}
+.tk-top-actions{gap:6px;}.tk-top-actions button{font-size:11px;min-height:36px;padding:8px 12px;border:1px solid #b09b71;background:#f7efd9;}.tk-top-actions button:hover{background:#e4d4ad;}.tk-top-actions .tk-advance{background:#8d352c!important;border-color:#732b24;color:#fff3d8;min-width:120px;}.tk-top-actions .tk-advance:hover{background:#a34737!important;}
+.tk-city-nav{display:flex;gap:16px;align-items:center;padding:7px 16px;background:#2b3c32;border-bottom:1px solid #59634a;flex-shrink:0;}
+.tk-city-nav>span:first-child{font-size:12px;font-family:Batang,serif;color:#c2ae7f;white-space:nowrap;}.tk-city-nav>span:first-child small{font:9px Pretendard,sans-serif;margin-left:8px;color:#b9bd9f;}
+.tk-city-nav>div{display:flex;gap:5px;overflow-x:auto;min-width:0;}
+.tk-city-nav button{display:flex;align-items:center;gap:12px;padding:7px 12px;border:1px solid #637055;font-size:12px;white-space:nowrap;color:#e3dec4;background:#33473a;}.tk-city-nav button>small{font-size:9px;color:#b7c0a4;}
+.tk-city-nav button[aria-pressed=true]{background:#e7d8b2;border-color:#e7d8b2;color:#304131;}.tk-city-nav button[aria-pressed=true]>small{color:#766548;}
+.tk-phase-label{margin-left:auto;font-size:10px;color:#bfc1a3;white-space:nowrap;}
+.tk-advice{flex-shrink:0;}.tk-advice>div{background:#e6dcc0!important;}.tk-advice button{min-height:28px;}.tk-advice>div>div{padding:6px 16px;}
+.tk-help-panel{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:20px;background:#f2e9d3;color:#344032;padding:18px;border-bottom:1px solid #a99a72;flex-shrink:0;}
+.tk-help-panel b{font-family:Batang,serif;font-size:13px;}.tk-help-panel p{font-size:11px;line-height:1.8;color:#787059;margin-top:6px;}.tk-help-panel button{font-size:11px;padding:5px 10px;align-self:start;border:1px solid #a99a72;}
+.tk-battlefield{gap:0;grid-template-columns:minmax(0,1fr) 360px;}
+.tk-map-area{border-right:1px solid #7b6d46;background:#d9c9a3;}
+.tk-command-panel{background:#eee6d3;border-left:3px double #a6946b;color:#303a32;scrollbar-color:#b6a47a #e7dcc2;overscroll-behavior:contain;}
+.tk-inspector-shell{background:#eee6d3!important;}.tk-inspector-shell>button{background:#d9c9a7;border-bottom:1px solid #b7a37b;min-height:35px;letter-spacing:1px;}.tk-inspector-shell>button>span:last-child{font-size:9px;}
+.tk-inspector-shell>div>div{padding:18px 16px;gap:16px;}
+.tk-inspector-heading{padding-bottom:12px;border-bottom:1px solid #baa985;}.tk-inspector-heading>span:first-child{height:44px;width:38px;border-radius:1px;border:2px double #ffffff66;font-size:22px;}.tk-inspector-heading>span:last-child>span:first-child{font-size:20px;}.tk-inspector-heading>span:last-child>span:last-child{white-space:normal;line-height:1.7;font-size:10px;margin-top:4px;}
+.tk-inspector-empty{text-align:center;padding:40px 22px!important;}.tk-inspector-empty>span{font-family:Batang,serif;font-size:50px;color:#b4a47d;}.tk-inspector-empty h2{font-family:Batang,serif;font-size:17px;font-weight:700;margin:16px 0;}.tk-inspector-empty p{font-size:11px;line-height:1.9;color:#817860;margin-top:14px;}
+.tk-command-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #b7a47a;}.tk-command-tabs button{min-height:42px;font-size:13px;font-weight:700;font-family:Batang,serif;background:#e1d5b8;border:1px solid #b7a47a;border-bottom:0;margin-right:-1px;}.tk-command-tabs button[aria-pressed=true]{background:#354837;color:#f7ebcc;box-shadow:inset 0 -3px #baa06b;border-color:#354837;}
+.tk-assignment-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;}.tk-assignment-heading strong{font-size:12px;}.tk-assignment-heading small{font-size:10px;font-weight:400;color:#8d352c;margin-left:8px;}.tk-assignment-heading button{font-size:10px;text-decoration:underline;min-height:24px;}
+.tk-roster-search{width:100%;border:1px solid #b9a985;background:#faf3e1;padding:9px 10px;color:#303a32;font-size:11px;margin:8px 0;outline:none;}
+.tk-city-roster{display:flex;flex-direction:column;gap:0;max-height:235px;overflow-y:auto;border:1px solid #c2b28d;padding:0;background:#f5eedc;scrollbar-color:#b6a47a #e7dcc2;}
+.tk-city-roster button{min-height:44px;border:0!important;border-bottom:1px solid #d3c6a6!important;border-radius:0;padding:7px 8px;display:grid;grid-template-columns:26px 42px minmax(0,1fr) 30px;gap:8px;font-size:11px;}
+.tk-city-roster button[aria-pressed=true]{background:#dbdfc7!important;box-shadow:inset 3px 0 #3b573c;}.tk-city-roster button:enabled:hover{background:#e7dec4;}
+.tk-officer-stats{gap:5px;font-size:10px;flex-wrap:wrap;}.tk-duty-label{font-size:9px;color:#79765d;}.tk-city-roster button[aria-pressed=true] .tk-duty-label{color:#3b573c;}
+.tk-orders-grid,.tk-build-grid{gap:6px;}.tk-orders-grid button,.tk-build-grid button{border-color:#b5a077!important;background:linear-gradient(#f6efd9,#e3d5b3);min-height:62px;border-radius:2px;}.tk-orders-grid button:enabled:hover,.tk-build-grid button:enabled:hover{background:#d8c79e;}.tk-orders-grid button>span:first-child{font-family:Batang,serif;font-size:14px;}.tk-orders-grid button>span:last-child{font-size:9px;}
+.tk-military-command{padding:12px;background:#e2d8bd;border:1px solid #c4b28a;}.tk-military-command h3{font-family:Batang,serif;font-size:15px;font-weight:700;}.tk-military-command p{font-size:10px;line-height:1.8;color:#77705b;margin:8px 0;}.tk-dispatch-open{width:100%;padding:12px;font-size:12px;margin:4px 0;}
+.tk-queue-heading{font-size:11px;font-weight:700;color:#695a38;}.tk-queue-heading small{margin-left:auto;font-size:9px;font-weight:400;}
+.tk-view-controls{top:14px;left:14px;max-width:calc(100% - 28px);background:#26392de8;border:1px solid #9d875b;color:#efe3c4;box-shadow:0 3px 12px #17281f2b;display:block;z-index:2;}
+.tk-view-controls summary{cursor:pointer;font-size:11px;padding:9px 13px;min-height:34px;user-select:none;}.tk-view-controls>div{display:flex;gap:4px;padding:0 8px 8px;flex-wrap:wrap;}.tk-view-controls button{background:#38493a;color:#efe3c4;border-color:#8c805a;min-height:34px;padding:6px 10px;}.tk-view-controls button:hover{background:#536047;}
+.tk-minimap{background:#27392ee8;border:1px solid #b09a64;box-shadow:inset 0 0 0 3px #bda06b22,0 4px 18px #1c1c1c30;width:220px;bottom:48px;}.tk-minimap>span{color:#d7c493;font-family:Batang,serif;}.tk-minimap>div{background:repeating-linear-gradient(0deg,transparent,transparent 22px,#baa56b0e 22px,#baa56b0e 23px);}.tk-minimap button{background:#e3d9bf;color:#334332;min-height:20px;}
+.tk-map-help{background:#26392de8;color:#e7d8b6;border:1px solid #9d875b80;font-size:10px;bottom:12px;left:14px;padding:7px 12px;}
+.tk-log-strip{background:#dfd2b1!important;flex-shrink:0;border-top:3px double #ac986a!important;}.tk-log-strip>button{min-height:36px;}.tk-log-strip>button>span:first-child{font-family:Batang,serif;font-size:11px;color:#76603d;letter-spacing:1px;opacity:1;}
+
+:is(.tk-overview,.tk-dispatch)>div{background:#eee6d3!important;border:3px double #9e8758!important;border-radius:4px;box-shadow:0 24px 90px #17261eb0;}
+.tk-overview>div>div:first-child{background:#dbccaa;padding:14px 18px;}.tk-overview h2{font-size:19px;}.tk-overview button{min-height:36px;}.tk-overview li button{background:#f7efdc;min-height:55px;border-radius:2px;}.tk-overview li button:hover{background:#e2d4b3;}
+.tk-dispatch>div{padding:24px;}.tk-dispatch h2{font-size:22px;}.tk-dispatch button{min-height:40px;border-radius:2px;}.tk-dispatch-roster{background:#f7efdc;padding:8px;border:1px solid #c2b08a;}.tk-dispatch input[type=range]{accent-color:#8d352c;min-height:32px;}
+.tk-editor,.tk-battle-dialog,.tk-replay{background:#eee6d3;color:#303a32;border:3px double #9e8758;border-radius:3px;}.tk-editor header,.tk-replay header,.tk-replay footer{background:#dfd0ae;border-color:#baa67c;}.tk-editor input,.tk-editor select{background:#faf3e1;color:#303a32;border-color:#b7a47a;}.tk-editor :is(label,small,p),.tk-replay :is(p,small){color:#75694d;}.tk-editor .tk-primary,.tk-battle-dialog .tk-primary,.tk-replay .tk-primary{background:#8d352c;color:#fff1d8;border-color:#732b24;}.tk-model-column{background:radial-gradient(ellipse,#596450,#25352d 80%);}.tk-model-column :is(p,small){color:#c9c8ab;}.tk-roster-scroll button[aria-pressed=true]{background:#354837;color:#f7ebcc;}.tk-battle-numbers strong,.tk-combatant>strong{color:#8d352c;}.tk-troop-track{background:#d2c39f;}.tk-troop-track span{background:#3d583d;}.tk-battle-dialog>small,.tk-replay header small{color:#8e784c;}
+@media(min-width:1600px){.tk-start-layout{margin-top:48px;}.tk-faction-setup{padding:30px;}.tk-campaign-atlas{max-height:520px;}.tk-battlefield{grid-template-columns:minmax(0,1fr) 390px;}}
+@media(max-width:1100px){.tk-start-layout{gap:28px;grid-template-columns:minmax(0,1.3fr) minmax(330px,1fr);}.tk-title-lockup{gap:14px;}.tk-title-lockup h1{font-size:52px;}.tk-title-lockup p{letter-spacing:1px;}.tk-faction-setup{padding:20px;}.tk-battlefield{grid-template-columns:minmax(0,1fr) 330px;}.tk-topbar{gap:12px;}.tk-top-actions{width:100%;justify-content:flex-end;}.tk-resource{min-width:42px;}.tk-start-generals>div{gap:13px;}}
+@media(max-width:850px){.tk-start{padding:0 24px;border-width:5px;}.tk-start-layout{grid-template-columns:1fr;max-width:640px;margin:24px auto;}.tk-titlebar{min-height:54px;}.tk-title-lockup{margin-bottom:24px;}.tk-title-lockup h1{font-size:64px;}.tk-campaign-atlas{max-height:370px;}.tk-faction-setup{padding:24px;}.tk-faction-list{grid-template-columns:repeat(4,minmax(0,1fr));}.tk-faction-list button{flex-wrap:wrap;gap:6px;}.tk-faction-list small{width:100%;padding-left:32px;}.tk-choice-mark{display:none;}.tk-faction-list button:last-child{grid-column:auto;}.tk-lord-summary{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;}.tk-lord-heading{grid-row:span 2;}.tk-faction-blurb{margin-top:0;}.tk-start-generals{grid-column:1/-1;}.tk-start-generals>div{gap:22px;}.tk-battlefield{grid-template-columns:minmax(0,1fr) 300px;}.tk-command-panel .tk-officer-stats{gap:3px;font-size:9px;}.tk-city-roster button{gap:5px;grid-template-columns:26px 34px minmax(0,1fr) 27px;}.tk-inspector-shell>div>div{padding:14px 12px;}.tk-date{margin-right:0;}.tk-help-panel{grid-template-columns:1fr;gap:12px;max-height:35dvh;overflow-y:auto;}}
+@media(max-width:620px){.tk-start{padding:0 16px;border-width:4px;}.tk-titlebar>span{font-size:8px;letter-spacing:1px;}.tk-title-lockup{gap:14px;}.tk-title-lockup h1{font-size:48px;letter-spacing:-3px;}.tk-title-lockup h1>span{margin-left:8px;}.tk-title-lockup p{font-size:10px;}.tk-title-sub{font-size:9px;letter-spacing:1px;}.tk-seal-mark{font-size:24px;padding:10px 6px;}.tk-title-lockup h1>small{font-size:10px;margin-top:6px;margin-left:4px;}.tk-scenario-heading h2{font-size:20px;}.tk-scenario-story{font-size:11px;}.tk-scenario-facts{gap:18px;}.tk-scenario-facts b{font-size:20px;}.tk-atlas-caption{padding:10px;font-size:9px;}.tk-campaign-atlas{min-height:215px;}.tk-faction-setup{padding:18px;}.tk-faction-list{grid-template-columns:repeat(2,minmax(0,1fr));}.tk-faction-list button{flex-wrap:nowrap;}.tk-faction-list small{width:auto;padding:0;}.tk-faction-list button:last-child{grid-column:1/-1;}.tk-lord-summary{display:block;}.tk-faction-blurb{margin-top:14px;}.tk-start-generals>div{gap:18px;}.tk-start-resources dd{font-size:22px;}.tk-start-footer{font-size:8px;letter-spacing:0;}.tk-game{border-width:2px;}.tk-toolbar{padding:6px 10px;gap:8px;}.tk-toolbar strong{font-size:18px;margin-right:auto;}.tk-toolbar strong>span{font-size:12px;}.tk-toolbar button{font-size:10px;min-height:34px;padding:5px 8px;}.tk-topbar{padding:8px 10px;gap:8px 12px;}.tk-player-badge{padding-right:10px;}.tk-date{font-size:11px;margin-right:auto;}.tk-resource{min-width:40px;}.tk-resource>span:last-child{font-size:16px;}.tk-topbar>.tk-resource{flex:1;}.tk-top-actions{grid-template-columns:1fr 1fr 1.2fr;}.tk-top-actions button{min-height:38px;padding:7px 5px;font-size:10px;}.tk-top-actions .tk-advance{min-width:0;}.tk-city-nav{gap:8px;padding:6px 10px;}.tk-city-nav>span:first-child{font-size:10px;}.tk-city-nav>span:first-child small,.tk-phase-label,.tk-city-nav button small{display:none;}.tk-city-nav button{padding:7px 11px;font-size:11px;min-height:32px;}.tk-advice>div>div{padding:5px 10px;gap:6px;font-size:10px;}.tk-advice button{min-height:26px;}.tk-battlefield{display:flex;flex-direction:column;}.tk-map-area{flex:1;min-height:140px;border-right:0;}.tk-command-panel{max-height:38dvh;border-left:0;border-top:3px double #a6946b;}.tk-inspector-shell>button{position:sticky;top:0;z-index:1;min-height:38px;}.tk-inspector-shell>div>div{padding:12px;gap:12px;}.tk-inspector-heading>span:first-child{height:36px;width:34px;}.tk-inspector-heading>span:last-child>span:first-child{font-size:17px;}.tk-command-tabs button{min-height:40px;font-size:12px;}.tk-city-roster{max-height:190px;}.tk-city-roster button{grid-template-columns:26px 44px minmax(0,1fr) 32px;font-size:12px;min-height:48px;}.tk-command-panel .tk-officer-stats{font-size:11px;gap:7px;}.tk-roster-search{font-size:16px;}.tk-inspector-empty{padding:20px!important;}.tk-inspector-empty>span{display:none;}.tk-inspector-empty h2{font-size:15px;margin:0 0 8px;}.tk-view-controls{top:8px;left:8px;}.tk-view-controls summary{font-size:10px;padding:8px 10px;}.tk-view-controls button{min-height:38px;}.tk-log-strip>button{min-height:32px;font-size:10px;}.tk-overview h2{font-size:17px;}.tk-overview>div>div:first-child{padding:10px 12px;}.tk-dispatch>div{padding:18px;}.tk-dispatch h2{font-size:20px;}.tk-help-panel{padding:12px;}}
+@media(max-height:650px) and (min-width:621px){.tk-toolbar{padding-block:5px;}.tk-topbar{padding-block:6px;}.tk-city-nav{padding-block:4px;}.tk-minimap{height:140px;}.tk-minimap>div{height:100px;}.tk-command-panel .tk-city-roster{max-height:170px;}}
+@media(prefers-reduced-motion:reduce){:is(.tk-start,.tk-game,.tk-editor,.tk-battle-dialog,.tk-replay) *{transition:none!important;}}
+
+.tk-portrait-art{display:block;flex-shrink:0;border:1px solid #a38a56;border-bottom-width:3px;background-color:#25342e;background-repeat:no-repeat;border-radius:2px;}
+.tk-officer-portrait{flex-shrink:0;vertical-align:middle;}
+.tk-city-roster-row{display:flex;border-bottom:1px solid #d3c6a6;align-items:stretch;}
+.tk-city-roster-row>button:first-child{flex:1;min-width:0;border-bottom:0!important;}
+.tk-city-roster-row>.tk-officer-inspect,.tk-officer-inspect{display:block;flex:0 0 36px;padding:4px!important;font-size:9px;color:#79643f;border:0!important;border-left:1px solid #d3c6a6!important;min-height:36px;grid-template-columns:none;}
+.tk-city-roster-row>.tk-officer-inspect:hover{background:#e2d3ae;}
+.tk-portrait-column{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;background:radial-gradient(ellipse at 50% 28%,#637058,#283b2e 78%);color:#f7ecd0;text-align:center;}
+.tk-portrait-column>.tk-officer-portrait{width:100%;max-width:240px;box-shadow:0 12px 28px #101a1644;}
+.tk-portrait-column .tk-portrait-art{width:100%!important;height:auto!important;aspect-ratio:1;border:3px double #bea474;}
+.tk-portrait-column h3{font:24px Batang,serif;margin:18px 0 6px;}.tk-portrait-column h3 small{color:#c0b182;font-size:12px;}.tk-portrait-column p{color:#c0c5a4;font-size:11px;}
+.tk-portrait-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:24px;border-top:1px solid #a9986244;padding-top:16px;width:100%;max-width:300px;}
+.tk-portrait-stats span{display:flex;flex-direction:column;gap:6px;}.tk-portrait-stats small{color:#c0c5a4;font-size:10px;}.tk-portrait-stats b{font-family:Georgia,serif;font-size:20px;}
+.tk-roster-scroll button{display:flex;gap:10px;align-items:center;}.tk-roster-scroll button>.tk-officer-portrait{flex-shrink:0;}.tk-roster-scroll button>span:last-child{font-size:11px;margin:0;opacity:1;}.tk-roster-scroll button small{display:block;font-size:9px;margin-top:4px;color:inherit;opacity:.7;}
+.tk-officer-detail{padding:0;margin:auto;width:min(660px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;border:3px double #9e8758;background:#eee6d3;color:#303a32;box-shadow:0 24px 100px #101a1688;}
+.tk-officer-detail::backdrop{background:#14251dd6;}.tk-officer-detail *{box-sizing:border-box;min-width:0;}.tk-officer-detail header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;background:#dbccaa;border-bottom:1px solid #baa67c;}.tk-officer-detail header>span{font-family:Batang,serif;font-size:14px;}.tk-officer-detail button{cursor:pointer;min-height:36px;border:1px solid #ad986b;padding:6px 12px;font-size:11px;background:#eee6d3;}.tk-officer-detail button:focus-visible{outline:3px solid #ad7835;outline-offset:3px;}
+.tk-officer-detail-body{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;padding:24px;}.tk-officer-detail-body h2{font:700 26px Batang,serif;margin:10px 0;}.tk-officer-detail-body h2 span{font-size:13px;color:#8e7b55;margin-left:6px;}.tk-officer-detail-body p,.tk-officer-detail-body small{font-size:11px;color:#796e54;line-height:1.7;}.tk-officer-detail-body dl{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:15px 0;border-block:1px solid #c1ae84;margin:18px 0;}.tk-officer-detail-body dt{font-size:10px;color:#796e54;}.tk-officer-detail-body dd{font:20px Georgia,serif;margin-top:5px;}.tk-officer-detail-body h3{font-size:12px;font-weight:700;}.tk-detail-tactics{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}.tk-detail-tactics>span{padding:6px 9px;border:1px solid #bdaa82;background:#e3d7b9;font-size:10px;}
+.tk-battle-portraits{display:flex;justify-content:center;align-items:center;gap:24px;padding:12px 0;margin-bottom:12px;}.tk-battle-portraits>span{font:24px Batang,serif;color:#a88c55;}.tk-battle-portraits>strong{font-size:13px;}.tk-combatant>.tk-officer-portrait{float:right;margin:0 0 10px 12px;}
+@media(max-width:620px){.tk-portrait-column{padding:20px 12px;}.tk-portrait-column h3{font-size:18px;}.tk-portrait-column h3 small{display:block;margin-top:5px;}.tk-portrait-stats{gap:6px;margin-top:14px;}.tk-portrait-stats small{font-size:9px;}.tk-portrait-stats b{font-size:16px;}.tk-officer-detail-body{grid-template-columns:1fr;gap:18px;padding:18px;}.tk-officer-detail-body>.tk-officer-portrait{width:100%;max-width:220px;justify-self:center;}.tk-officer-detail-body .tk-portrait-art{width:100%!important;height:auto!important;aspect-ratio:1;}.tk-officer-detail-body h2{font-size:24px;}.tk-roster-scroll button{gap:6px;padding:8px 4px;}.tk-roster-scroll button .tk-portrait-art{width:30px!important;height:30px!important;}.tk-roster-scroll button>span:last-child{font-size:10px;}.tk-officer-detail-body dd{font-size:24px;}}

@@ -960,7 +960,6 @@ test('PK editor validates atomically, transfers rosters and preserves assignment
   const before = JSON.stringify(s);
   assert.equal(editOfficer(s, { ...draft, war: NaN }).ok, false);
   assert.equal(editOfficer(s, { ...draft, name: '' }).ok, false);
-  assert.equal(editOfficer(s, { ...draft, appearance: { ...draft.appearance, build: 999 } }).ok, false);
   assert.equal(JSON.stringify(s), before);
   s.officers.guanyu.duty = 'internal';
   assert.equal(editOfficer(s, { ...draft, cityId: 'xiapi' }).ok, false);
@@ -969,7 +968,7 @@ test('PK editor validates atomically, transfers rosters and preserves assignment
   assert.ok(s.officers.guanyu.tactics.includes('confuse'));
 });
 
-test('PK custom officers are usable in dispatch and serializable with their models', () => {
+test('PK custom officers are usable in dispatch without appearance editing', () => {
   const s = createGameState('caocao');
   const draft = { ...structuredClone(s.officers.xiahoudun), id: 'custom-test', name: '검증 장수', appearance: { ...appearanceFor(s.officers.xiahoudun), cloth: '#abcdef' } };
   assert.equal(editOfficer(s, draft, true).ok, true);
@@ -977,7 +976,17 @@ test('PK custom officers are usable in dispatch and serializable with their mode
   const result = dispatch(s, { cityId: 'chenliu', officerIds: ['custom-test'], type: 'cavalry', troops: 1000 });
   assert.equal(result.ok, true);
   assert.equal(s.officers['custom-test'].duty, 'marching');
-  assert.equal(JSON.parse(JSON.stringify(s)).officers['custom-test'].appearance.cloth, '#abcdef');
+  assert.equal(JSON.parse(JSON.stringify(s)).officers['custom-test'].appearance, undefined);
+});
+
+test('PK officer editing ignores appearance changes and preserves legacy save metadata',()=>{
+  const s=createGameState('caocao');
+  s.officers.guanyu.appearance={...appearanceFor(s.officers.guanyu),armor:'#123456'};
+  const legacy=structuredClone(s.officers.guanyu.appearance);
+  const draft={...structuredClone(s.officers.guanyu),war:99,appearance:{...legacy,armor:'#abcdef',build:999}};
+  assert.equal(editOfficer(s,draft).ok,true);
+  assert.deepEqual(s.officers.guanyu.appearance,legacy);
+  assert.equal(s.officers.guanyu.war,99);
 });
 
 test('PK appearance profiles are deterministic and distinguish every historical officer', () => {

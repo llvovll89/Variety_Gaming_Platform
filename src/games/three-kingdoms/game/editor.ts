@@ -1,4 +1,3 @@
-import { appearanceFor } from './appearance';
 import { tacticsFor } from './officers';
 import type { GameState, Officer } from './types';
 import type { CommandResult } from './internal';
@@ -14,13 +13,11 @@ export function editOfficer(state: GameState, draft: Officer, creating = false):
   const city = state.cities[draft.cityId];
   if (!city?.faction) return { ok: false, reason: '소속 세력이 있는 도시를 선택하십시오.' };
   if (original && original.cityId !== draft.cityId && original.duty !== 'idle') return { ok: false, reason: '임무 중인 장수는 배치 도시를 바꿀 수 없습니다.' };
-  const a = appearanceFor(draft);
-  if (![a.armor, a.cloth, a.skin].every(c => /^#[0-9a-f]{6}$/i.test(c)) || !['crown', 'helmet', 'scholar', 'plume'].includes(a.helmet) || !['spear', 'blade', 'sword', 'fan', 'bow'].includes(a.weapon) || !Number.isFinite(a.beard) || a.beard < 0 || a.beard > 1 || !Number.isFinite(a.build) || a.build < 0.7 || a.build > 1.5) return { ok: false, reason: '외형 설정을 확인하십시오.' };
   const next: Officer = {
-    ...(original ?? draft), name: draft.name.trim(), hanja: draft.hanja.trim(),
+    ...original, id: draft.id, name: draft.name.trim(), hanja: draft.hanja.trim(),
     lead: draft.lead, war: draft.war, int: draft.int, pol: draft.pol, cha: draft.cha,
     cityId: city.id, faction: original?.cityId === city.id ? original.faction : city.faction,
-    appearance: { ...a }, tactics: tacticsFor(draft.lead, draft.war, draft.int, draft.cha),
+    tactics: tacticsFor(draft.lead, draft.war, draft.int, draft.cha),
     duty: original?.duty ?? 'idle', unitId: original?.unitId ?? null,
   };
   for (const c of Object.values(state.cities)) c.officerIds = c.officerIds.filter(id => id !== next.id);

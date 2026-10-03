@@ -6,6 +6,7 @@ import { isSupplied } from "../game/supply";
 import { hexNeighbors } from "../game/hex";
 import { DispatchDialog } from "./DispatchDialog";
 import { OfficerPortrait } from "./OfficerPortrait";
+import { OfficerDetails } from './OfficerDetails';
 import { officersInCity, officersOfUnit } from "../game/state";
 import { barracksBonus, buildableTiles, developmentCap, facilityCount, previewInternal } from "../game/internal";
 import { orderLabel } from "../game/events";
@@ -61,12 +62,18 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
   const [picked, setPicked] = useState<OfficerId[]>([]);
   const [problem, setProblem] = useState<string | null>(null);
   const [dispatching, setDispatching] = useState(false);
+  const [commandTab, setCommandTab] = useState<'internal' | 'military' | 'build'>('internal');
+  const [search, setSearch] = useState('');
+  const [inspected, setInspected] = useState<string|null>(null);
+  const officerDetails = inspected && state.officers[inspected] ? <OfficerDetails officer={state.officers[inspected]} state={state} onClose={()=>setInspected(null)}/> : null;
 
   // Switching cities must not carry an assignment across; officers are city-local.
   useEffect(() => {
     setPicked([]);
     setProblem(null);
     setDispatching(false);
+    setSearch('');
+    setCommandTab('internal');
   }, [cityId]);
 
   if (selected.kind === "unit") {
@@ -78,6 +85,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
       const supplied = ours ? isSupplied(state, unit) : true;
       return (
         <Shell>
+          {officerDetails}
           <div className="flex flex-col gap-3 px-3 py-3">
             <Header
               badge={spec.hanja}
@@ -100,6 +108,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                   <OfficerPortrait officer={o} state={state} size={30} />
                   <span className="w-14 shrink-0 text-xs font-semibold">{o.name}</span>
                   <OfficerStats officer={o} />
+                  <button className="tk-officer-inspect" onClick={()=>setInspected(o.id)} aria-label={`${o.name} 상세 보기`}>상세</button>
                 </li>
               ))}
             </ul>
@@ -112,9 +121,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
   if (!cityId) {
     return (
       <Shell>
-        <p className="px-3 py-4 text-center text-xs opacity-55">
-          도시나 부대를 눌러 살펴보십시오. 끌어서 지도를 옮기고, 두 손가락으로 확대합니다.
-        </p>
+        <div className="tk-inspector-empty"><span aria-hidden="true">城</span><h2>명령을 내릴 곳을 선택하세요</h2><p>지도 위 도시나 부대를 선택하면<br/>현황과 실행 가능한 명령이 표시됩니다.</p><p>상단의 내 도시 목록으로도 바로 이동할 수 있습니다.</p></div>
       </Shell>
     );
   }
@@ -155,6 +162,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
 
   return (
     <Shell>
+      {officerDetails}
       <div className="flex flex-col gap-3 px-3 py-3">
         <Header
           badge={city.hanja[0]}
@@ -173,14 +181,20 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
 
         {mine && (
           <>
+            <div className="tk-command-tabs" aria-label="도시 명령 분류">
+              {([['internal','내정'],['military','군사'],['build','건설']] as const).map(([id,label])=><button key={id} aria-pressed={commandTab===id} onClick={()=>{if(commandTab==='build'&&id!=='build')engine.cancelPlacement();setCommandTab(id);setProblem(null);}}>{label}</button>)}
+            </div>
+            {commandTab === 'military' && <div className="tk-military-command"><h3>출진 편성</h3><p>대장과 부장, 병종과 병력을 정한 뒤 전장에 내보냅니다.</p>
             <button
               type="button"
               onClick={() => setDispatching(true)}
-              className="self-start rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+              disabled={snapshot.busy || !roster.some(o=>o.duty==='idle') || city.troops<1000}
+              className="tk-dispatch-open self-start rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
               style={{ background: PALETTE.seal }}
             >
-              출진
+              부대 편성 · 출진 →
             </button>
+            <p>파란 칸: 이동 가능 · 붉은 표시: 공격 대상<br/>출진 후 지도에서 부대를 선택해 지휘하세요.</p></div>}
             {dispatching && (
               <DispatchDialog
                 engine={engine}
@@ -189,19 +203,20 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                 onClose={() => setDispatching(false)}
               />
             )}
-            <div>
+            <div className="tk-assignment">
+              <div className="tk-assignment-heading"><strong>{commandTab==='military'?'군사 담당 무장':'담당 무장'} <small>{picked.length}/3 선택</small></strong><button disabled={!picked.length} onClick={()=>setPicked([])}>선택 해제</button></div>
               <p className="mb-1 text-[11px] opacity-60">
                 무장을 고르고 지시하십시오. 배정된 무장은 이번 순(10일) 동안 임무를 수행합니다.
               </p>
+              <input className="tk-roster-search" type="search" aria-label="주둔 무장 검색" placeholder="무장 이름 검색" value={search} onChange={e=>setSearch(e.target.value)}/>
               <div className="tk-city-roster">
-                {roster.map((o) => {
+                {roster.filter(o=>o.name.includes(search.trim())).map((o) => {
                   const busy = o.duty !== "idle";
                   const on = picked.includes(o.id);
                   return (
-                    <button
-                      key={o.id}
+                    <div className="tk-city-roster-row" key={o.id}><button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || snapshot.busy}
                       onClick={() => toggle(o.id)}
                       aria-pressed={on}
                       className="flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition-colors disabled:opacity-35"
@@ -213,22 +228,24 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                       <OfficerPortrait officer={o} state={state} size={26} />
                       <span className="tk-officer-name font-semibold" title={o.name}>{o.name}</span>
                       <OfficerStats officer={o} />
-                    </button>
+                      <small className="tk-duty-label">{busy?'배정됨':on?'선택':'대기'}</small>
+                    </button><button className="tk-officer-inspect" onClick={()=>setInspected(o.id)} aria-label={`${o.name} 상세 보기`}>상세</button></div>
                   );
                 })}
                 {roster.length === 0 && <span className="text-xs opacity-55">주둔한 무장이 없습니다.</span>}
+                {roster.length>0 && !roster.some(o=>o.name.includes(search.trim())) && <p>검색 결과가 없습니다.</p>}
               </div>
             </div>
 
-            <div className="tk-orders-grid">
-              {ORDERS.map((kind) => {
+            {commandTab !== 'build' && <div className="tk-orders-grid">
+              {ORDERS.filter(kind=>commandTab==='military'?['draft','train','repair'].includes(kind):['commerce','agriculture','order'].includes(kind)).map((kind) => {
                 const preview = picked.length > 0 ? previewInternal(state, cityId, kind, picked) : null;
                 const blocked = !preview || Boolean(preview.problem);
                 return (
                   <button
                     key={kind}
                     type="button"
-                    disabled={blocked}
+                    disabled={blocked || snapshot.busy}
                     onClick={() => issue(kind)}
                     title={preview?.problem ?? undefined}
                     className="flex flex-col items-center gap-0.5 rounded-lg border px-2 py-1.5 text-xs transition-colors disabled:opacity-35 enabled:hover:bg-black/5"
@@ -245,9 +262,9 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                   </button>
                 );
               })}
-            </div>
+            </div>}
 
-            <div>
+            {commandTab === 'build' && <div>
               <p className="mb-1 flex items-center gap-2 text-[11px] opacity-60">
                 <span>
                   건설 ({facilityCount(state, cityId)}/{FACILITY_SLOTS}) — 개발 상한을 영구히 올립니다.
@@ -273,7 +290,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                     <button
                       key={type}
                       type="button"
-                      disabled={blocked}
+                      disabled={blocked || snapshot.busy}
                       onClick={() => build(type)}
                       title={spec.desc}
                       aria-pressed={active}
@@ -297,12 +314,13 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                   지도에서 점선으로 표시된 자리를 누르십시오.
                 </p>
               )}
-            </div>
+            </div>}
 
-            {problem && <p className="text-xs" style={{ color: PALETTE.seal }}>{problem}</p>}
+            {problem && <p role="alert" className="text-xs" style={{ color: PALETTE.seal }}>{problem}</p>}
 
             {queued.length > 0 && (
               <ul className="flex flex-col gap-1 border-t pt-2" style={{ borderColor: PALETTE.inkFaint }}>
+                <li className="tk-queue-heading">명령 대기 · {queued.length}건 <small>다음 순에 실행</small></li>
                 {queued.map(({ order, index }) => (
                   <li key={index} className="flex items-center gap-2 text-xs">
                     <span className="font-semibold">{orderLabel(order.kind)}</span>
@@ -311,6 +329,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                     </span>
                     <button
                       type="button"
+                      disabled={snapshot.busy}
                       onClick={() => engine.cancelOrder(index)}
                       className="ml-auto rounded border px-2 py-0.5 transition-colors hover:bg-black/5"
                       style={{ borderColor: PALETTE.inkSoft }}
@@ -331,6 +350,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                 <OfficerPortrait officer={o} state={state} size={30} />
                 <span className="w-14 shrink-0 text-xs font-semibold">{o.name}</span>
                 <OfficerStats officer={o} />
+                <button className="tk-officer-inspect" onClick={()=>setInspected(o.id)} aria-label={`${o.name} 상세 보기`}>상세</button>
               </li>
             ))}
           </ul>
@@ -342,7 +362,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
 
 function Header({ badge, color, title, subtitle }: { badge: string; color: string; title: string; subtitle: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="tk-inspector-heading flex items-center gap-2">
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded text-base font-bold text-white"
         style={{ background: color, fontFamily: HANJA_FONT }}
@@ -368,8 +388,8 @@ function Shell({ title, children }: { title?: string; children: React.ReactNode 
   const [open, setOpen] = useState(true);
   return (
     <div
-      className="pointer-events-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-      style={{ background: "rgba(250,250,250,0.96)", borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
+      className="tk-inspector-shell pointer-events-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
+      style={{ background: PALETTE.paper, borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
     >
       <button
         type="button"
@@ -377,7 +397,7 @@ function Shell({ title, children }: { title?: string; children: React.ReactNode 
         aria-expanded={open}
         className="flex w-full items-center gap-2 px-3 py-1 text-[11px] transition-colors hover:bg-black/5"
       >
-        <span className="opacity-45">{title ?? "선택"}</span>
+        <span>{title ?? "거점 · 부대 명령"}</span>
         <span className="ml-auto opacity-45">{open ? "패널 접기" : "패널 펼치기"}</span>
       </button>
       {open && <div className="max-h-[44vh] overflow-y-auto">{children}</div>}

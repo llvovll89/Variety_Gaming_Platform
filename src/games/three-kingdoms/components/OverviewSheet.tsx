@@ -4,6 +4,8 @@ import { citiesOf, idleOfficers, officersInCity, unitsOf } from "../game/state";
 import { suggestOrder } from "../game/advice";
 import { isSupplied } from "../game/supply";
 import { OfficerPortrait } from "./OfficerPortrait";
+import { useDialogFocus } from '../hooks/useDialogFocus';
+import { OfficerDetails } from './OfficerDetails';
 import type { GameState, UISnapshot } from "../game/types";
 import type { HexCoord } from "../game/hex";
 
@@ -29,7 +31,9 @@ const TABS: [Tab, string][] = [
  * actually comes from.
  */
 export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
+  const dialogRef = useDialogFocus(onClose);
   const [tab, setTab] = useState<Tab>("cities");
+  const [inspected, setInspected] = useState<string|null>(null);
   const me = state.playerFactionId;
   const cities = citiesOf(state, me);
   const armies = unitsOf(state, me);
@@ -41,6 +45,8 @@ export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="전체 현황"
@@ -154,12 +160,13 @@ export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
                 <button
                   key={o.id}
                   type="button"
-                  onClick={() => jump(state.cities[o.cityId]?.coord ?? { q: 0, r: 0 })}
+                  onClick={() => setInspected(o.id)}
                   className="flex flex-col items-center gap-0.5 rounded-lg border p-1 text-[10px] transition-colors hover:bg-black/5"
                   style={{ borderColor: PALETTE.inkSoft, opacity: o.duty === "idle" ? 1 : 0.5 }}
                 >
                   <OfficerPortrait officer={o} state={state} size={48} />
                   <span className="font-semibold">{o.name}</span>
+                  <span className="text-[9px] opacity-60">상세 보기</span>
                   <span className="tabular-nums opacity-60" style={{ transition: "none" }}>
                     통{o.lead} 무{o.war}
                   </span>
@@ -195,6 +202,7 @@ export function OverviewSheet({ state, snapshot, onJump, onClose }: Props) {
           )}
         </div>
       </div>
+      {inspected && state.officers[inspected] && <OfficerDetails officer={state.officers[inspected]} state={state} onClose={()=>setInspected(null)}/>}
     </div>
   );
 }

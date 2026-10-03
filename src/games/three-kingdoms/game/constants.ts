@@ -29,12 +29,12 @@ export const HARVEST_MONTH = 9;
 // --- Ink-wash palette --------------------------------------------------------
 
 export const PALETTE = {
-  paper: "#fafafa",
-  paperDeep: "#e5e5e5",
-  ink: "#171717",
-  inkSoft: "rgba(23, 23, 23, 0.35)",
-  inkFaint: "rgba(23, 23, 23, 0.16)",
-  seal: "#171717",
+  paper: "#eee6d3",
+  paperDeep: "#ddd0b4",
+  ink: "#303a32",
+  inkSoft: "rgba(87, 73, 45, 0.38)",
+  inkFaint: "rgba(87, 73, 45, 0.18)",
+  seal: "#8d352c",
   plain: "#d9c9a3",
   wasteland: "#cbbfa2",
   forest: "#b3c09a",

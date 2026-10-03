@@ -4,6 +4,7 @@ import type { BattleReplay, BattleSide } from '../game/battleReplay';
 import { box, disposeObject, mesh, officerModel } from '../game/models';
 import { TACTICS, UNIT_TYPES } from '../game/constants';
 import type { GameEngine } from '../game/engine';
+import { OfficerPortrait } from './OfficerPortrait';
 
 const DURATION = 5600;
 export const battleProgress = (elapsed: number) => Math.max(0, Math.min(1, elapsed / DURATION));
@@ -91,7 +92,7 @@ export function BattlePlayback({ engine }: { engine: GameEngine }) {
   const side = (s: BattleSide, label: string) => {
     const fraction = Math.max(0, Math.min(1, (progress - .38) / .3));
     const troops = Math.round(s.before + (s.after - s.before) * fraction);
-    return <section className="tk-combatant"><small>{label} · {s.type === 'city' ? '도시 수비군' : UNIT_TYPES[s.type].label}</small><h3 title={s.name}>{s.name}</h3><strong>{troops.toLocaleString()} <small>명</small></strong><div className="tk-troop-track"><span style={{ width: `${troops / Math.max(1, s.before) * 100}%` }} /></div><p>{finished ? `전장 병력 감소 ${(s.before - s.after).toLocaleString()}` : `교전 전 ${s.before.toLocaleString()}`}{finished && s.after === 0 ? ' · 전장 이탈' : ''}</p>{s.wallBefore !== undefined && <p>성벽 {s.wallBefore.toLocaleString()} → {finished ? s.wallAfter?.toLocaleString() : '교전 중'}</p>}</section>;
+    return <section className="tk-combatant">{s.officer&&<OfficerPortrait officer={s.officer} state={engine.getState()} size={64}/>}<small>{label} · {s.type === 'city' ? '도시 수비군' : UNIT_TYPES[s.type].label}</small><h3 title={s.name}>{s.name}</h3><strong>{troops.toLocaleString()} <small>명</small></strong><div className="tk-troop-track"><span style={{ width: `${troops / Math.max(1, s.before) * 100}%` }} /></div><p>{finished ? `전장 병력 감소 ${(s.before - s.after).toLocaleString()}` : `교전 전 ${s.before.toLocaleString()}`}{finished && s.after === 0 ? ' · 전장 이탈' : ''}</p>{s.wallBefore !== undefined && <p>성벽 {s.wallBefore.toLocaleString()} → {finished ? s.wallAfter?.toLocaleString() : '교전 중'}</p>}</section>;
   };
   return <dialog ref={dialog} className="tk-replay" aria-labelledby="tk-replay-title" onCancel={e => { e.preventDefault(); if (finished) close(); else fastForward(); }}>
     <header><div><small>BATTLE</small><h2 id="tk-replay-title">{report.attacker.name} <span>대</span> {report.defender.name}</h2></div><span className="tk-battle-phase" role="status">{stage}</span></header>
