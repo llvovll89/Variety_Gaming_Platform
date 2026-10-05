@@ -3,11 +3,81 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
 const compiled = await build({ entryPoints: ['src/games/fantasy-tactics/game.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
-const { Battle, SKILLS, STAGES, key, distance, restore, serialize } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const { Battle, FINAL_STAGE, SKILLS, STAGES, key, distance, restore, serialize } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 const playing = (stage = 0) => { const b = new Battle(stage); while (b.phase === 'intro') b.advanceDialogue(); return b; };
 const gearBuild=await build({entryPoints:['src/games/fantasy-tactics/equipment.ts'],bundle:true,write:false,format:'esm',platform:'node'});
 const {EQUIPMENT,TREASURES,START_GEAR}=await import('data:text/javascript;base64,'+Buffer.from(gearBuild.outputFiles[0].text).toString('base64'));
 const camping=()=>{const b=playing();b.units.filter(u=>u.team==='enemy').forEach(u=>u.hp=0);b.checkResult();b.enterCamp();return b;};
+
+test('promotion is camp-only at level three, chooses a permanent upgrade and unlocks hidden skills at five',()=>{
+  const b=camping();
+  for(const u of b.allies){
+    b.selected=u.id;assert.equal(b.promote(u.id,'power'),false);assert.equal(b.skill('skill2'),undefined);assert.equal(b.act(u,'skill2'),false);
+    b.gainXp(u,160);assert.equal(u.level,3);const base=b.skill('skill0').power;
+    assert.ok(b.promote(u.id,'power'));assert.ok(b.skill('skill0').power>base);assert.equal(b.promote(u.id,'reach'),false);
+    assert.equal(b.skills(u).length,2);b.gainXp(u,160);assert.equal(b.skills(u).length,3);assert.ok(b.skill('skill2'));
+  }
+  const next=b.nextStage(),saved=restore(serialize(next));assert.ok(saved);assert.ok(saved.allies.every(u=>u.promoted&&u.training==='power'&&u.level===5));
+  assert.equal(next.promote('arin','reach'),false);
+  const old=JSON.parse(serialize(playing()));old.units.forEach(u=>{delete u.promoted;delete u.training;});assert.ok(restore(JSON.stringify(old)));
+});
+
+test('reach promotion extends line length, ranged skills, and hidden skills execute with mana costs',()=>{
+  const b=camping();b.allies.forEach(u=>{b.gainXp(u,320);b.promote(u.id,'reach');});const next=b.nextStage();while(next.phase==='intro')next.advanceDialogue();
+  next.selected='arin';assert.equal(next.area({x:3,y:5},'skill0').length,3);
+  next.selected='theo';assert.equal(next.area({x:3,y:6},'skill0').length,4);
+  next.selected='ria';assert.equal(next.skill('skill0').range,5);
+  const enemy=next.units.find(u=>u.team==='enemy');enemy.x=3;enemy.y=5;const mana=next.actor.mp;assert.ok(next.act(enemy,'skill2'));assert.equal(next.actor.mp,mana-10);
+  next.selected='noah';next.allies[0].hp=1;assert.ok(next.act(next.allies[0],'skill2'));assert.ok(next.allies[0].hp>1);assert.ok(restore(serialize(next)));
+});
+
+test('rescue side quest requires three rescues, survives saves and returns to camp with one-time rewards',()=>{
+  const camp=camping();let b=camp.startSideQuest();assert.ok(b);assert.equal(b.sideQuest,true);while(b.phase==='intro')b.advanceDialogue();
+  assert.equal(b.rescue('child'),false);b.units.filter(u=>u.team==='enemy').forEach(u=>u.hp=0);b.checkResult();assert.equal(b.phase,'player');
+  for(const [i,v] of b.civilians.entries()){b.selected=b.allies[i].id;b.actor.x=v.x-1;b.actor.y=v.y;assert.ok(b.rescue(v.id));assert.equal(b.rescue(v.id),false);const loaded=restore(serialize(b));assert.ok(loaded);b=loaded;}
+  assert.equal(b.phase,'won');const xp=b.allies.map(u=>u.xp),levels=b.allies.map(u=>u.level);const returned=b.returnFromSideQuest();assert.equal(returned.phase,'camp');assert.equal(returned.startSideQuest(),null);assert.deepEqual(returned.allies.map(u=>u.xp),xp);assert.deepEqual(returned.allies.map(u=>u.level),levels);assert.ok(restore(serialize(returned)));assert.ok(restore(serialize(returned.nextStage())));
+});
+
+test('rescue deadline fails after eight full turns and allows retry or camp return',()=>{
+  let b=camping().startSideQuest();while(b.phase==='intro')b.advanceDialogue();b.units.filter(u=>u.team==='enemy').forEach(u=>u.hp=0);
+  for(let i=0;i<8;i++){assert.ok(b.endTurn());b.aiStep();}
+  assert.equal(b.phase,'lost');assert.ok(restore(serialize(b)));assert.ok(b.retryStage());assert.equal(b.returnFromSideQuest().phase,'camp');
+});
+
+test('both rescue missions can be completed with legal movement and actions before the deadline',()=>{
+  let camp=camping();
+  for(const stage of [0,1]){
+    if(stage===1){camp=camp.nextStage();while(camp.phase==='intro')camp.advanceDialogue();camp.units.filter(u=>u.team==='enemy').forEach(u=>u.hp=0);camp.checkResult();camp.enterCamp();}
+    let b=camp.startSideQuest();while(b.phase==='intro')b.advanceDialogue();
+    for(let round=0;round<8&&b.phase!=='won'&&b.phase!=='lost';round++){
+      for(const u of b.allies){
+        if(b.phase!=='player'||u.hp===0||u.acted)continue;b.selected=u.id;
+        const people=b.civilians.filter(v=>!b.rescued.includes(v.id));
+        const adjacent=people.find(v=>distance(u,v)<=1&&b.at(v)?.team!=='enemy');
+        if(adjacent){b.rescue(adjacent.id);continue;}
+        const destinations=b.targets('move').sort((a,c)=>Math.min(...people.map(v=>distance(a,v)))-Math.min(...people.map(v=>distance(c,v))));
+        if(destinations[0])assert.ok(b.moveTo(destinations[0]));
+        const reachable=people.find(v=>distance(u,v)<=1&&b.at(v)?.team!=='enemy');
+        if(reachable)b.rescue(reachable.id);else {
+          const mode=['skill0','skill1','attack'].find(m=>{const skill=b.skill(m);return (!skill||skill.effect==='damage'&&u.mp>=b.skillCost(m))&&b.targets(m).some(p=>b.affected(p,m).length);});
+          if(mode){const target=b.targets(mode).find(p=>b.affected(p,mode).length);b.act(target,mode);}else b.wait();
+        }
+      }
+      if(b.phase==='player')b.endTurn();while(b.phase==='enemy')b.aiStep();
+      assert.ok(restore(serialize(b)));
+    }
+    assert.equal(b.phase,'won',`stage ${stage}, round ${b.round}: ${b.log.join(' / ')}`);camp=b.returnFromSideQuest();
+  }
+  assert.ok(camp.allies.every(u=>u.level>=5));
+});
+
+test('boss telegraphs fixed cells, hits only those cells, preserves warnings and enters phase two',()=>{
+  const b=playing(2);assert.equal(b.bossWarning.length,5);const saved=restore(serialize(b));assert.deepEqual(saved.bossWarning,b.bossWarning);
+  const boss=b.units.find(u=>u.role==='boss');boss.hp=Math.floor(boss.maxHp/2);b.checkResult();assert.equal(b.bossPhase,2);
+  b.prepareBossWarning();assert.ok(b.bossWarning.length>5);const target=b.allies.find(u=>b.bossWarning.some(p=>key(p)===key(u)));const hp=target.hp;target.ward=2;
+  b.units.filter(u=>u.team==='enemy'&&u!==boss).forEach(u=>u.acted=true);b.endTurn();b.units.filter(u=>u.team==='enemy'&&u!==boss).forEach(u=>u.acted=true);b.aiStep();assert.equal(target.hp,hp-21);assert.equal(b.bossWarning.length,0);assert.ok(restore(serialize(b)));
+  b.aiStep();assert.ok(b.bossWarning.length>0);
+});
 const animationBuild = await build({ entryPoints: ['src/games/fantasy-tactics/animation.ts'], bundle: true, write: false, format: 'esm', platform: 'node' });
 const { facing, motion, eventDuration, moveDuration } = await import('data:text/javascript;base64,' + Buffer.from(animationBuild.outputFiles[0].text).toString('base64'));
 
@@ -158,7 +228,7 @@ function commandParty(b) {
   }
   if (b.phase === 'player') b.endTurn();
 }
-test('all three chapters can be completed through legal actions with growth, restoration and final boss objective', () => {
+test('all six chapters can be completed through legal actions with growth, restoration and final boss objective', () => {
   let b = playing(); const results = [];
   for (let stage = 0; stage < STAGES.length; stage++) {
     while (b.phase === 'intro') b.advanceDialogue();
@@ -181,7 +251,7 @@ test('camp gates progression, restores party once, preserves growth and allows o
   assert.equal(b.enterCamp(),false);assert.deepEqual(b.allies.map(u=>u.xp),xp);
   assert.equal(b.act({x:3,y:5},'move'),false);assert.equal(b.aiStep(),false);assert.equal(b.endTurn(),false);
   const next=b.nextStage();assert.equal(next.stage,1);assert.equal(next.phase,'intro');assert.equal(next.camp,null);assert.deepEqual(next.allies.map(u=>u.xp),xp);
-  const final=playing(2);final.units.find(u=>u.role==='boss').hp=0;final.checkResult();assert.equal(final.enterCamp(),false);
+  const final=playing(FINAL_STAGE);final.units.find(u=>u.role==='boss').hp=0;final.checkResult();assert.equal(final.enterCamp(),false);
 });
 
 test('camp saves exact dialogue progress, heard topics and route; old saves still resume', () => {
@@ -197,8 +267,8 @@ test('camp saves exact dialogue progress, heard topics and route; old saves stil
   }
 });
 
-test('both camps complete all conversations safely and reset camp history on departure', () => {
-  for (const stage of [0,1]) {
+test('all five camps complete all conversations safely and reset camp history on departure', () => {
+  for (const stage of [0,1,2,3,4]) {
     const b=playing(stage);b.units.filter(u=>u.team==='enemy').forEach(u=>u.hp=0);b.checkResult();b.enterCamp();
     for(const topic of ['arrival','arin','theo','ria','noah','route']) {
       assert.ok(b.talkCamp(topic));let count=0;
@@ -210,11 +280,11 @@ test('both camps complete all conversations safely and reset camp history on dep
   }
 });
 
-test('24 distinct equipment items are obtainable and all nine chest positions are reachable',()=>{
+test('24 distinct equipment items are obtainable and all eighteen chest positions are reachable',()=>{
   assert.equal(EQUIPMENT.length,24);assert.equal(new Set(EQUIPMENT.map(g=>g.id)).size,24);
   assert.equal(EQUIPMENT.filter(g=>g.slot==='weapon').length,12);assert.equal(EQUIPMENT.filter(g=>g.slot==='armor').length,6);
   const obtainable=new Set([...START_GEAR,...TREASURES.flat().flatMap(t=>t.items),'acc-focus','armor-star']);assert.equal(obtainable.size,24);
-  for(let stage=0;stage<3;stage++){
+  for(let stage=0;stage<STAGES.length;stage++){
     const b=playing(stage);assert.equal(b.treasures.length,3);
     const visited=new Set(),queue=[{x:2,y:5}];
     for(let i=0;i<queue.length;i++){const p=queue[i];if(visited.has(key(p)))continue;visited.add(key(p));for(const d of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]){const q={x:p.x+d.x,y:p.y+d.y};if(b.inside(q)&&b.tile(q).terrain!=='water'&&Math.abs(b.tile(q).height-b.tile(p).height)<=1&&!visited.has(key(q)))queue.push(q);}}

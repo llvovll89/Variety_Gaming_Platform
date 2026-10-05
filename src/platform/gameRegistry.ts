@@ -17,12 +17,12 @@ export const GAMES: GameDefinition[] = [
   {
     id: 'fantasy-tactics',
     title: '별빛 원정대',
-    description: '네 동료와 떠나는 쿼터뷰 전술 RPG · 검과 마법으로 별의 등대를 되찾으세요',
+    description: '네 동료와 떠나는 6개 챕터의 전술 RPG · 전직과 지형 전술로 바다 건너 별빛까지',
     thumbnail: '/art/fantasy-tactics/cover.png',
     accentColor: '#416d79',
     genres: ['전략'],
     tags: ['턴제', 'RPG', '판타지', '스토리', '전술'],
-    featuredText: '작은 약속이 모험이 되는 순간. 네 동료를 지휘해 숲과 언덕을 건너 별빛을 되찾으세요.',
+    featuredText: '등대에 돌아온 빛이 바다 건너에서 응답합니다. 숲과 언덕을 지나 항구·유령선·별이 떨어진 섬으로 원정을 이어 가세요.',
     Component: FantasyTacticsApp,
   },
   {

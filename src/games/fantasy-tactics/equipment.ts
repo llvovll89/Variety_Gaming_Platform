@@ -3,7 +3,7 @@ import type { Point, Role } from './game';
 export type Slot = 'weapon' | 'armor' | 'accessory';
 export type GearStats = { attack: number; defense: number; move: number; mpDiscount: number; healing: number; dash: number };
 export interface Equipment { id: string; name: string; slot: Slot; roles: Role[]; description: string; bonus: Partial<GearStats>; }
-const fighters: Role[] = ['sword','spear'], casters: Role[] = ['mage','healer'], everyone: Role[] = [...fighters,...casters];
+const fighters: Role[] = ['sword','spear','rogue'], casters: Role[] = ['mage','healer'], everyone: Role[] = [...fighters,...casters,'ranger'];
 const item = (id: string, name: string, slot: Slot, roles: Role[], bonus: Partial<GearStats>, description: string): Equipment => ({id,name,slot,roles,bonus,description});
 export const EQUIPMENT: Equipment[] = [
   item('sword-start','여행자의 검','weapon',['sword'],{},'손에 익은 첫 번째 검.'),
@@ -41,5 +41,8 @@ export const TREASURES: Treasure[][] = [
   [ {id:'forest-road',name:'다리 앞 상자',x:3,y:5,items:['sword-iron'],potions:1}, {id:'forest-detour',name:'숲 가장자리 상자',x:0,y:8,items:['mage-ember','armor-leather'],potions:0}, {id:'forest-high',name:'궁수 고지 상자',x:9,y:1,items:['spear-oak','acc-moon'],potions:0} ],
   [ {id:'hill-road',name:'언덕길 상자',x:4,y:5,items:['healer-heal'],potions:1}, {id:'hill-detour',name:'성벽 아래 상자',x:3,y:9,items:['armor-mail','acc-swift'],potions:0}, {id:'hill-high',name:'망루 옆 상자',x:10,y:2,items:['sword-star','mage-flame'],potions:0} ],
   [ {id:'tower-road',name:'뜰 입구 상자',x:4,y:4,items:['spear-wind','armor-robe'],potions:0}, {id:'tower-detour',name:'외곽 정원 상자',x:2,y:9,items:['acc-heal','armor-spell'],potions:0}, {id:'tower-high',name:'봉인 뒤 상자',x:10,y:5,items:['healer-dawn','acc-guard'],potions:0} ],
+  [ {id:'port-road',name:'항구 보급 상자',x:3,y:5,items:['armor-star'],potions:1}, {id:'port-detour',name:'창고 뒤 상자',x:2,y:8,items:['acc-moon'],potions:1}, {id:'port-high',name:'부두 망루 상자',x:10,y:2,items:['sword-star'],potions:0} ],
+  [ {id:'ship-road',name:'갑판 보급 상자',x:3,y:4,items:['spear-wind'],potions:1}, {id:'ship-detour',name:'선실 입구 상자',x:2,y:8,items:['healer-dawn'],potions:1}, {id:'ship-high',name:'선장실 상자',x:10,y:5,items:['acc-guard'],potions:0} ],
+  [ {id:'island-road',name:'해변 보급 상자',x:3,y:5,items:['mage-flame'],potions:1}, {id:'island-detour',name:'별의 정원 상자',x:5,y:8,items:['acc-heal'],potions:0}, {id:'island-high',name:'분화구 상자',x:10,y:3,items:['armor-spell'],potions:1} ],
 ];
 export const ALL_CHEST_IDS = TREASURES.flat().map(t=>t.id);
