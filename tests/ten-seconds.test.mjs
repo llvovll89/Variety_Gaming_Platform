@@ -48,8 +48,9 @@ function solveTo(run,goal){
   const mark=`${state.x},${state.y},${state.t}`;if(seen.has(mark))continue;seen.add(mark);
   for(const direction of [0,1,2,3,4]){
    const d=direction===4?{x:0,y:0}:DIRECTIONS[direction],p={x:state.x+d.x,y:state.y+d.y};if(p.x<1||p.x>11||p.y<1||p.y>7||run.level.walls.some(w=>w.x===p.x&&w.y===p.y))continue;
-   const occupied=run.level.plates.filter(plate=>[state,...run.echoes.map(e=>e[Math.min(state.t,599)])].some(f=>f.x===plate.x&&f.y===plate.y)).map(p=>p.id);
-   if(run.level.gates.some(g=>g.x===p.x&&g.y===p.y&&(!g.plates.every(id=>occupied.includes(id))||g.crystal&&!run.collected.includes(g.crystal))))continue;
+   const savedTick=run.tick,savedPlayer=run.player;run.tick=state.t;run.player={x:state.x,y:state.y,direction:0};
+   const occupied=run.level.plates.filter(plate=>run.plateRemaining(plate)>0).map(p=>p.id);
+   const blocked=run.level.gates.some(g=>g.x===p.x&&g.y===p.y&&!run.gateOpen(g));run.tick=savedTick;run.player=savedPlayer;if(blocked)continue;void occupied;
    let safe=true;for(let t=state.t;t<=state.t+MOVE_TICKS;t++)if(run.level.lasers.some(l=>(t+l.offset)%l.period<l.active&&l.cells.some(c=>c.x===p.x&&c.y===p.y))){safe=false;break;}if(!safe)continue;
    queue.push({...p,t:state.t+MOVE_TICKS,path:[...state.path,direction]});
   }
@@ -59,10 +60,32 @@ function solveTo(run,goal){
  assert.equal(run.deaths,0);assert.equal(run.player.x,goal.x);assert.equal(run.player.y,goal.y);
 }
 test('all six designed rooms can be solved with legal moves, timed ghosts and no deaths',()=>{
- for(let index=0;index<LEVELS.length;index++){
+ for(let index=0;index<6;index++){
   const r=playing(index);if(index===3)solveTo(r,r.level.crystals[0]);
   for(const plate of r.level.plates){solveTo(r,plate);assert.ok(r.rewind());}
   for(const c of r.level.crystals)if(!r.collected.includes(c.id))solveTo(r,c);
   solveTo(r,r.level.exit);assert.equal(r.status,'won',`room ${index+1}`);assert.equal(r.loops,r.level.par);assert.equal(r.stars,3);
+ }
+});
+
+test('ghost-only pulse plates expire, rearm on a fresh arrival and obey exact time windows',()=>{
+ const r=playing(6),p=r.level.plates[0];Object.assign(r.player,p);assert.equal(r.occupiedPlates.includes('A'),false);r.echoes=[Array.from({length:600},(_,i)=>({x:p.x,y:i===140?p.y+1:p.y,direction:0}))];assert.ok(r.occupiedPlates.includes('A'));r.tick=119;assert.ok(r.occupiedPlates.includes('A'));r.tick=120;assert.equal(r.occupiedPlates.includes('A'),false);r.tick=141;assert.ok(r.occupiedPlates.includes('A'));
+ const last=playing(8);last.echoes=last.level.plates.map(p=>Array.from({length:600},(_,i)=>({x:p.x,y:i>=231?p.y:p.y+1,direction:0})));last.tick=269;assert.equal(last.gateOpen(last.level.gates[0]),false);last.tick=270;assert.ok(last.gateOpen(last.level.gates[0]));last.tick=330;assert.equal(last.gateOpen(last.level.gates[0]),false);
+});
+test('interference blocks doors, unstable crystals reset, echo budgets and hint stars are enforced',()=>{
+ const r=playing(7),a=r.level.plates[0],b=r.level.plates[1];r.echoes=[Array.from({length:600},()=>({...a,direction:0}))];assert.ok(r.gateOpen(r.level.gates[0]));Object.assign(r.player,b);assert.equal(r.gateOpen(r.level.gates[0]),false);Object.assign(r.player,r.level.crystals[0]);r.checkPosition();assert.ok(r.collected.includes('unstable'));r.resetLoop();assert.equal(r.collected.length,0);r.echoes.push(Array.from({length:600},()=>({...a,direction:0})));frames(r,1);assert.equal(r.rewind(),false);assert.equal(r.status,'paused');assert.equal(r.echoLimit,2);const score=playing();score.loops=1;assert.equal(score.stars,3);score.hintsUsed=1;assert.equal(score.stars,2);
+});
+test('old completed saves unlock the new chapter and preserve previous best scores',()=>{
+ const old={unlocked:5,best:{5:{stars:3,loops:3,deaths:0}}};const loaded=loadProgress(JSON.stringify(old));assert.equal(loaded.unlocked,6);assert.deepEqual(loaded.best,old.best);
+});
+test('all three advanced experiments have legal, zero-death solutions within their echo budgets',()=>{
+ for(const index of [6,7,8]){
+  const r=playing(index);
+  for(const plate of r.level.plates.filter(p=>p.echoOnly)){
+   if(index===8){const adjacent={x:plate.x,y:plate.y+(plate.y<=2?1:-1)};solveTo(r,adjacent);frames(r,231-r.tick);assert.ok(r.move(plate.y<=2?0:2));frames(r,9);}else solveTo(r,plate);
+   assert.ok(r.rewind());
+  }
+  for(const c of r.level.crystals)solveTo(r,c);
+  solveTo(r,r.level.exit);assert.equal(r.status,'won',`advanced room ${index+1}`);assert.equal(r.deaths,0);assert.equal(r.loops,r.level.par);assert.ok(r.echoes.length<=r.echoLimit);assert.equal(r.stars,3);
  }
 });

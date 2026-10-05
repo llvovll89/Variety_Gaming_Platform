@@ -34,13 +34,13 @@ export function buildRoom(levelIndex:number){
   for(const p of level.walls){const v=world(p);box(root,[.92,.52,.92],[v.x,.15,v.z],wall);box(root,[.84,.055,.84],[v.x,.43,v.z],brass);}
   for(let i=-6;i<=6;i+=2){box(root,[.2,.65,.2],[i,-.05,-4.3],wall);box(root,[.3,.09,.3],[i,.31,-4.3],brass);}
   const plates=new Map<string,THREE.Group>();
-  for(const p of level.plates){const g=new THREE.Group();g.position.copy(world(p));root.add(g);mesh(new THREE.CylinderGeometry(.37,.4,.08,32),material('#152b33'),g,0,.02,0);ring(g,.32,material(p.color,true));mesh(new THREE.CylinderGeometry(.24,.24,.055,24),material(p.color,true),g,0,.07,0);plates.set(p.id,g);label(g,p.id,'#12343e',.15);}
+  for(const p of level.plates){const g=new THREE.Group();g.position.copy(world(p));root.add(g);mesh(new THREE.CylinderGeometry(.37,.4,.08,32),material('#152b33'),g,0,.02,0);ring(g,.32,material(level.gates.some(d=>d.blockedBy?.includes(p.id))?'#ff8e79':p.color,true));if(p.pulse){const pulse=mesh(new THREE.SphereGeometry(.06,8,6),material('#f8dc9f',true),g,.4,.13,0);g.userData.pulse=pulse;}g.userData.disc=mesh(new THREE.CylinderGeometry(.24,.24,.055,24),material(p.color,true),g,0,.07,0);plates.set(p.id,g);label(g,p.id,'#12343e',.15);}
   const gates:THREE.Group[]=[];
   for(const door of level.gates){const g=new THREE.Group();g.position.copy(world(door));root.add(g);box(g,[.12,1.08,.15],[-.44,.53,0],brass);box(g,[.12,1.08,.15],[.44,.53,0],brass);box(g,[.99,.12,.15],[0,1.05,0],brass);const barrier=box(g,[.72,.86,.07],[0,.48,0],new THREE.MeshStandardMaterial({color:'#ecaa73',emissive:'#ed9564',emissiveIntensity:1,transparent:true,opacity:.4}));g.userData.barrier=barrier;gates.push(g);}
   const laserGroups:THREE.Group[]=[];
   for(const laser of level.lasers){const g=new THREE.Group();root.add(g);for(const p of laser.cells){const v=world(p);box(g,[.09,.58,.94],[v.x,.31,v.z],material('#fa687c',true));box(root,[.6,.015,.92],[v.x,-.015,v.z],material('#693e47'));}laserGroups.push(g);}
   const crystals:THREE.Mesh[]=[];
-  for(const p of level.crystals){const v=world(p);const o=mesh(new THREE.OctahedronGeometry(.19),material('#f6d387',true),root,v.x,.5,v.z);crystals.push(o);ringAt(root,p,'#d9b570');}
+  for(const p of level.crystals){const v=world(p);const o=mesh(new THREE.OctahedronGeometry(.19),material(p.volatile?'#c3a0ff':'#f6d387',true),root,v.x,.5,v.z);crystals.push(o);ringAt(root,p,'#d9b570');}
   const exit=new THREE.Group();exit.position.copy(world(level.exit));root.add(exit);ring(exit,.4,material('#b2ecd3',true));const portal=mesh(new THREE.TorusGeometry(.37,.065,12,48),material('#b2ecd3',true),exit,0,.51,0);portal.rotation.y=Math.PI/2;label(exit,'↗','#d9f5e4',.1);
   ringAt(root,level.start,'#e9b989');
   const clock=new THREE.Group();clock.position.set(.1,1,-5.3);root.add(clock);
@@ -69,7 +69,7 @@ function animateCharacter(g:THREE.Group,frame:Frame,seconds:number,instant:boole
 export function updateRoom(room:Room,run:TimeRun,seconds:number,instant=false){
   animateCharacter(room.player,run.player,seconds,instant);
   room.ghosts.forEach((g,i)=>{g.visible=i<run.echoes.length;if(g.visible)animateCharacter(g,run.ghostFrames[i],seconds,instant);});
-  room.plates.forEach((g,id)=>{g.children[2].position.y=run.occupiedPlates.includes(id)?.045:.075;g.scale.setScalar(run.occupiedPlates.includes(id)?1.08:1);});
+  room.plates.forEach((g,id)=>{g.userData.disc.position.y=run.occupiedPlates.includes(id)?.045:.075;g.scale.setScalar(run.occupiedPlates.includes(id)?1.08:1);if(g.userData.pulse){const p=run.level.plates.find(p=>p.id===id)!;const a=run.plateRemaining(p)/(p.pulse??120)*Math.PI*2;g.userData.pulse.position.set(Math.cos(a)*.4,.13,Math.sin(a)*.4);g.userData.pulse.visible=run.plateRemaining(p)>0;}});
   room.gates.forEach((g,i)=>{g.userData.barrier.visible=!run.gateOpen(run.level.gates[i]);});
   room.laserGroups.forEach((g,i)=>{g.visible=run.laserActive(run.level.lasers[i]);});
   room.crystals.forEach((o,i)=>{o.visible=!run.collected.includes(run.level.crystals[i].id);o.rotation.y=seconds;o.position.y=.48+Math.sin(seconds*3+i)*.06;});

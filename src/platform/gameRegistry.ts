@@ -23,7 +23,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: '#9acbbb',
     genres: ['전략', '캐주얼'],
     tags: ['3D', '퍼즐', '시간 루프', '협동', '잔상'],
-    featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 여섯 개의 시간 연구실을 탈출하세요.',
+    featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 아홉 개의 시간 연구실을 탈출하세요. 짧게 켜지는 발판과 시간 문을 연결하는 고급 실험에 도전하세요.',
     Component: TenSecondsApp,
   },
   {
