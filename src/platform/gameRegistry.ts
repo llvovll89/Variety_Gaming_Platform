@@ -7,6 +7,7 @@ import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColo
 import { lazy } from 'react';
 const FantasyTacticsApp = lazy(() => import('../games/fantasy-tactics/FantasyTacticsApp'));
 const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
+const TenSecondsApp = lazy(() => import('../games/ten-seconds/TenSecondsApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
@@ -14,6 +15,17 @@ import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: 'ten-seconds',
+    title: '텐 세컨즈 · 시간의 잔상',
+    description: '10초 전의 나와 협동하는 3D 시간 퍼즐 · 과거의 발걸음으로 다음 순간을 열어 보세요',
+    thumbnail: '/art/ten-seconds.svg',
+    accentColor: '#9acbbb',
+    genres: ['전략', '캐주얼'],
+    tags: ['3D', '퍼즐', '시간 루프', '협동', '잔상'],
+    featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 여섯 개의 시간 연구실을 탈출하세요.',
+    Component: TenSecondsApp,
+  },
   {
     id: 'fantasy-tactics',
     title: '별빛 원정대',
