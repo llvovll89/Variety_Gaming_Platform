@@ -5,6 +5,7 @@ import HachupingBalloonApp from "../games/hachuping-balloon/HachupingBalloonApp"
 import HachupingMemoryApp from "../games/hachuping-memory/HachupingMemoryApp";
 import HachupingColorMatchApp from "../games/hachuping-color-match/HachupingColorMatchApp";
 import { lazy } from 'react';
+const GhostMoversApp = lazy(() => import('../games/ghost-movers/GhostMoversApp'));
 const FantasyTacticsApp = lazy(() => import('../games/fantasy-tactics/FantasyTacticsApp'));
 const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
 const TenSecondsApp = lazy(() => import('../games/ten-seconds/TenSecondsApp'));
@@ -15,6 +16,17 @@ import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: 'ghost-movers',
+    title: '유령 이삿짐센터',
+    description: '일곱 가구에 빙의하는 3D 이사 퍼즐 · 3개 챕터와 24개 야간 배송 현장',
+    thumbnail: '/art/ghost-movers.svg',
+    accentColor: '#a8d7c0',
+    genres: ['전략', '캐주얼'],
+    tags: ['3D', '퍼즐', '빙의', '유령', '이사'],
+    featuredText: '몸을 바꾸면, 길이 열립니다. 밀고 당기고 튕기고 운반하는 일곱 가구의 능력을 연결해 24개 이사 현장을 해결하세요.',
+    Component: GhostMoversApp,
+  },
   {
     id: 'ten-seconds',
     title: '텐 세컨즈 · 시간의 잔상',
