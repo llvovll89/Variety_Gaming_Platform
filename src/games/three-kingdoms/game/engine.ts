@@ -632,15 +632,16 @@ export class GameEngine {
   }
 
   /** Navigation selects information without executing a selected army's map command. */
-  inspect(hex: HexCoord): void {
+  inspect(hex: HexCoord, preference: 'auto' | 'city' = 'auto'): void {
     this.attackRequest = null;
     this.placement = null;
     this.pendingTactic = null;
     const unit = unitAt(this.state, hex);
     const city = cityAt(this.state, hex);
-    this.selection = unit ? { kind: 'unit', unitId: unit.id } : city ? { kind: 'city', cityId: city.id } : { kind: 'none' };
+    const preferCity = preference === 'city' && city;
+    this.selection = preferCity ? { kind: 'city', cityId: city.id } : unit ? { kind: 'unit', unitId: unit.id } : city ? { kind: 'city', cityId: city.id } : { kind: 'none' };
     this.reach = []; this.targets = [];
-    if (unit) this.refreshUnitOverlay(unit);
+    if (unit && !preferCity) this.refreshUnitOverlay(unit);
     this.focus(hex);
     this.publish();
   }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { PALETTE } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import type { LogEntry } from "../game/types";
 
 interface Props {
@@ -41,7 +41,7 @@ export function LogStrip({ log, onFocus }: Props) {
       >
         <span className="shrink-0">軍報 · 군보</span>
         <span className="min-w-0 flex-1 truncate" style={{ color: latest ? KIND_COLOR[latest.kind] : undefined }}>
-          {latest?.text ?? "—"}
+          {latest?.text ?? "새로운 군보를 기다립니다."}
         </span>
         <span className="shrink-0 opacity-45">{open ? "닫기" : "펼치기"}</span>
       </button>

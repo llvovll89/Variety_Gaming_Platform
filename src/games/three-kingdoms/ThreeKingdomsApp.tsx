@@ -9,8 +9,10 @@ import { BattlePreview } from './components/BattlePreview';
 import { BattlePlayback } from './components/BattlePlayback';
 import { StrategicMap } from './components/StrategicMap';
 import { GuideBar } from './components/GuideBar';
+import { OfficerPortrait } from './components/OfficerPortrait';
 import { citiesOf } from './game/state';
 import './three-kingdoms.css';
+import './pk-interface.css';
 import { InspectorPanel } from "./components/InspectorPanel";
 import { LogStrip } from "./components/LogStrip";
 import { OverviewSheet } from "./components/OverviewSheet";
@@ -64,6 +66,7 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
   }
 
   const state = engine?.getState() ?? null;
+  const leader = state && state.officers[state.factions[factionId].leaderId];
 
   return (
     <div className="tk-game">
@@ -76,8 +79,14 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
         onExit={() => { engine?.save(); onExit(); }}
       />
       {help && <div className="tk-help-panel"><div><b>一 · 도시 관리</b><p>내 도시 선택 → 내정·군사·건설 분류 → 담당 무장 선택 → 명령. 명령은 다음 순에 실행됩니다.</p></div><div><b>二 · 전장 지휘</b><p>군사 → 부대 편성·출진. 부대를 선택한 뒤 파란 칸으로 이동하고 붉은 적을 눌러 공격합니다.</p></div><div><b>三 · 시간 진행</b><p>명령을 마치면 10일 진행. 진행 중 가속 버튼으로 연출을 건너뛸 수 있습니다.</p></div><button onClick={()=>setHelp(false)}>닫기</button></div>}
-      {engine && state && <nav className="tk-city-nav" aria-label="내 도시 바로가기"><span>領地 <small>내 도시</small></span><div>{citiesOf(state,factionId).map(c=><button key={c.id} aria-pressed={snapshot.selected.kind==='city'&&snapshot.selected.cityId===c.id} onClick={()=>engine.inspect(c.coord)}>{c.name}<small>{state.internalOrders.filter(o=>o.cityId===c.id).length ? '명령 대기' : '도시 관리'}</small></button>)}</div><span className="tk-phase-label">{snapshot.busy?'진행 중':'명령 대기'} · {snapshot.turn}순</span></nav>}
-      {engine && state && <div className="tk-advice"><GuideBar state={state} onFocus={hex=>engine.inspect(hex)} revision={snapshot.turn}/></div>}
+      <div className="tk-war-room">
+      <aside className="tk-domain-rail" aria-label="군주와 영지">
+        {state && leader && <div className="tk-commanding-lord"><OfficerPortrait officer={leader} state={state} size={104}/><small>중원 쟁패</small><h2>{state.factions[factionId].name}<span>군주</span></h2><p>{snapshot.busy ? '전황이 진행되고 있습니다' : '당신의 명령을 기다립니다'}</p></div>}
+        {engine && state && <nav className="tk-city-nav" aria-label="내 도시 바로가기"><span>내 도시 <small>{citiesOf(state,factionId).length}</small></span><div>{citiesOf(state,factionId).map(c=><button key={c.id} aria-pressed={snapshot.selected.kind==='city'&&snapshot.selected.cityId===c.id} onClick={()=>engine.inspect(c.coord, 'city')}><span>{c.name}<small>{state.internalOrders.filter(o=>o.cityId===c.id).length ? '명령 대기' : '도시 관리'}</small></span><strong>{(c.troops/1000).toFixed(1)}<small>천</small></strong></button>)}</div></nav>}
+        {engine && state && <div className="tk-advice"><h3>군사의 제언</h3><GuideBar state={state} onFocus={hex=>engine.inspect(hex)} revision={snapshot.turn}/></div>}
+        {engine && state && <details className="tk-mobile-advice"><summary>군사의 제언</summary><GuideBar state={state} onFocus={hex=>engine.inspect(hex)} revision={snapshot.turn}/></details>}
+        <div className="tk-domain-note">내정과 군사 명령을 내린 뒤<br/>10일을 진행하세요.</div>
+      </aside>
       <div className="tk-battlefield">
         <div className="tk-map-area">
           <MapCanvas playerFactionId={factionId} onReady={handleReady} />
@@ -96,6 +105,7 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
         {snapshot.result !== "playing" && (
           <ResultScreen snapshot={snapshot} onRestart={restart} onExit={onExit} />
         )}
+      </div>
       </div>
       <LogStrip log={snapshot.log} onFocus={(entry) => entry.focus && engine?.focus(entry.focus)} />
       {editor && engine && <OfficerEditor engine={engine} onClose={() => setEditor(false)} />}

@@ -16,7 +16,15 @@ export function OfficerEditor({ engine, onClose }: { engine: GameEngine; onClose
   const [dirty, setDirty] = useState(false);
   const [discard, setDiscard] = useState<(() => void) | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => { dialog.current?.showModal(); }, []);
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const modal = dialog.current;
+    modal?.showModal();
+    return () => {
+      modal?.close();
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
   const guard = (action: () => void) => { if (dirty) setDiscard(() => action); else action(); };
   const change = (patch: Partial<Officer>) => { setDraft(d => ({ ...d, ...patch })); setDirty(true); setMessage(''); };
   const choose = (o: Officer) => guard(() => { setDraft(structuredClone(o)); setCreating(false); setDirty(false); setMessage(''); });

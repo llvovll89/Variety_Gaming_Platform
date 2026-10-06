@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { HANJA_FONT, PALETTE, UNIT_TYPES } from "../game/constants";
+import { HANJA_FONT, UNIT_TYPES } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import { citiesOf, idleOfficers, officersInCity, unitsOf } from "../game/state";
 import { suggestOrder } from "../game/advice";
 import { isSupplied } from "../game/supply";

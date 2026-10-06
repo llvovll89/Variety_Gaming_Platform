@@ -1,4 +1,5 @@
-import { HANJA_FONT, PALETTE } from "../game/constants";
+import { HANJA_FONT } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import type { UISnapshot } from "../game/types";
 
 interface Props {
@@ -15,7 +16,7 @@ export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
 
   return (
     <div
-      className="absolute inset-0 z-40 flex items-center justify-center p-4"
+      className="tk-result absolute inset-0 z-40 flex items-center justify-center p-4"
       style={{ background: "rgba(24,24,24,0.55)" }}
     >
       <div
@@ -24,7 +25,7 @@ export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
       >
         <span
           className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded text-3xl font-bold text-white"
-          style={{ background: won ? PALETTE.seal : "#4a4a42", fontFamily: HANJA_FONT }}
+          style={{ background: won ? PALETTE.seal : "#4a4a42", color: won ? '#18262b' : '#edf0e8', fontFamily: HANJA_FONT }}
         >
           {seal}
         </span>

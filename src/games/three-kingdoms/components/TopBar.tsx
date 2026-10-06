@@ -1,86 +1,18 @@
-import { HANJA_FONT, PALETTE } from "../game/constants";
-import type { UISnapshot } from "../game/types";
-
-interface Props {
-  snapshot: UISnapshot;
-  onEndTurn: () => void;
-  onSkip: () => void;
-  onOverview: () => void;
-  onExit: () => void;
-}
-
-const MONTH_HANJA = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="tk-resource flex items-baseline gap-1">
-      <span className="text-[11px] opacity-60">{label}</span>
-      {/* The global `* { transition }` rule cross-fades every changing number; turn it off
-          here so monthly figures snap instead of smearing. */}
-      <span className="text-sm font-semibold tabular-nums" style={{ transition: "none" }}>
-        {value}
-      </span>
-    </span>
-  );
-}
-
+import { CoinsIcon, GrainsIcon, CastleTurretIcon, FlagBannerIcon, UsersThreeIcon, FastForwardIcon, ArrowRightIcon } from '@phosphor-icons/react';
+import type { UISnapshot } from '../game/types';
+interface Props { snapshot: UISnapshot; onEndTurn: () => void; onSkip: () => void; onOverview: () => void; onExit: () => void }
 export function TopBar({ snapshot, onEndTurn, onSkip, onOverview, onExit }: Props) {
-  const p = snapshot.player;
-  return (
-    <div
-      className="tk-topbar pointer-events-auto flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]"
-      style={{ borderColor: PALETTE.inkSoft }}
-    >
-      <span className="tk-player-badge flex items-center gap-2">
-        <span
-          className="flex h-7 w-7 items-center justify-center rounded text-xs font-bold text-white"
-          style={{ background: p?.color ?? PALETTE.ink, fontFamily: HANJA_FONT }}
-        >
-          {p?.name.slice(0, 1) ?? "—"}
-        </span>
-        <span className="text-sm font-semibold">{p?.name ?? ""}</span>
-      </span>
-
-      <span className="tk-date text-sm font-semibold tabular-nums" style={{ fontFamily: HANJA_FONT, transition: "none" }}>
-        {snapshot.year}년 {MONTH_HANJA[snapshot.month]}월 {snapshot.day === 21 ? '하순' : snapshot.day === 11 ? '중순' : '상순'}
-      </span>
-
-      <Stat label="금" value={(p?.gold ?? 0).toLocaleString()} />
-      <Stat label="병량" value={(p?.food ?? 0).toLocaleString()} />
-      <Stat label="도시" value={String(p?.cities ?? 0)} />
-      <Stat label="부대" value={String(p?.units ?? 0)} />
-      <Stat label="무장" value={String(p?.officers ?? 0)} />
-
-      <span className="tk-top-actions ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onOverview}
-          className="rounded-lg border px-3 py-1 text-xs transition-colors hover:bg-black/5"
-          style={{ borderColor: PALETTE.inkSoft }}
-        >
-          세력 현황
-        </button>
-        {/* While the month is playing out the same slot becomes the skip control, so the
-            player is never stuck watching rival armies shuffle around. */}
-        <button
-          type="button"
-          onClick={snapshot.busy ? onSkip : onEndTurn}
-          disabled={snapshot.result !== 'playing'}
-          className="tk-advance rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-transform hover:-translate-y-px"
-          style={{ background: snapshot.busy ? "#4a4a42" : PALETTE.seal }}
-        >
-          {snapshot.busy ? "진행 가속 ▶▶" : "10일 진행 ▷"}
-        </button>
-        <button
-          type="button"
-          onClick={onExit}
-          disabled={snapshot.busy}
-          className="rounded-lg border px-3 py-1 text-xs transition-colors hover:bg-black/5"
-          style={{ borderColor: PALETTE.inkSoft }}
-        >
-          저장 후 나가기
-        </button>
-      </span>
-    </div>
-  );
+  const player = snapshot.player;
+  const resources = [
+    { label: '금', value: player?.gold ?? 0, icon: CoinsIcon },
+    { label: '병량', value: player?.food ?? 0, icon: GrainsIcon },
+    { label: '도시', value: player?.cities ?? 0, icon: CastleTurretIcon },
+    { label: '부대', value: player?.units ?? 0, icon: FlagBannerIcon },
+    { label: '무장', value: player?.officers ?? 0, icon: UsersThreeIcon },
+  ];
+  return <header className="tk-topbar">
+    <div className="tk-calendar"><strong>{snapshot.year}<small>년</small> {snapshot.month}<small>월</small></strong><span>{snapshot.day === 21 ? '하순' : snapshot.day === 11 ? '중순' : '상순'} · {snapshot.turn}순</span></div>
+    <div className="tk-resource-ledger">{resources.map(({ label, value, icon: Icon }) => <div className="tk-resource" key={label}><Icon size={18} aria-hidden="true"/><span><small>{label}</small><strong>{value.toLocaleString()}</strong></span></div>)}</div>
+    <div className="tk-top-actions"><button onClick={onOverview}>세력 현황</button><button onClick={onExit} disabled={snapshot.busy}>저장 후 나가기</button><button className="tk-advance" onClick={snapshot.busy ? onSkip : onEndTurn} disabled={snapshot.result !== 'playing'}><span>{snapshot.busy ? '진행 가속' : '10일 진행'}</span>{snapshot.busy ? <FastForwardIcon size={18} aria-hidden="true"/> : <ArrowRightIcon size={18} aria-hidden="true"/>}</button></div>
+  </header>;
 }

@@ -90,5 +90,7 @@ test('city navigation never moves an army, queues construction, or resolves an a
   assert.equal(engine.pendingTactic,null);assert.equal(engine.placement,null);assert.equal(engine.attackRequest,null);
   engine.inspect(unit.coord);
   assert.deepEqual(engine.selection,{kind:'unit',unitId:unit.id});
+  engine.inspect(state.cities.chenliu.coord,'city');
+  assert.deepEqual(engine.selection,{kind:'city',cityId:'chenliu'},'a city shortcut still manages the city when an army stands on it');
   assert.equal(JSON.stringify(state),before);
 });

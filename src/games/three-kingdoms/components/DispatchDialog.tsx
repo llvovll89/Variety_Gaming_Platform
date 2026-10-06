@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { HANJA_FONT, PALETTE, UNIT_TYPES } from "../game/constants";
+import { HANJA_FONT, UNIT_TYPES } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import { dispatchCost, validateDispatch } from "../game/commands";
 import { officersInCity } from "../game/state";
 import { OfficerPortrait } from "./OfficerPortrait";
@@ -160,7 +161,7 @@ export function DispatchDialog({ engine, state, city, onClose }: Props) {
             type="button"
             onClick={send}
             disabled={!check.ok}
-            className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="tk-primary flex-1 rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-40"
             style={{ background: PALETTE.seal }}
           >
             출진

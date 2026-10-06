@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { FACILITIES, FACILITY_SLOTS, HANJA_FONT, PALETTE, TACTICS, TERRAIN_LABEL, UNIT_TYPES } from "../game/constants";
+import { FACILITIES, FACILITY_SLOTS, HANJA_FONT, TACTICS, TERRAIN_LABEL, UNIT_TYPES } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import { availableTactics } from "../game/combat";
 import { canCapture } from "../game/siege";
 import { isSupplied } from "../game/supply";
@@ -28,7 +29,7 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
   return (
     <div className="flex items-center gap-2">
       <span className="w-10 shrink-0 text-[11px] opacity-60">{label}</span>
-      <span className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(24,24,24,0.15)" }}>
+      <span className="tk-stat-track h-1.5 flex-1 overflow-hidden rounded-full">
         <span className="block h-full rounded-full" style={{ width: `${pct * 100}%`, background: color }} />
       </span>
       <span className="w-24 shrink-0 text-right text-[11px] tabular-nums" style={{ transition: "none" }}>
@@ -181,7 +182,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
 
         {mine && (
           <>
-            <div className="tk-command-tabs" aria-label="도시 명령 분류">
+            <div className="tk-command-tabs" role="group" aria-label="도시 명령 분류">
               {([['internal','내정'],['military','군사'],['build','건설']] as const).map(([id,label])=><button key={id} aria-pressed={commandTab===id} onClick={()=>{if(commandTab==='build'&&id!=='build')engine.cancelPlacement();setCommandTab(id);setProblem(null);}}>{label}</button>)}
             </div>
             {commandTab === 'military' && <div className="tk-military-command"><h3>출진 편성</h3><p>대장과 부장, 병종과 병력을 정한 뒤 전장에 내보냅니다.</p>
@@ -189,7 +190,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
               type="button"
               onClick={() => setDispatching(true)}
               disabled={snapshot.busy || !roster.some(o=>o.duty==='idle') || city.troops<1000}
-              className="tk-dispatch-open self-start rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+              className="tk-dispatch-open tk-primary self-start rounded-lg px-3 py-1.5 text-xs font-semibold"
               style={{ background: PALETTE.seal }}
             >
               부대 편성 · 출진 →
@@ -255,7 +256,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
                     <span className="text-[10px] tabular-nums opacity-60" style={{ transition: "none" }}>
                       {preview
                         ? preview.problem
-                          ? "—"
+                          ? "불가"
                           : `${kind === "draft" || kind === "repair" ? "" : "+"}${preview.delta.toLocaleString()}${preview.gold ? ` · ${preview.gold}금` : ""}`
                         : "무장 선택"}
                     </span>
@@ -267,7 +268,7 @@ export function InspectorPanel({ engine, state, snapshot }: Props) {
             {commandTab === 'build' && <div>
               <p className="mb-1 flex items-center gap-2 text-[11px] opacity-60">
                 <span>
-                  건설 ({facilityCount(state, cityId)}/{FACILITY_SLOTS}) — 개발 상한을 영구히 올립니다.
+                  건설 ({facilityCount(state, cityId)}/{FACILITY_SLOTS}) · 개발 상한을 영구히 올립니다.
                 </span>
                 {snapshot.placement?.cityId === cityId && (
                   <button
@@ -389,7 +390,7 @@ function Shell({ title, children }: { title?: string; children: React.ReactNode 
   return (
     <div
       className="tk-inspector-shell pointer-events-auto border-t pb-[max(0.25rem,env(safe-area-inset-bottom))]"
-      style={{ background: PALETTE.paper, borderColor: PALETTE.inkSoft, color: PALETTE.ink }}
+      style={{ borderColor: PALETTE.inkSoft }}
     >
       <button
         type="button"
@@ -470,7 +471,7 @@ function UnitActions({
             <button
               type="button"
               onClick={() => engine.enterCity(unit.id, breached.id)}
-              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+              className="tk-primary rounded-lg px-3 py-1.5 text-xs font-semibold"
               style={{ background: PALETTE.seal }}
             >
               {breached.name} 입성

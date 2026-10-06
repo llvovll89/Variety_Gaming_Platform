@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { adviceFor, currentObjective, type Advice } from "../game/advice";
-import { PALETTE } from "../game/constants";
+import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import type { GameState } from "../game/types";
 import type { HexCoord } from "../game/hex";
 
