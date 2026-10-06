@@ -20,6 +20,9 @@ function star(c: CanvasRenderingContext2D, x: number, y: number, r: number, colo
   for (let i = 0; i < 10; i++) { const a = i * Math.PI / 5 - Math.PI / 2; const d = i % 2 ? r * .48 : r; const px = x + Math.cos(a) * d, py = y + Math.sin(a) * d; if (!i) c.moveTo(px, py); else c.lineTo(px, py); }
   c.closePath(); c.fillStyle = color; c.fill();
 }
+function goldenRing(c:CanvasRenderingContext2D,x:number,y:number,pulse:number){
+  c.save();const gold=c.createLinearGradient(x-20,y-22,x+20,y+22);gold.addColorStop(0,'#aa7725');gold.addColorStop(.3,'#ffe98a');gold.addColorStop(.5,'#fff6c1');gold.addColorStop(.7,'#eab647');gold.addColorStop(1,'#b67e22');c.strokeStyle=gold;c.lineWidth=4;c.shadowColor='#ffd65e80';c.shadowBlur=10;c.beginPath();c.ellipse(x,y,19+pulse,23+pulse,0,0,Math.PI*2);c.stroke();c.restore();
+}
 function face(c: CanvasRenderingContext2D, x: number, y: number) {
   oval(c, x - 9, y, 2.3, 3.4, '#586268'); oval(c, x + 9, y, 2.3, 3.4, '#586268');
   oval(c, x - 16, y + 6, 5, 2.8, '#f89ea8'); oval(c, x + 16, y + 6, 5, 2.8, '#f89ea8');
@@ -30,15 +33,27 @@ function cloud(c: CanvasRenderingContext2D, x: number, y: number, size: number) 
   oval(c, 4, 18, 43, 14, '#b0b9d344');
   oval(c, 0, 9, 42, 15, '#ffffffcc'); oval(c, -18, 0, 21, 20, '#ffffffcc'); oval(c, 12, -6, 25, 25, '#ffffffed'); c.restore();
 }
+function tintBackdrop(c: CanvasRenderingContext2D, stageIndex: number, width: number, height: number) {
+  const theme = STAGES[stageIndex].theme;
+  if (theme === 'garden') return;
+  c.save();
+  c.globalAlpha = theme === 'palace' ? .36 : .12;
+  c.fillStyle = theme === 'forest' ? '#367761' : theme === 'ice' ? '#bbeaff' : theme === 'toy' ? '#edb17c' : theme === 'palace' ? '#19386b' : '#edc4d4';
+  c.fillRect(0, 0, width, height);
+  c.restore();
+}
 function landscape(c: CanvasRenderingContext2D, distance: number, stageIndex: number, backdrop: HTMLImageElement | null = null) {
   const stage = STAGES[stageIndex];
   const sky = c.createLinearGradient(0, 0, 0, LOGICAL_HEIGHT); sky.addColorStop(0, stage.sky[0]); sky.addColorStop(.6, stage.sky[1]); sky.addColorStop(1, stage.sky[2]);
   c.fillStyle = sky; c.fillRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-  if (stage.theme === 'garden' && backdrop?.complete && backdrop.naturalWidth > 0) {
-    c.save(); c.globalAlpha = .78;
+  if (backdrop?.complete && backdrop.naturalWidth > 0) {
+    c.save();
     const sourceWidth = backdrop.naturalHeight * LOGICAL_WIDTH / LOGICAL_HEIGHT;
-    c.drawImage(backdrop, (backdrop.naturalWidth - sourceWidth) / 2, 0, sourceWidth, backdrop.naturalHeight, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+    const drift = Math.sin(distance * .0007) * 32;
+    c.drawImage(backdrop, (backdrop.naturalWidth - sourceWidth) / 2 + drift, 0, sourceWidth, backdrop.naturalHeight, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+    tintBackdrop(c, stageIndex, LOGICAL_WIDTH, LOGICAL_HEIGHT);
     c.restore();
+    return;
   }
   oval(c, 320, 115, 42, 42, '#fff1b5'); oval(c, 320, 115, 33, 33, '#fff9d9'); face(c, 320, 116);
   c.save(); c.globalAlpha = stage.theme === 'garden' ? .26 : stage.theme === 'rainbow' ? .2 : .08; const rainbow = ['#ee8fa7', '#ffc775', '#fff8ac', '#92d6bb', '#97cde5'];
@@ -95,12 +110,25 @@ function item(c: CanvasRenderingContext2D, x: number, y: number, kind: ItemKind,
   if (kind !== "shield" && kind !== "magnet") { c.fillStyle = color; c.font = "bold 18px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(ITEMS[kind].symbol, x, y + 1); c.textBaseline = "alphabetic"; }
 }
 export function renderJump(c: CanvasRenderingContext2D, t: LetterboxTransform, obstacles: Obstacle[], player: PlayerState, image: HTMLImageElement | null, distance: number, flapFx: number, rewards: Rewards, journey: Journey, backdrop: HTMLImageElement | null = null, reducedMotion = false): void {
-  // Extend the same world behind the portrait playfield instead of flat letterbox bars.
+  // Cover the viewport from the panoramic source, avoiding an enlarged portrait crop.
   c.save();
-  const backdropScale = Math.max(t.viewportWidth / LOGICAL_WIDTH, t.viewportHeight / LOGICAL_HEIGHT);
-  c.translate((t.viewportWidth - LOGICAL_WIDTH * backdropScale) / 2, (t.viewportHeight - LOGICAL_HEIGHT * backdropScale) / 2);
-  c.scale(backdropScale, backdropScale); landscape(c, reducedMotion ? 0 : distance * .4, journey.stage, backdrop); c.restore();
-  c.fillStyle = '#fff0f433'; c.fillRect(0, 0, t.viewportWidth, t.viewportHeight);
+  if (backdrop?.complete && backdrop.naturalWidth > 0 && backdrop.naturalHeight > 0) {
+    const coverScale = Math.max(t.viewportWidth / backdrop.naturalWidth, t.viewportHeight / backdrop.naturalHeight);
+    const sourceWidth = t.viewportWidth / coverScale;
+    const sourceHeight = t.viewportHeight / coverScale;
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    c.drawImage(backdrop, (backdrop.naturalWidth - sourceWidth) / 2, (backdrop.naturalHeight - sourceHeight) / 2,
+      sourceWidth, sourceHeight, 0, 0, t.viewportWidth, t.viewportHeight);
+    tintBackdrop(c, journey.stage, t.viewportWidth, t.viewportHeight);
+  } else {
+    const backdropScale = Math.max(t.viewportWidth / LOGICAL_WIDTH, t.viewportHeight / LOGICAL_HEIGHT);
+    c.translate((t.viewportWidth - LOGICAL_WIDTH * backdropScale) / 2, (t.viewportHeight - LOGICAL_HEIGHT * backdropScale) / 2);
+    c.scale(backdropScale, backdropScale);
+    landscape(c, reducedMotion ? 0 : distance * .4, journey.stage);
+  }
+  c.restore();
+  c.fillStyle = '#173f6726'; c.fillRect(0, 0, t.viewportWidth, t.viewportHeight);
   c.save(); c.shadowColor = '#86a9b633'; c.shadowBlur = 26; c.fillStyle = STAGES[journey.stage].sky[0];
   c.fillRect(t.offsetX, t.offsetY, LOGICAL_WIDTH * t.scale, LOGICAL_HEIGHT * t.scale); c.restore();
   c.save(); c.translate(t.offsetX, t.offsetY); c.scale(t.scale, t.scale); c.beginPath(); c.rect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT); c.clip();
@@ -109,11 +137,12 @@ export function renderJump(c: CanvasRenderingContext2D, t: LetterboxTransform, o
     if (o.kind !== "mushroom" && o.kind !== "flower") drawObstacleModel(c, o.x, 0, o.gapCenterY - o.gapHeight / 2, o.hue, true, o.kind);
     const bottom = o.gapCenterY + o.gapHeight / 2; drawObstacleModel(c, o.x, bottom, GROUND_Y - bottom, o.hue, false, o.kind);
     const pulse = reducedMotion ? 0 : Math.sin(distance * .025 + o.id);
-    if (o.star && !o.star.collected) { const x = o.x + PIPE_WIDTH / 2; oval(c, x, o.star.y, 23 + pulse * 2, 23 + pulse * 2, '#fff8bd88'); star(c, x, o.star.y, STAR_RADIUS + 3, '#dc962e'); star(c, x, o.star.y - 1, STAR_RADIUS + 1, '#ffdc65'); star(c, x - 2, o.star.y - 4, 3, '#fff9dc'); }
+    if (o.star && !o.star.collected) { const x = o.x + PIPE_WIDTH / 2; goldenRing(c,x,o.star.y,pulse); star(c, x, o.star.y, STAR_RADIUS + 3, '#dc962e'); star(c, x, o.star.y - 1, STAR_RADIUS + 1, '#ffdc65'); star(c, x - 2, o.star.y - 4, 3, '#fff9dc'); }
     if (o.item && !o.item.collected) item(c, o.x - ITEM_OFFSET, o.gapCenterY, o.item.kind, pulse);
   }
-  c.fillStyle = STAGES[journey.stage].ground; c.fillRect(0, GROUND_Y, 400, 60); c.fillStyle = STAGES[journey.stage].frosting; c.fillRect(0, GROUND_Y, 400, 13);
-  for (let i = -1; i < 15; i++) { const x = i * 32 - distance % 32; oval(c, x, GROUND_Y + 12, 17, 9, STAGES[journey.stage].frosting); oval(c, x + 8, GROUND_Y + 40, 3, 2, '#d3a480'); }
+  const ground=c.createLinearGradient(0,GROUND_Y,0,LOGICAL_HEIGHT);ground.addColorStop(0,'#bca17c');ground.addColorStop(1,'#79664f');c.fillStyle=ground;c.fillRect(0,GROUND_Y,400,60);
+  c.fillStyle = journey.stage === 2 ? '#dcf2f4' : '#7da14e'; c.fillRect(0, GROUND_Y, 400, 9);
+  for (let i = -1; i < 15; i++) { const x = i * 32 - distance % 32; oval(c, x, GROUND_Y + 6, 17, 6, journey.stage === 2 ? '#effbff' : '#a7be70');c.strokeStyle='#5c513333';c.lineWidth=2;c.beginPath();c.moveTo(x+8,GROUND_Y+16);c.lineTo(x+14,GROUND_Y+37);c.lineTo(x+5,LOGICAL_HEIGHT);c.stroke(); }
   const x = PLAYER_X, y = player.y;
   // Contact shadow and a little winged toy shell add depth without changing physics.
   oval(c, x + 6, GROUND_Y + 10, 16 + (y / GROUND_Y) * 5, 4, '#80577422');
@@ -122,15 +151,22 @@ export function renderJump(c: CanvasRenderingContext2D, t: LetterboxTransform, o
   if (rewards.shieldTime > 0) { c.save(); c.globalAlpha = rewards.shieldTime < 1.5 ? .55 + Math.sin(distance * .14) * .25 : 1; oval(c, x, y, 29, 29, '#bdf8ff88'); c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.stroke(); oval(c, x - 12, y - 16, 7, 3, '#fff'); c.restore(); }
   if (!reducedMotion && flapFx > .01) { c.strokeStyle = `rgba(255,255,255,${flapFx * .6})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 20 + (1 - flapFx) * 16, 0, Math.PI * 2); c.stroke(); }
   c.save(); c.translate(x, y); c.rotate(player.rotation);
+  const defaultBird = !image || image.src.endsWith('/art/jump/blue-bird.png');
+  if(defaultBird && image?.complete && image.naturalWidth > 0){
+    // The body stays over the unchanged 14px collision circle; tail and feathers are decorative.
+    c.scale(1, reducedMotion ? 1 : 1 + flapFx * .035);
+    c.drawImage(image,-36,-25,64,43);c.restore();
+  }else{
   oval(c, -20, 4 - flapFx * 6, 11, 5, '#c7b9d5'); oval(c, -21, 1 - flapFx * 6, 11, 5, '#fff9fc');
   oval(c, 17, 5 - flapFx * 5, 8, 4, '#c7b9d5'); oval(c, 18, 2 - flapFx * 5, 8, 4, '#fff9fc');
   oval(c, 2, 4, PLAYER_RADIUS + 2, PLAYER_RADIUS + 2, '#c482a5');
   const shell = c.createRadialGradient(-7, -9, 2, 0, 0, PLAYER_RADIUS + 2);
-  shell.addColorStop(0, '#fff9fc'); shell.addColorStop(.7, '#ffe5ee'); shell.addColorStop(1, '#dda0bc');
+  shell.addColorStop(0, '#e2f7ff'); shell.addColorStop(.7, '#71b8ed'); shell.addColorStop(1, '#3479b6');
   oval(c, 0, 0, PLAYER_RADIUS + 2, PLAYER_RADIUS + 2, shell);
   c.beginPath(); c.arc(0, 0, PLAYER_RADIUS, 0, Math.PI * 2); c.clip();
   if (image && image.complete && image.naturalWidth > 0) drawImageTopCrop(c, image, -PLAYER_RADIUS, -PLAYER_RADIUS, PLAYER_RADIUS * 2);
-  else { oval(c, 0, 0, PLAYER_RADIUS, PLAYER_RADIUS, '#ffc4db'); face(c, 0, -3); } c.restore();
+  else { oval(c, 0, 0, PLAYER_RADIUS, PLAYER_RADIUS, '#71b8ed'); face(c, 0, -3); } c.restore();
+  }
   for (const fx of rewards.effects) { c.save(); c.globalAlpha = Math.min(1, fx.life * 2); c.font = 'bold 17px Pretendard, sans-serif'; c.textAlign = 'center'; c.strokeStyle = '#fff'; c.lineWidth = 4; c.strokeText(fx.text, fx.x, fx.y - 18); c.fillStyle = fx.color; c.fillText(fx.text, fx.x, fx.y - 18); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; star(c, fx.x + Math.cos(a) * (1 - fx.life) * 45, fx.y + Math.sin(a) * (1 - fx.life) * 35, fx.life * 4, '#ffd060'); } c.restore(); }
   c.restore();
 }

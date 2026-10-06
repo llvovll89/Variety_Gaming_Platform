@@ -73,7 +73,7 @@ export class JumpEngine {
     this.playerImage = new Image();
     this.playerImage.src = characterImageUrl;
     this.worldImage = new Image();
-    this.worldImage.src = '/art/jump-diorama.jpg';
+    this.worldImage.src = '/art/jump/floating-islands.jpg';
     this.reducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (import.meta.env.DEV) {

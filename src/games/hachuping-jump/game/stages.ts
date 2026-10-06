@@ -14,7 +14,7 @@ export interface StageDefinition {
 }
 
 export const STAGES: StageDefinition[] = [
-  { name: '솜사탕 정원', subtitle: '사탕과 와플 사이로 작은 꽃을 만나요', sky: ['#dff3fa','#ffedf2','#fff4dc'], ground: '#edcba6', frosting: '#fffaf0', hills: ['#d9f0df','#bce2cd'], speedStart: 185, speedEnd: 195, gapStart: 235, gapEnd: 230, kinds: ['candy','flower','waffle','cloud','mushroom','candy'], theme: 'garden' },
+  { name: '바람의 공중 정원', subtitle: '풀꽃과 덩굴이 자라는 공중 섬을 날아요', sky: ['#91cbea','#c6e8f4','#f2f9ef'], ground: '#ad9673', frosting: '#96b55d', hills: ['#b5d8cf','#8bbdc4'], speedStart: 185, speedEnd: 195, gapStart: 235, gapEnd: 230, kinds: ['candy','flower','waffle','cloud','mushroom','candy'], theme: 'garden' },
   { name: '반딧불 버섯숲', subtitle: '민트빛 숲에서 버섯과 꽃을 지나가요', sky: ['#d3f0e2','#ecf8df','#fff5de'], ground: '#c4dfb8', frosting: '#f5fbe6', hills: ['#bde4cc','#a7d4b8'], speedStart: 195, speedEnd: 205, gapStart: 230, gapEnd: 225, kinds: ['mushroom','flower','cloud','flower','mushroom','waffle'], theme: 'forest' },
   { name: '오로라 얼음성', subtitle: '반짝이는 얼음과 구름 문을 통과해요', sky: ['#d5f0fa','#e8f9fa','#fff5eb'], ground: '#c1e1ec', frosting: '#f6fcfc', hills: ['#d9f1ed','#b7dde7'], speedStart: 205, speedEnd: 215, gapStart: 225, gapEnd: 215, kinds: ['crystal','cloud','castle','crystal','cloud','waffle'], theme: 'ice' },
   { name: '노을 장난감 마을', subtitle: '알록달록 블록과 비스킷 탑을 지나가요', sky: ['#ffe3d4','#fff0da','#fff8e5'], ground: '#edc6b0', frosting: '#fff4dc', hills: ['#f6d5b4','#edbfae'], speedStart: 215, speedEnd: 225, gapStart: 215, gapEnd: 210, kinds: ['toy','waffle','candy','toy','castle','cloud'], theme: 'toy' },
