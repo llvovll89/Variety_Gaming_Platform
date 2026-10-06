@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "pretendard/dist/web/static/pretendard.css";
+@import "./pretendard.css";
 
 :root {
   /* Design System: Premium Playful */
