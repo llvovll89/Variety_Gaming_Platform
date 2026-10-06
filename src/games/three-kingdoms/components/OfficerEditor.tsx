@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameEngine } from '../game/engine';
 import type { Officer } from '../game/types';
 import { OfficerPortrait } from './OfficerPortrait';
+import { officerStatInput } from '../game/editor';
 
 const STATS = [['lead', '통솔'], ['war', '무력'], ['int', '지력'], ['pol', '정치'], ['cha', '매력']] as const;
 
@@ -54,7 +55,8 @@ export function OfficerEditor({ engine, onClose }: { engine: GameEngine; onClose
         <div className="tk-field-pair"><label>이름<input maxLength={16} value={draft.name} onChange={e => change({ name: e.target.value })} /></label><label>한자<input maxLength={16} value={draft.hanja} onChange={e => change({ hanja: e.target.value })} /></label></div>
         <label>배치 도시 · 소속 세력<select disabled={!creating && draft.duty !== 'idle'} value={draft.cityId} onChange={e => change({ cityId: e.target.value })}>{Object.values(state.cities).filter(c => c.faction).map(c => <option key={c.id} value={c.id}>{c.name} · {state.factions[c.faction!].name}</option>)}</select></label>
         {draft.duty !== 'idle' && <p className="tk-muted">임무 중인 장수는 배치를 변경할 수 없습니다.</p>}
-        <div className="tk-stat-inputs">{STATS.map(([key, name]) => <label key={key}>{name}<input type="number" min={1} max={100} required value={draft[key]} onChange={e => change({ [key]: Number(e.target.value) })} /></label>)}</div>
+        <div className="tk-stat-inputs">{STATS.map(([key, name]) => <label key={key}>{name}<input type="number" inputMode="numeric" min={1} max={100} step={1} required value={draft[key]} onKeyDown={e => { if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault(); }} onChange={e => change({ [key]: officerStatInput(e.target.value) })} /></label>)}</div>
+        <small>능력치는 1~100의 정수로 입력하세요.</small>
         <p role="status">{message || (dirty ? '변경 사항을 저장하면 적용됩니다.' : '능력치에 따라 사용 가능한 전법도 갱신됩니다.')}</p>
         <button className="tk-primary" type="submit" disabled={!dirty}>변경 사항 저장</button>
       </form>

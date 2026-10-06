@@ -54,7 +54,7 @@ const FACTION_ROWS = [
  * The 가도 network. Everything south of the 황하 links up along one spine; 업 reaches the
  * south only through two river fords, which is what makes 원소 a slow, deliberate threat.
  */
-const ROADS: readonly RoadLink[] = [
+export const ROADS: readonly RoadLink[] = [
   ["changan", "luoyang"],
   ["luoyang", "chenliu"],
   ["luoyang", "wan"],

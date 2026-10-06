@@ -2,6 +2,11 @@ import { tacticsFor } from './officers';
 import type { GameState, Officer } from './types';
 import type { CommandResult } from './internal';
 
+export function officerStatInput(value: string): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(100, Math.max(1, Math.trunc(number))) : 1;
+}
+
 export function editOfficer(state: GameState, draft: Officer, creating = false): CommandResult {
   if (state.phase !== 'player' || state.result !== 'playing') return { ok: false, reason: '플레이어 차례에만 편집할 수 있습니다.' };
   const original = state.officers[draft.id];

@@ -12,6 +12,7 @@ const compiled=await build({stdin:{contents:`
   export {createOfficers} from './src/games/three-kingdoms/game/officers';
   export {dispatch} from './src/games/three-kingdoms/game/commands';
   export {GameEngine} from './src/games/three-kingdoms/game/engine';
+  export {officerStatInput,editOfficer} from './src/games/three-kingdoms/game/editor';
   export * from './src/games/three-kingdoms/game/officerPortraits';
   export {OfficerEditor} from './src/games/three-kingdoms/components/OfficerEditor';
   export {OfficerDetails} from './src/games/three-kingdoms/components/OfficerDetails';
@@ -22,6 +23,16 @@ bundled.filename=fileURLToPath(import.meta.url);
 bundled.paths=Module._nodeModulePaths(process.cwd());
 bundled._compile(compiled.outputFiles[0].text,bundled.filename);
 const {createElement,renderToStaticMarkup,createGameState,createOfficers,dispatch,GameEngine,officerPortraitSource,officerPortraitStyle,OfficerEditor,OfficerDetails,StartMenu}=bundled.exports;
+
+test('editor caps typed and pasted stats and rejects invalid saved stats atomically',()=>{
+  const {officerStatInput,editOfficer}=bundled.exports;
+  for(const [input,expected] of [['1111111',100],['101',100],['0',1],['-50',1],['',1],['99.9',99],['Infinity',1],['NaN',1],['1',1],['100',100]]) assert.equal(officerStatInput(input),expected);
+  const state=createGameState('caocao'),before=JSON.stringify(state);
+  for(const key of ['lead','war','int','pol','cha']) for(const value of [1111111,101,0,-1,99.9,NaN,Infinity]) {
+    assert.equal(editOfficer(state,{...state.officers.caocao,[key]:value}).ok,false);
+    assert.equal(JSON.stringify(state),before);
+  }
+});
 
 test('all 120 historical officers have distinct illustrated portraits backed by real assets',()=>{
   const portraits=Object.values(createOfficers()).map(o=>officerPortraitSource(o.id));
