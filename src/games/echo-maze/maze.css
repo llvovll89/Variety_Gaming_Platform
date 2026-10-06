@@ -1,201 +1,103 @@
-.maze-app{--ink:#173e3b;--muted:#677b74;--line:#d6ded5;--paper:#f4f3eb;position:absolute;inset:0;overflow:auto;background:var(--paper);color:var(--ink);font-family:Pretendard,sans-serif;padding:0 max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom));color-scheme:light}
-
-.maze-app *{box-sizing:border-box}
-.maze-app button,.maze-upload{cursor:pointer;border:1px solid var(--line);background:#fffef8;color:var(--ink);border-radius:6px;padding:12px 16px;font:inherit;font-size:13px;font-weight:600;transition:background .15s,transform .15s}
-.maze-app button:hover,.maze-upload:hover{background:#e5ebe0}
-.maze-app button:active{transform:translateY(1px)}
-.maze-app button:disabled{cursor:default;opacity:.4}
-.maze-app button:focus-visible,.maze-upload:focus-within,.maze-app input:focus-visible{outline:3px solid #258b7b;outline-offset:3px}
-
-.maze-header{max-width:1240px;margin:auto;min-height:80px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
-.maze-header>span{font-size:18px;font-weight:800;letter-spacing:-.6px}
-.maze-header small{font-size:10px;letter-spacing:2px;color:var(--muted);margin-left:14px}
-.maze-header .maze-header-tag{font-size:11px;color:var(--muted);font-weight:500}
-.maze-header>button{background:transparent;border:0;padding-left:0}
-
-.maze-setup{max-width:1180px;margin:48px auto;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(330px,1fr);gap:64px;align-items:center}
-.maze-eyebrow{font-size:11px;font-weight:700;letter-spacing:1.8px;color:#458075}
-.maze-intro h1{font-size:clamp(40px,4.4vw,64px);line-height:1.13;letter-spacing:-3px;margin:18px 0 22px;font-weight:800}
-.maze-intro h1 em{font-style:normal;color:#388478}
-.maze-intro>p{font-size:14px;color:var(--muted);line-height:1.9}
-.maze-preview{position:relative;height:330px;margin:24px 0;background:#e8ecdf;border-radius:8px;overflow:hidden;border:1px solid #d9dfd0}
-.maze-preview canvas{width:100%;height:100%;padding:14px}
-.maze-preview>span{position:absolute;bottom:14px;right:18px;color:#537269;font-size:10px}
-.maze-story{display:flex;gap:20px;align-items:baseline;border-top:1px solid var(--line);padding-top:17px}
-.maze-story b{font-size:13px;white-space:nowrap}
-.maze-story p{font-size:12px;line-height:1.8;color:var(--muted);margin:0}
-
-.maze-config{background:#fffef8;border:1px solid var(--line);border-radius:10px;padding:30px;box-shadow:0 16px 36px #173e3b07}
+.maze-app{--ink:#edf2f3;--muted:#b0beca;--line:#3a4b5a;--paper:#0d1520;--panel:#17232f;--cyan:#8bdede;--gold:#ebbf70;position:absolute;inset:0;overflow:auto;background:var(--paper);color:var(--ink);font-family:Pretendard,sans-serif;padding:0 max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom));color-scheme:dark}
+.maze-app *{box-sizing:border-box;min-width:0}
+.maze-app button,.maze-upload{cursor:pointer;border:1px solid var(--line);background:#1b2936;color:var(--ink);border-radius:5px;padding:12px 16px;font:600 13px Pretendard,sans-serif;transition:background .15s}
+.maze-app button:hover,.maze-upload:hover{background:#293b49}
+.maze-app button:disabled{cursor:default;opacity:.5}
+.maze-app :focus-visible,.maze-upload:focus-within{outline:2px solid var(--gold);outline-offset:3px}
+.maze-app button{touch-action:manipulation}
+.maze-header{max-width:1440px;margin:auto;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid var(--line)}
+.maze-header>span{font-size:20px;font-weight:800;letter-spacing:-.6px}
+.maze-header small{font-size:10px;letter-spacing:2px;color:var(--muted);margin-left:14px;font-weight:500}
+.maze-header .maze-header-tag{font-size:12px;color:var(--muted);font-weight:400;letter-spacing:0}
+.maze-header>button{background:transparent;border:0;padding-left:0;min-height:44px}
+.maze-setup{max-width:1320px;margin:32px auto;display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.85fr);gap:42px;align-items:start}
+.maze-intro{position:relative;isolation:isolate;padding:30px 28px 22px;border:1px solid #3d4e5b;border-radius:6px;overflow:hidden;background:#15232f}
+.maze-intro::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#0e1925 3%,#0e1925b3 47%,#0c182767),url('/art/hub/echo-maze-large.jpg') 48% center/cover;opacity:.8}
+.maze-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--cyan)}
+.maze-intro h1{font-size:clamp(40px,5vw,70px);line-height:1.05;letter-spacing:-3px;margin:20px 0 18px;font-weight:800;text-shadow:0 2px 18px #060d17}
+.maze-intro>p{font-size:14px;color:#d1dbe1;line-height:1.85;margin:0;max-width:460px}
+.maze-preview{position:relative;height:clamp(300px,40dvh,400px);margin:24px -12px 0;background:#0d1826bd;border:1px solid #43596b;border-radius:4px;overflow:hidden}
+.maze-preview canvas{width:100%;height:100%;display:block}
+.maze-preview>span{position:absolute;bottom:12px;left:16px;right:16px;color:#b7c7d2;font-size:11px;text-align:center;pointer-events:none}
+.maze-story{display:flex;gap:20px;align-items:baseline;padding-top:20px;margin-top:20px;border-top:1px solid #59707a80}
+.maze-story b{font-size:13px;color:var(--gold);white-space:nowrap}
+.maze-story p{font-size:12px;line-height:1.8;color:#c2d0d8;margin:0}
+.maze-config{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:26px}
 .maze-config-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.maze-config h2{font-size:22px;margin:0;letter-spacing:-.8px}
-.maze-config-heading>span{font-size:10px;color:var(--muted);letter-spacing:1.5px}
-.maze-label{display:block;font-size:12px;font-weight:700;margin:22px 0 10px}
-.maze-config>input{width:100%;border:1px solid var(--line);background:#f8f8f0;color:var(--ink);border-radius:5px;padding:13px;font:inherit;font-size:14px}
-.maze-photo{display:flex;gap:18px;align-items:center}
-.maze-photo img{width:72px;height:72px;object-fit:cover;border-radius:16px;border:1px solid var(--line);padding:4px;background:#e8ecdf}
-.maze-upload{display:inline-flex;position:relative;overflow:hidden;padding:9px 14px}
+.maze-config h2{font-size:23px;margin:0;letter-spacing:-.8px}
+.maze-config-heading>span{color:var(--gold)}
+.maze-label{display:block;font-size:12px;font-weight:600;margin:20px 0 10px}
+.maze-config>input{width:100%;border:1px solid #526574;background:#0d1823;color:var(--ink);border-radius:4px;padding:12px;font:inherit;font-size:15px;min-height:44px}
+.maze-photo{display:flex;gap:16px;align-items:center}
+.maze-photo img{width:68px;height:68px;object-fit:cover;border-radius:8px;border:1px solid #655d49;padding:7px;background:#252d32;flex-shrink:0}
+.maze-upload{display:inline-flex;position:relative;overflow:hidden;padding:10px 14px;min-height:40px;align-items:center}
 .maze-upload input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 .maze-photo p{font-size:11px;line-height:1.7;color:var(--muted);margin:8px 0 0}
-.maze-photo button{padding:3px 0;background:transparent;border:0;font-size:11px}
-.maze-private{font-size:10px;line-height:1.6;color:var(--muted);margin-top:12px}
-.maze-error{font-size:12px;color:#a24030;font-weight:700}
-.maze-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.maze-levels button{background:transparent;padding:14px 5px}
-.maze-levels button[aria-pressed=true]{background:#e4efe6;border-color:#388478;color:#173e3b;box-shadow:inset 0 -3px #388478}
+.maze-photo button{padding:6px 0;background:transparent;border:0;font-size:11px;color:var(--cyan);min-height:32px}
+.maze-private{font-size:11px;line-height:1.7;color:var(--muted);margin-top:12px}
+.maze-error{font-size:12px;color:#ffb8a7;font-weight:600}
+.maze-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.maze-levels button{background:transparent;padding:14px 4px;min-height:64px}
+.maze-levels button[aria-pressed=true]{background:#304249;border-color:var(--cyan);color:#d5ffff;box-shadow:inset 0 -2px var(--cyan)}
 .maze-levels strong,.maze-levels span{display:block}
 .maze-levels span{font-size:11px;margin-top:6px;font-weight:400;color:var(--muted)}
-.maze-level-detail{font-size:11px;line-height:1.7;color:var(--muted);min-height:20px}
-.maze-app .maze-primary{width:100%;display:flex;justify-content:center;align-items:center;gap:24px;background:var(--ink);color:#fffef8;border-color:var(--ink);font-weight:700;padding:16px 18px;margin-top:20px}
-.maze-app .maze-primary:hover{background:#286057}
-.maze-controls-help{text-align:center;color:var(--muted);font-size:10px;margin:12px 0 0}
-
-.maze-play{max-width:1120px;margin:24px auto}
-.maze-hud{display:flex;align-items:center;gap:28px;padding:0 4px 18px}
+.maze-level-detail{font-size:12px;line-height:1.7;color:var(--muted);min-height:40px;margin:12px 0}
+.maze-app .maze-primary{width:100%;display:flex;justify-content:center;align-items:center;gap:16px;background:var(--gold);color:#18232c;border-color:var(--gold);font-weight:700;padding:15px 18px;margin-top:20px;min-height:50px}
+.maze-app .maze-primary:hover{background:#f5cf8a}
+.maze-controls-help{color:var(--muted);font-size:11px;margin:14px 0 0;line-height:1.8;text-align:center}
+.maze-in-game .maze-header{min-height:56px}
+.maze-play{max-width:1440px;margin:18px auto 0;display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px 20px;align-items:start}
+.maze-hud{grid-column:1/-1;display:flex;align-items:center;gap:24px;padding:0 2px}
 .maze-hud>div:first-child{flex:1}
-.maze-hud span{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}
-.maze-hud strong{font-size:22px;letter-spacing:-.8px}
-.maze-time{display:flex;gap:18px;align-items:center;border-left:1px solid var(--line);padding-left:24px}
+.maze-hud span{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+.maze-hud strong{font-size:22px;letter-spacing:-.7px}
+.maze-hud>button{width:44px;height:44px;display:grid;place-items:center;padding:0}
+.maze-time{display:flex;gap:18px;align-items:center;padding:8px 20px;border-left:1px solid var(--line)}
 .maze-time small{color:var(--muted);font-size:11px}
-.maze-time b{font-size:36px;letter-spacing:-1.5px;font-variant-numeric:tabular-nums;line-height:1}
-.maze-time.urgent b{color:#b94732}
-.maze-time.urgent small{color:#b94732}
-.maze-board{position:relative;background:#e8ecdf;border:1px solid #d5ddce;border-radius:10px;overflow:hidden}
-.maze-board>canvas{display:block;width:100%;height:clamp(320px,55dvh,600px);padding:12px}
-.maze-legend{display:flex;gap:24px;justify-content:center;padding:8px 10px 16px;color:#577267;font-size:10px}
-.maze-legend span:first-child{color:#8a651c}
-.maze-bottom{display:flex;gap:26px;align-items:center;margin-top:18px}
-.maze-tools{flex:1;min-width:0}
-.maze-message{font-size:13px;color:#286057;min-height:30px;line-height:1.6}
-.maze-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.maze-actions button{display:flex;align-items:center;gap:13px;text-align:left;padding:14px}
-.maze-actions svg{flex-shrink:0;color:#388478}
+.maze-time b{font-size:34px;letter-spacing:-1px;font-variant-numeric:tabular-nums;line-height:1;color:var(--gold)}
+.maze-time.urgent :is(b,small){color:#ffb2a1}
+.maze-board{grid-column:1;position:relative;background:radial-gradient(ellipse at 50% 40%,#253648,#111c2b 75%);border:1px solid #3e5160;border-radius:6px;overflow:hidden;touch-action:none}
+.maze-board>canvas{display:block;width:100%;height:clamp(360px,calc(100dvh - 222px),800px)}
+.maze-run-stats{position:absolute;top:14px;left:16px;right:16px;display:flex;gap:16px;align-items:center;pointer-events:none;font-size:11px;color:#dae3e8;z-index:1}
+.maze-run-stats span{display:flex;gap:6px;align-items:center;background:#101d2bd9;border:1px solid #465a6c;border-radius:3px;padding:6px 8px}
+.maze-run-stats .maze-north{margin-left:auto;font-size:10px}
+.maze-legend{display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:center;padding:12px;color:#b7c7d2;font-size:10px;background:#111e2a;border-top:1px solid #344858}
+.maze-legend span:first-child{color:#d4b5f5}
+.maze-bottom{grid-column:2;display:flex;flex-direction:column;gap:24px;margin:0;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;align-items:stretch}
+.maze-tools{min-width:0}
+.maze-message{font-size:13px;color:var(--cyan);min-height:50px;line-height:1.8;margin:12px 0 18px}
+.maze-actions{display:grid;grid-template-columns:1fr;gap:10px}
+.maze-actions button{display:flex;align-items:center;gap:12px;text-align:left;padding:14px 12px;min-height:66px}
+.maze-actions svg{flex-shrink:0;color:var(--gold)}
 .maze-actions b,.maze-actions small{display:block}
-.maze-actions b{font-size:12px}
-.maze-actions small{font-size:10px;font-weight:400;margin-top:5px;color:var(--muted)}
-.maze-tools>p{font-size:10px;line-height:1.6;color:var(--muted);margin:12px 0 0}
-.maze-dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,44px);gap:5px;touch-action:none;user-select:none}
-.maze-dpad button{touch-action:none;padding:0;font-size:23px;background:#e2e8db;border-color:#c9d5c5}
-.maze-dpad .dir-0{grid-column:2}
-.maze-dpad .dir-3{grid-column:1;grid-row:2}
-.maze-dpad .dir-2{grid-column:2;grid-row:2}
-.maze-dpad .dir-1{grid-column:3;grid-row:2}
-.maze-overlay{position:absolute;inset:0;display:grid;place-items:center;background:#173e3ba6;padding:20px;z-index:2;backdrop-filter:blur(5px)}
-.maze-overlay section{background:#fffef8;border:1px solid var(--line);border-radius:12px;padding:34px;text-align:center;width:min(100%,420px);box-shadow:0 24px 80px #10292330}
-.maze-overlay h2{font-size:28px;letter-spacing:-1px;margin:18px 0}
-.maze-overlay p{font-size:13px;color:var(--muted);line-height:1.8}
-.maze-overlay section>button:last-child{margin-top:12px}
-.maze-overlay~*{pointer-events:none}
-
-@media(max-width:900px){.maze-setup{gap:32px;grid-template-columns:minmax(0,1fr) minmax(310px,1fr)}
-.maze-intro h1{font-size:44px}
-.maze-config{padding:24px}
-.maze-actions button{gap:8px;padding:12px}
-.maze-actions svg{width:18px}
-}
-
-@media(max-width:700px){.maze-app{padding-left:16px;padding-right:16px}
-.maze-header{min-height:64px}
-.maze-header>span{font-size:15px}
-.maze-header small,.maze-header-tag{display:none}
-.maze-header button{font-size:11px;padding:9px 0}
-.maze-setup{grid-template-columns:1fr;gap:28px;margin:28px auto;max-width:450px}
-.maze-intro h1{font-size:42px;letter-spacing:-2px}
-.maze-intro>p{font-size:12px}
-.maze-preview{height:230px;margin:18px 0}
-.maze-story{gap:16px}
-.maze-story p{font-size:11px}
-.maze-config{padding:24px}
-.maze-play{margin-top:18px}
-.maze-hud{gap:12px;padding-bottom:14px}
-.maze-hud strong{font-size:16px}
-.maze-hud span{font-size:10px}
-.maze-hud button{padding:10px;font-size:11px}
-.maze-time{display:block;padding-left:12px}
-.maze-time small{display:block;font-size:9px;margin-bottom:5px}
-.maze-time b{font-size:28px}
-.maze-board>canvas{height:clamp(295px,46dvh,470px);padding:0}
-.maze-legend{gap:12px;font-size:9px;padding-bottom:12px}
-.maze-bottom{flex-wrap:wrap;gap:12px;justify-content:center}
-.maze-tools{flex-basis:100%}
-.maze-message{font-size:12px}
-.maze-actions{gap:6px}
-.maze-actions button{display:block;padding:12px 9px}
-.maze-actions svg{margin-bottom:7px;width:20px}
-.maze-actions b{font-size:11px}
-.maze-actions small{font-size:9px}
-.maze-tools>p{margin:10px 0 0}
-.maze-dpad{grid-template-columns:repeat(3,54px);grid-template-rows:repeat(2,48px)}
-.maze-overlay section{padding:25px}
-.maze-overlay h2{font-size:24px}
-}
-
-@media(prefers-reduced-motion:reduce){.maze-app *{transition:none!important}
-}
-@media(prefers-reduced-transparency:reduce){.maze-overlay{background:#e8ecdf;backdrop-filter:none}
-}
-
-/* Soft toy diorama: the same mint, warm ivory and amber family as Mole Pop. */
-.maze-app{--ink:#214b42;--muted:#5c7f71;--line:#c7dbcd;--paper:#eef5e7;background:radial-gradient(ellipse at 55% 30%,#fcf8e6 0,#e8f2e4 65%,#dceee3 100%);padding:0 max(28px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom))}
-.maze-header{max-width:1400px;min-height:72px;border-color:#abc6b955}
-.maze-header>span{font-size:19px;font-weight:800}
-.maze-header small{color:#648b7c}
-.maze-setup{max-width:1380px;grid-template-columns:minmax(0,1.65fr) minmax(310px,.85fr);gap:44px;margin:28px auto;align-items:start}
-.maze-intro{position:relative;padding-top:12px}
-.maze-eyebrow{display:inline-flex;align-items:center;gap:8px;color:#467b67;letter-spacing:1px}
-.maze-intro h1{font-size:clamp(42px,4.2vw,62px);line-height:1.12;letter-spacing:-2.8px;margin:14px 0}
-.maze-intro h1 em{color:#498967}
-.maze-intro>p{margin:16px 0 0;font-size:13px}
-.maze-preview{height:clamp(300px,44dvh,510px);margin:4px -12px 0;border:0;background:transparent;overflow:visible}
-.maze-preview canvas{padding:0;display:block;width:100%;height:100%}
-.maze-preview>span{bottom:8px;left:0;right:0;text-align:center;font-size:11px}
-.maze-story{border-color:#aecab666;gap:20px;padding:14px 0 0;margin-top:8px}
-.maze-config{border-radius:22px;padding:26px 28px;background:#fffdf2e8;box-shadow:0 14px 0 -8px #bbd3bc55,0 18px 42px #5479610c}
-.maze-config-heading{margin-bottom:14px}
-.maze-config h2{font-size:23px;font-weight:800}
-.maze-config-heading>span{color:#709f83}
-.maze-label{margin:18px 0 8px;font-size:11px}
-.maze-config>input{border-radius:10px;background:#f4f7ec;padding:12px}
-.maze-photo img{border-radius:19px;background:#e5efdb;width:64px;height:64px}
-.maze-app button,.maze-upload{border-radius:12px}
-.maze-levels button{padding:12px 4px}
-.maze-levels button[aria-pressed=true]{background:#dcebd3;border-color:#709b71;box-shadow:inset 0 -3px #709b71}
-.maze-app .maze-primary{background:#efb14e;color:#304632;border-color:#e6a640;box-shadow:0 4px 0 #ca9139;border-radius:13px;margin-top:16px;font-size:15px}
-.maze-app .maze-primary:hover{background:#f7c46a}
-.maze-in-game{padding-bottom:18px}
-.maze-in-game .maze-header{min-height:58px}
-.maze-play{max-width:1400px;margin:14px auto 0;display:grid;grid-template-columns:minmax(0,1fr) 270px;column-gap:24px;align-items:start}
-.maze-hud{grid-column:1/-1;padding:0 8px 14px;gap:24px}
-.maze-hud strong{font-size:21px}
-.maze-hud>button{width:44px;height:44px;display:grid;place-items:center;padding:0;background:#fffdf1}
-.maze-time{border:0;background:#fffdf2;border-radius:16px;gap:16px;padding:10px 20px;box-shadow:0 3px 0 #bfd1b866}
-.maze-time b{font-size:32px}
-.maze-board{grid-column:1;min-width:0;border-radius:24px;background:radial-gradient(ellipse at 50% 45%,#faf9e9,#deeddc);border:1px solid #c7dcc3;box-shadow:inset 0 1px #ffffffa0}
-.maze-board>canvas{height:clamp(360px,calc(100dvh - 208px),850px);width:100%;padding:0;display:block}
-.maze-run-stats{position:absolute;top:18px;left:20px;right:20px;display:flex;gap:18px;align-items:center;pointer-events:none;font-size:11px;color:#486c59}
-.maze-run-stats span{display:flex;gap:6px;align-items:center}
-.maze-run-stats .maze-north{margin-left:auto;font-size:10px;font-weight:700}
-.maze-legend{padding:0 10px 16px;gap:24px;font-size:10px;color:#557961}
-.maze-bottom{grid-column:2;display:flex;flex-direction:column;gap:24px;margin:0;background:#fffdf2b8;border:1px solid #c8dcc6;border-radius:22px;padding:20px;align-items:stretch}
-.maze-message{min-height:52px;font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.8}
-.maze-actions{grid-template-columns:1fr;gap:12px}
-.maze-actions button{padding:16px 14px;background:#fffdf7;border-color:#cdddc9;gap:14px;border-radius:14px}
 .maze-actions b{font-size:13px}
-.maze-actions small{font-size:11px}
-.maze-actions svg{color:#61967c}
-.maze-tools>p{font-size:10px;line-height:1.9;margin-top:18px}
-.maze-dpad{justify-content:center;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,48px);gap:6px}
-.maze-dpad button{background:#dfeccf;border-color:#bed3b2;box-shadow:0 3px 0 #bfd0b2}
-.maze-overlay{background:#244c405c;backdrop-filter:blur(6px);z-index:3}
-.maze-overlay section{border-radius:23px;background:#fffdf2}
-.maze-overlay h2{font-weight:800}
-.maze-render-error{position:absolute;top:48px;left:16px;right:16px;padding:16px;background:#fffdf2;border:1px solid #d3b384;border-radius:12px;color:#82522d;font-size:13px;z-index:4;line-height:1.7}
-@media(max-width:1000px){.maze-setup{gap:24px;grid-template-columns:minmax(0,1.3fr) minmax(300px,1fr)}.maze-config{padding:24px}.maze-play{grid-template-columns:minmax(0,1fr) 230px;gap:16px}.maze-bottom{padding:16px}.maze-intro h1{font-size:46px}}
-@media(max-width:700px){.maze-app{padding:0 14px max(18px,env(safe-area-inset-bottom))}.maze-header{min-height:60px}.maze-header>span{font-size:16px}.maze-setup{max-width:460px;grid-template-columns:1fr;margin:16px auto;gap:20px}.maze-intro{padding-top:8px}.maze-intro h1{font-size:42px;letter-spacing:-2px}.maze-intro>p{font-size:12px}.maze-preview{height:300px;margin:0 -8px}.maze-preview>span{bottom:4px}.maze-story{margin-top:8px;padding-top:12px}.maze-config{padding:24px;border-radius:20px}.maze-config-heading{margin-bottom:18px}.maze-play{grid-template-columns:1fr;gap:0;margin-top:12px}.maze-in-game .maze-header{min-height:52px}.maze-hud{padding:0 2px 12px;gap:10px}.maze-hud strong{font-size:15px;letter-spacing:-.6px}.maze-hud span{font-size:10px}.maze-time{padding:8px 12px;display:block;border-radius:12px}.maze-time small{font-size:9px;margin:0 0 4px}.maze-time b{font-size:26px;letter-spacing:-1px}.maze-hud>button{width:38px;height:40px}.maze-board{grid-column:1;border-radius:20px}.maze-board>canvas{height:clamp(310px,47dvh,500px)}.maze-run-stats{top:14px;left:14px;right:14px;gap:10px;font-size:9px}.maze-run-stats svg{width:13px}.maze-run-stats .maze-north{font-size:9px}.maze-legend{font-size:9px;gap:14px;padding-bottom:12px}.maze-bottom{grid-column:1;margin-top:12px;display:grid;grid-template-columns:1fr;gap:12px;padding:14px;background:#fffdf2a0;border-radius:18px}.maze-tools{min-width:0}.maze-message{font-size:11px;min-height:20px;margin-bottom:10px}.maze-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.maze-actions button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:10px 8px;border-radius:10px}.maze-actions svg{width:18px;height:18px;margin:0}.maze-actions b{font-size:10px;white-space:nowrap}.maze-actions small{font-size:9px;line-height:1.5}.maze-tools>p{font-size:9px;margin:10px 0 0;line-height:1.7}.maze-dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,44px);gap:6px;justify-self:center}.maze-overlay section{padding:24px}.maze-overlay h2{font-size:23px}}
-@media(prefers-reduced-transparency:reduce){.maze-config,.maze-bottom{background:#fffdf2}.maze-overlay{background:#deeddc;backdrop-filter:none}}
-.maze-view-switch{position:absolute;bottom:42px;right:16px;display:flex;gap:3px;padding:4px;background:#fffdf2e8;border:1px solid #b9d3b7;border-radius:12px}
-.maze-view-switch button{padding:7px 11px;border:0;background:transparent;font-size:10px;border-radius:8px}
-.maze-view-switch button[aria-pressed=true]{background:#dcebcf;color:#254e3e}
-@media(max-width:700px){.maze-view-switch{bottom:37px;right:12px}.maze-view-switch button{font-size:9px;padding:6px 9px}}
-.maze-board{touch-action:none}
-.maze-dpad button{min-width:48px;min-height:48px;-webkit-touch-callout:none}
-@media(max-width:700px){.maze-in-game{padding-bottom:150px}.maze-dpad{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));right:16px;z-index:5;padding:10px;background:#fffdf2ed;border:1px solid #bdd1b6;border-radius:18px;box-shadow:0 6px 24px #214b4229;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,50px)}.maze-legend{flex-wrap:wrap;gap:6px 12px}.maze-run-stats{flex-wrap:wrap}}
+.maze-actions small{font-size:11px;font-weight:400;margin-top:5px;color:var(--muted);line-height:1.5}
+.maze-tools>p{font-size:11px;line-height:1.8;color:var(--muted);margin:0}
+.maze-tools>p:last-child{margin-top:18px}
+.maze-dpad{display:grid;justify-content:center;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,50px);gap:6px;touch-action:none;user-select:none}
+.maze-dpad button{touch-action:none;padding:0;font-size:24px;background:#253947;border-color:#55717e;min-width:48px;min-height:48px;-webkit-touch-callout:none}
+.maze-dpad .dir-0{grid-column:2}.maze-dpad .dir-3{grid-column:1;grid-row:2}.maze-dpad .dir-2{grid-column:2;grid-row:2}.maze-dpad .dir-1{grid-column:3;grid-row:2}
+.maze-view-switch{position:absolute;bottom:65px;right:14px;display:flex;gap:4px;padding:4px;background:#101d2bf2;border:1px solid #547080;border-radius:4px;z-index:1}
+.maze-view-switch button{padding:9px 12px;border:0;background:transparent;font-size:11px;min-height:36px}
+.maze-view-switch button[aria-pressed=true]{background:#344e5c;color:#cfffff}
+.maze-overlay{position:absolute;inset:0;display:grid;place-items:center;background:#070e19b8;padding:20px;z-index:3;backdrop-filter:blur(5px)}
+.maze-overlay section{background:#192733;border:1px solid #647884;border-radius:6px;padding:30px;text-align:center;width:min(100%,420px);box-shadow:0 20px 70px #0006}
+.maze-overlay h2{font-size:26px;letter-spacing:-1px;margin:18px 0;font-weight:700}
+.maze-overlay p{font-size:13px;color:var(--muted);line-height:1.8}
+.maze-overlay section>button:last-child{margin-top:12px;min-height:44px}
+.maze-render-error{position:absolute;top:58px;left:16px;right:16px;padding:16px;background:#2c2620;border:1px solid #bf9562;border-radius:5px;color:#ffe0ac;font-size:13px;z-index:4;line-height:1.7}
+@media(max-width:1100px){.maze-setup{gap:24px;grid-template-columns:minmax(0,1fr) 340px}.maze-intro{padding:24px}.maze-config{padding:22px}.maze-play{grid-template-columns:minmax(0,1fr) 235px;gap:14px}.maze-bottom{padding:16px}.maze-run-stats{gap:8px}.maze-run-stats span{padding:5px}.maze-preview{height:320px}}
+@media(max-width:740px){
+ .maze-app{padding:0 12px max(18px,env(safe-area-inset-bottom))}.maze-header{min-height:56px;gap:8px}.maze-header>span{font-size:16px}.maze-header small,.maze-header-tag{display:none}.maze-header button{font-size:11px;padding:8px 0}.maze-setup{max-width:500px;grid-template-columns:1fr;gap:16px;margin:16px auto}.maze-intro{padding:22px 18px}.maze-intro h1{font-size:46px;letter-spacing:-2px;margin:18px 0}.maze-intro>p{font-size:12px}.maze-preview{height:270px;margin:22px -4px 0}.maze-preview>span{font-size:10px}.maze-story{gap:14px;padding-top:15px;margin-top:16px}.maze-story p{font-size:11px}.maze-config{padding:22px}.maze-config>input{font-size:16px}.maze-play{grid-template-columns:1fr;gap:12px;margin-top:12px}.maze-hud{gap:10px}.maze-hud strong{font-size:16px;line-height:1.4}.maze-hud span{font-size:10px}.maze-time{gap:4px;display:flex;flex-direction:column;border:0;padding:0 8px;align-items:flex-end}.maze-time small{font-size:10px}.maze-time b{font-size:28px}.maze-hud>button{width:40px;height:42px}.maze-board>canvas{height:clamp(260px,40dvh,450px)}.maze-run-stats{top:10px;left:10px;right:10px;gap:6px;flex-wrap:wrap;font-size:9px}.maze-run-stats svg{width:12px;height:12px}.maze-run-stats .maze-north{display:none}.maze-legend{gap:6px 12px;font-size:9px;padding:10px}.maze-view-switch{bottom:67px;right:10px}.maze-view-switch button{font-size:10px;padding:7px 10px;min-height:34px}.maze-bottom{grid-column:1;padding:14px;gap:14px}.maze-tools>p:first-child{display:none}.maze-message{font-size:12px;min-height:20px;margin:0 0 12px}.maze-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.maze-actions button{flex-direction:column;align-items:flex-start;padding:10px 8px;gap:7px;min-height:90px}.maze-actions svg{width:18px;height:18px}.maze-actions b{font-size:11px;line-height:1.4}.maze-actions small{font-size:9px}.maze-tools>p:last-child{font-size:10px;margin-top:12px}.maze-dpad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,50px);align-self:center}.maze-overlay section{padding:22px}.maze-overlay h2{font-size:22px}
+}
+@media(max-width:360px){.maze-intro h1{font-size:39px}.maze-intro{padding:20px 14px}.maze-config{padding:18px}.maze-hud strong{font-size:14px}.maze-time b{font-size:25px}.maze-actions button{padding:9px 6px}.maze-actions b{font-size:10px}.maze-photo{gap:12px}}
+@media(max-width:740px){
+ .maze-bottom{display:grid;grid-template-columns:minmax(0,1fr) 156px;gap:10px;padding:12px}
+ .maze-tools{display:contents}.maze-message{grid-column:1/-1;margin:0;min-height:20px}
+ .maze-actions{grid-column:1;grid-row:2;grid-template-columns:1fr;gap:6px}
+ .maze-actions button{flex-direction:row;align-items:center;min-height:44px;padding:7px;gap:7px}
+ .maze-actions small{margin-top:2px}.maze-tools>p:last-child{display:none}
+ .maze-dpad{grid-column:2;grid-row:2;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(2,50px);align-self:center;gap:6px}
+}
+@media(prefers-reduced-motion:reduce){.maze-app *{transition:none!important;animation:none!important}}
+@media(prefers-reduced-transparency:reduce){.maze-overlay{background:#111c29;backdrop-filter:none}.maze-view-switch,.maze-run-stats span{background:#101d2b}}
