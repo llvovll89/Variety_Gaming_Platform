@@ -13,7 +13,7 @@ export function enemyShotCount(w: World, kind: Kind) {
   return kind === 'boss' ? 12 + DIFFICULTIES[w.difficulty].extraShots : kind === 'elite' ? 7 + DIFFICULTIES[w.difficulty].extraShots : 1;
 }
 export const STAGES = [
-  { name: '이끼빛 전초지', subtitle: '숲을 되찾아라', color: '#77cba3', floor: '#172b28', boss: '가시왕 그룸' },
+  { name: '이끼빛 전초지', subtitle: '숲을 되찾아라', color: '#77cba3', floor: '#323039', boss: '가시왕 그룸' },
   { name: '잿불의 성채', subtitle: '불타는 군단을 돌파하라', color: '#f4ad73', floor: '#302724', boss: '잿불 군주' },
   { name: '서리의 협곡', subtitle: '얼어붙은 골렘을 돌파하라', color: '#91dce8', floor: '#20353c', boss: '빙하 거인' },
   { name: '독안개의 늪', subtitle: '슬라임의 둥지를 정화하라', color: '#c3d979', floor: '#293323', boss: '늪의 포식자' },
@@ -27,13 +27,13 @@ export const WEAPONS = {
   shotgun: { name: '산탄총', description: '다섯 발을 퍼뜨리는 강력한 근거리 사격', range: 300, damage: .65, interval: 1.65 },
 } as const;
 export type Weapon = keyof typeof WEAPONS;
-export const HEROES = { ranger: '숲의 레인저', knight: '철갑 기사', witch: '별빛 마도사', robot: '룬 기계병' } as const;
+export const HEROES = { ranger: '숲의 레인저', knight: '철갑 기사', witch: '별빛 마도사', robot: '룬 기계병', assassin: '월영 암살자', storm: '폭풍 창기사' } as const;
 export type Hero = keyof typeof HEROES;
 export const TINTS = { mint: '#71bea5', gold: '#e5bd70', violet: '#b599e5', coral: '#e69083' } as const;
 export type Tint = keyof typeof TINTS;
 export interface Loadout { weapon: Weapon; hero: Hero; tint: Tint }
 export const DEFAULT_LOADOUT: Loadout = { weapon: 'rifle', hero: 'ranger', tint: 'mint' };
-export interface Attack { x: number; y: number; angle: number; range: number; life: number; kind: 'sword' | 'laser' | 'nova' | 'frost' | 'heal'; color?:string }
+export interface Attack { x: number; y: number; angle: number; range: number; life: number; kind: 'sword' | 'laser' | 'nova' | 'frost' | 'heal' | 'shadow' | 'lightning' | 'muzzle' | 'impact'; color?:string; hero?:Hero }
 export type Status = 'menu' | 'playing' | 'paused' | 'upgrade' | 'promotion' | 'clear' | 'dead' | 'victory';
 export type Kind = 'soldier' | 'mage' | 'brute' | 'elite' | 'boss' | 'slime' | 'bat' | 'golem';
 export type Upgrade = 'damage' | 'haste' | 'vitality' | 'speed' | 'multishot' | 'magnet';
@@ -47,7 +47,7 @@ export const UPGRADES: Record<Upgrade, { name: string; description: string; symb
   magnet: { name: '영혼 수집가', description: '수집 범위 +45 · 경험치 획득 +15%', symbol: 'EXP' },
 };
 export interface Enemy { id: number; kind: Kind; x: number; y: number; hp: number; maxHp: number; radius: number; speed: number; cooldown: number; flash: number; angle: number; charge: number }
-export interface Shot { x: number; y: number; vx: number; vy: number; damage: number; life: number; hostile: boolean; radius: number }
+export interface Shot { x: number; y: number; vx: number; vy: number; damage: number; life: number; hostile: boolean; radius: number; hero?:Hero }
 export interface Gem { x: number; y: number; value: number }
 export interface Effect { x: number; y: number; life: number; text: string; color: string }
 export interface World {
@@ -97,6 +97,10 @@ export function choosePromotion(w:World,id:string) {
   if(choice.path==='cryomancer')p.armor=Math.min(.65,p.armor+.08);
   if(choice.path==='artillery')p.interval/=1.12;
   if(choice.path==='engineer'){p.maxHp+=20;p.hp=Math.min(p.maxHp,p.hp+20);p.magnet+=20;}
+  if(choice.path==='shadowblade'){p.damage*=1.15;p.speed*=1.05;}
+  if(choice.path==='reaper'){p.magnet+=35;p.xpBonus+=.1;}
+  if(choice.path==='stormcaller')p.damage*=1.15;
+  if(choice.path==='dragoon'){p.maxHp+=20;p.hp=Math.min(p.maxHp,p.hp+20);p.armor=Math.min(.65,p.armor+.05);}
   if(choice.tier>1){
     if(choice.focus==='power')w.job.power+=.35;
     else {p.maxHp+=30;p.hp=Math.min(p.maxHp,p.hp+30);p.armor=Math.min(.65,p.armor+.05);}
@@ -108,8 +112,8 @@ export function choosePromotion(w:World,id:string) {
 }
 export function weaponStats(w:World) {
   const {weapon,hero}=w.loadout;
-  return { damage:WEAPONS[weapon].damage*((hero==='knight'&&weapon==='sword')||(hero==='witch'&&weapon==='laser')?1.25:1),
-    interval:WEAPONS[weapon].interval/(hero==='ranger'&&weapon==='rifle'?1.2:1),
+  return { damage:WEAPONS[weapon].damage*((hero==='knight'&&weapon==='sword')||(hero==='witch'&&weapon==='laser')?1.25:hero==='storm'&&weapon==='laser'?1.15:1),
+    interval:WEAPONS[weapon].interval/((hero==='ranger'&&weapon==='rifle')||(hero==='assassin'&&weapon==='sword')?1.2:hero==='storm'&&weapon==='laser'?1.1:1),
     pellets:weapon==='shotgun'?(hero==='robot'?7:5):1 };
 }
 function offerUpgrade(w: World) {
@@ -163,27 +167,37 @@ function stepSkill(w:World,dt:number) {
   const radius=130+tier*35;
   if(path==='engineer') {
     if(p.hp>=p.maxHp && !w.shots.some(s=>s.hostile && distance(s,p)<radius))return;
-  } else if(!enemies.length || (['berserker','paladin','cryomancer'].includes(path) && distance(enemies[0],p)>radius))return;
+  } else if(!enemies.length || (['berserker','paladin','cryomancer','reaper'].includes(path) && distance(enemies[0],p)>radius))return;
   job.cooldown=PATHS[path].cooldown;
   const power=(1+tier*.6)*job.power,color=PATHS[path].color;
   const hit=(e:Enemy,multiplier:number)=>{e.hp-=p.damage*power*multiplier;e.flash=.2;};
-  const ring=(x:number,y:number,range:number,kind:Attack['kind'])=>w.attacks.push({x,y,angle:0,range,life:.5,kind,color});
+  const ring=(x:number,y:number,range:number,kind:Attack['kind'])=>w.attacks.push({x,y,angle:0,range,life:.5,kind,color,hero:w.loadout.hero});
   if(path==='engineer') {
     p.hp=Math.min(p.maxHp,p.hp+Math.round((12+tier*8)*job.power));
     w.shots=w.shots.filter(s=>!s.hostile || distance(s,p)>=radius);ring(p.x,p.y,radius,'heal');
-  } else if(path==='sniper') {
+  } else if(path==='shadowblade') {
+    for(const e of enemies.slice(0,3)){hit(e,1.7);ring(e.x,e.y,42,'shadow');}
+    p.invincible=Math.max(p.invincible,.6);
+  } else if(path==='stormcaller') {
+    let origin={x:p.x,y:p.y};
+    for(const e of enemies.slice(0,4)){
+      hit(e,1.8);w.attacks.push({x:origin.x,y:origin.y,angle:Math.atan2(e.y-origin.y,e.x-origin.x),range:distance(e,origin),life:.4,kind:'lightning',color,hero:w.loadout.hero});origin=e;
+    }
+  } else if(path==='sniper'||path==='dragoon') {
     const angle=Math.atan2(enemies[0].y-p.y,enemies[0].x-p.x);
-    w.attacks.push({x:p.x,y:p.y,angle,range:620,life:.35,kind:'laser',color});
-    for(const e of enemies){const dx=e.x-p.x,dy=e.y-p.y;if(dx*Math.cos(angle)+dy*Math.sin(angle)>0 && Math.abs(-dx*Math.sin(angle)+dy*Math.cos(angle))<e.radius+10)hit(e,2.5);}
+    w.attacks.push({x:p.x,y:p.y,angle,range:620,life:.35,kind:path==='dragoon'?'lightning':'laser',color,hero:w.loadout.hero});
+    for(const e of enemies){const dx=e.x-p.x,dy=e.y-p.y;if(dx*Math.cos(angle)+dy*Math.sin(angle)>0 && Math.abs(-dx*Math.sin(angle)+dy*Math.cos(angle))<e.radius+10)hit(e,path==='dragoon'?2.2:2.5);}
+    if(path==='dragoon')job.shield=Math.max(job.shield,Math.round((15+tier*12)*job.power));
   } else if(path==='artillery') {
     for(const e of enemies.slice(0,3)){hit(e,1.5);ring(e.x,e.y,32,'nova');}
   } else {
     const center=path==='hunter'||path==='pyromancer'?enemies[0]:p;
     let hits=0;
-    for(const e of enemies)if(distance(e,center)<radius){hit(e,path==='pyromancer'?3:path==='berserker'?2:1.5);hits++;if(path==='hunter'||path==='cryomancer')job.slow[e.id]=3;}
+    for(const e of enemies)if(distance(e,center)<radius){hit(e,path==='pyromancer'?3:path==='berserker'?2:path==='reaper'?1.8:1.5);hits++;if(path==='hunter'||path==='cryomancer')job.slow[e.id]=3;}
     if(path==='paladin')job.shield=Math.max(job.shield,Math.round((20+tier*15)*job.power));
     if(path==='berserker' && hits)p.hp=Math.min(p.maxHp,p.hp+Math.round((4+tier*2)*job.power));
-    ring(center.x,center.y,radius,path==='hunter'||path==='cryomancer'?'frost':'nova');
+    if(path==='reaper'&&hits)p.hp=Math.min(p.maxHp,p.hp+Math.round((3+tier)*job.power)*Math.min(hits,5));
+    ring(center.x,center.y,radius,path==='reaper'?'shadow':path==='hunter'||path==='cryomancer'?'frost':'nova');
   }
   w.effects.push({x:p.x,y:p.y-50,life:1,text:PATHS[path].skill,color});
 }
@@ -210,10 +224,10 @@ export function stepWorld(w: World, dt: number, movement: {x:number;y:number}) {
   const targets = w.enemies.filter(e => e.hp > 0 && distance(e,p) < range).sort((a,b) => distance(a,p)-distance(b,p));
   if (w.fireTimer <= 0 && targets.length) {
     w.fireTimer = Math.max(.07, p.interval * weapon.interval);
-    const hit = (e: Enemy, damage: number) => { e.hp -= damage; e.flash = .12; w.effects.push({ x:e.x,y:e.y-25,life:.5,text:String(Math.round(damage)),color:'#f4ddb0' }); };
+    const hit = (e: Enemy, damage: number) => { e.hp -= damage; e.flash = .12; w.effects.push({ x:e.x,y:e.y-25,life:.5,text:String(Math.round(damage)),color:'#f4ddb0' });w.attacks.push({x:e.x,y:e.y,angle:0,range:18,life:.2,kind:'impact',hero:w.loadout.hero}); };
     if (w.loadout.weapon === 'sword') {
       p.angle = Math.atan2(targets[0].y-p.y, targets[0].x-p.x);
-      w.attacks.push({x:p.x,y:p.y,angle:p.angle,range,life:.22,kind:'sword'});
+      w.attacks.push({x:p.x,y:p.y,angle:p.angle,range,life:.22,kind:'sword',hero:w.loadout.hero});
       for (const e of targets) {
         const delta = Math.atan2(Math.sin(Math.atan2(e.y-p.y,e.x-p.x)-p.angle),Math.cos(Math.atan2(e.y-p.y,e.x-p.x)-p.angle));
         if (Math.abs(delta) < 1.25) hit(e,p.damage*weapon.damage*(1+(p.shots-1)*.15));
@@ -223,7 +237,7 @@ export function stepWorld(w: World, dt: number, movement: {x:number;y:number}) {
       const target = targets[i % targets.length], angle = Math.atan2(target.y-p.y,target.x-p.x);
       if (i === 0) p.angle = angle;
       if (w.loadout.weapon === 'laser') {
-        w.attacks.push({x:p.x,y:p.y,angle,range,life:.18,kind:'laser'});
+        w.attacks.push({x:p.x,y:p.y,angle,range,life:.18,kind:'laser',hero:w.loadout.hero});
         for (const e of w.enemies) {
           const dx=e.x-p.x,dy=e.y-p.y,along=dx*Math.cos(angle)+dy*Math.sin(angle),across=Math.abs(-dx*Math.sin(angle)+dy*Math.cos(angle));
           if (e.hp>0 && along>0 && along<range && across<e.radius+5) hit(e,p.damage*weapon.damage);
@@ -231,10 +245,11 @@ export function stepWorld(w: World, dt: number, movement: {x:number;y:number}) {
         continue;
       }
       const offset = (i - (p.shots - 1) / 2) * 7 * UNIT_SCALE;
+      if(i===0)w.attacks.push({x:p.x+Math.cos(angle)*25,y:p.y+Math.sin(angle)*25,angle,range:20,life:.12,kind:'muzzle',hero:w.loadout.hero});
       const pellets = weapon.pellets;
       for (let j=0;j<pellets;j++) {
         const a=angle+(j-(pellets-1)/2)*.13;
-        w.shots.push({ x: p.x + Math.cos(a)*25*UNIT_SCALE - Math.sin(a)*offset, y: p.y + Math.sin(a)*25*UNIT_SCALE + Math.cos(a)*offset, vx: Math.cos(a)*640, vy: Math.sin(a)*640, damage: p.damage*weapon.damage, life: w.loadout.weapon==='shotgun' ? .47 : 1.1, hostile: false, radius: 3 });
+        w.shots.push({ x: p.x + Math.cos(a)*25*UNIT_SCALE - Math.sin(a)*offset, y: p.y + Math.sin(a)*25*UNIT_SCALE + Math.cos(a)*offset, vx: Math.cos(a)*640, vy: Math.sin(a)*640, damage: p.damage*weapon.damage, life: w.loadout.weapon==='shotgun' ? .47 : 1.1, hostile: false, radius: 3,hero:w.loadout.hero });
       }
     }
     }
@@ -266,7 +281,7 @@ export function stepWorld(w: World, dt: number, movement: {x:number;y:number}) {
     if (s.hostile) { if (hits(p,PLAYER_RADIUS)) { hurt(w,s.damage); s.life = 0; } }
     else {
       const enemy = w.enemies.find(e => e.hp > 0 && hits(e,e.radius));
-      if (enemy) { enemy.hp -= s.damage; enemy.flash = .12; s.life = 0; w.effects.push({ x:enemy.x, y:enemy.y-25, life:.5, text:String(Math.round(s.damage)), color:'#f4ddb0' }); }
+      if (enemy) { enemy.hp -= s.damage; enemy.flash = .12; s.life = 0; w.effects.push({ x:enemy.x, y:enemy.y-25, life:.5, text:String(Math.round(s.damage)), color:'#f4ddb0' });w.attacks.push({x:enemy.x,y:enemy.y,angle:Math.atan2(s.vy,s.vx),range:18,life:.2,kind:'impact',hero:s.hero??w.loadout.hero}); }
     }
   }
   w.shots = w.shots.filter(s => s.life > 0 && s.x > -50 && s.x < WIDTH+50 && s.y > -50 && s.y < HEIGHT+50);

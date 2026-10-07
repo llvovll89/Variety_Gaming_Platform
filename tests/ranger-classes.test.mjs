@@ -13,7 +13,7 @@ function target(w,x=90,y=0) {const e=spawnEnemy(w,'golem');e.x=w.player.x+x;e.y=
 
 test('all character bases differ and only matching weapons get mastery',()=>{
   const builds=Object.keys(HERO_STATS).map(hero=>world(hero));
-  assert.equal(new Set(builds.map(w=>JSON.stringify(w.player))).size,4);
+  assert.equal(new Set(builds.map(w=>JSON.stringify(w.player))).size,Object.keys(HERO_STATS).length);
   assert.ok(world('ranger').player.speed>world('knight').player.speed);
   assert.ok(world('witch').player.xpBonus>1);
   assert.ok(weaponStats(world('ranger','rifle')).interval<weaponStats(world('witch','rifle')).interval);
@@ -21,6 +21,9 @@ test('all character bases differ and only matching weapons get mastery',()=>{
   assert.ok(weaponStats(world('witch','laser')).damage>weaponStats(world('robot','laser')).damage);
   assert.equal(weaponStats(world('robot','shotgun')).pellets,7);
   assert.equal(weaponStats(world('ranger','shotgun')).pellets,5);
+  assert.ok(weaponStats(world('assassin','sword')).interval<weaponStats(world('storm','sword')).interval);
+  assert.ok(weaponStats(world('storm','laser')).damage>weaponStats(world('knight','laser')).damage);
+  assert.ok(weaponStats(world('storm','laser')).interval<weaponStats(world('ranger','laser')).interval);
 });
 test('all three earned promotions retain normal upgrades, surplus XP and freeze combat',()=>{
   const w=world();w.xp=100000;const promotions=[],upgrades=[];
@@ -63,7 +66,7 @@ test('later regions reward more experience and new curve reaches third promotion
   const budget=Array.from({length:6},(_,stage)=>(75*7+45+90)*(1+stage*.35)).reduce((a,b)=>a+b,0);
   assert.ok(budget>requirement);assert.equal(requirement,4914);
 });
-test('eight career skills produce actual damage, healing, shields, slow or projectile removal',()=>{
+test('all career skills produce actual damage, healing, shields, slow or projectile removal',()=>{
   for(const [path,definition] of Object.entries(PATHS)){
     const w=world(definition.hero);advance(w,path);w.fireTimer=999;w.player.hp=40;
     const e=target(w),health=e.hp;
@@ -76,6 +79,45 @@ test('eight career skills produce actual damage, healing, shields, slow or proje
     if(path==='berserker')assert.equal(w.player.hp,46);
     if(path==='hunter'||path==='cryomancer')assert.equal(w.job.slow[e.id],3);
     const after=e.hp;stepWorld(w,.01,still);assert.equal(e.hp,after,'cooldown prevents repeated damage');
+  }
+});
+
+test('shadow blades hit at most three nearby foes and grant temporary invulnerability',()=>{
+  const w=world('assassin','sword');advance(w,'shadowblade');w.fireTimer=999;
+  const foes=[90,130,170,210].map(x=>target(w,x));const hp=foes.map(e=>e.hp);
+  stepWorld(w,.01,still);
+  assert.ok(foes.slice(0,3).every((e,i)=>e.hp<hp[i]));assert.equal(foes[3].hp,hp[3]);
+  assert.equal(w.player.invincible,.6);assert.equal(w.attacks.filter(a=>a.kind==='shadow').length,3);
+  foes[3].x=w.player.x;const health=w.player.hp;stepWorld(w,.01,still);assert.equal(w.player.hp,health);
+  foes[3].x=w.player.x+400;for(let i=0;i<13;i++)stepWorld(w,.05,still);assert.equal(w.player.invincible,0);
+});
+test('soul harvest heals by nearby hit count with a five-target recovery cap',()=>{
+  const w=world('assassin');advance(w,'reaper');w.fireTimer=999;w.player.hp=20;
+  for(let i=0;i<7;i++)target(w,80+i*4,10);
+  const outside=target(w,200);const hp=outside.hp;
+  stepWorld(w,.01,still);assert.equal(w.player.hp,40);assert.equal(outside.hp,hp);
+  assert.equal(w.attacks[0].kind,'shadow');
+});
+test('chain lightning reaches four foes and draws connected segments without hitting a fifth',()=>{
+  const w=world('storm');advance(w,'stormcaller');w.fireTimer=999;
+  const foes=[90,150,230,310,400].map(x=>target(w,x));const hp=foes.map(e=>e.hp);
+  stepWorld(w,.01,still);
+  assert.ok(foes.slice(0,4).every((e,i)=>e.hp<hp[i]));assert.equal(foes[4].hp,hp[4]);
+  const bolts=w.attacks.filter(a=>a.kind==='lightning');assert.equal(bolts.length,4);
+  assert.equal(bolts[1].x,foes[0].x);assert.equal(bolts[3].range,80);
+});
+test('dragon lance pierces a line, misses flanking foes and creates a shield',()=>{
+  const w=world('storm');advance(w,'dragoon');w.fireTimer=999;
+  const front=target(w,90),behind=target(w,210),flank=target(w,220,100),health=flank.hp;
+  stepWorld(w,.01,still);assert.ok(front.hp<front.maxHp);assert.ok(behind.hp<behind.maxHp);assert.equal(flank.hp,health);
+  assert.equal(w.job.shield,27);assert.equal(w.attacks[0].kind,'lightning');
+});
+test('base attack visuals retain hero identity on blades, beams and projectiles',()=>{
+  for(const hero of Object.keys(HERO_STATS))for(const weapon of ['sword','rifle','laser','shotgun']){
+    const w=world(hero,weapon);target(w,90);stepWorld(w,.01,still);
+    const attacks=w.attacks.filter(a=>a.kind!=='impact');
+    assert.ok(attacks.length>0,`${hero} ${weapon}`);assert.ok(attacks.every(a=>a.hero===hero));
+    assert.ok(w.shots.every(s=>s.hero===hero));
   }
 });
 test('power and survival specializations persist through stages and restart resets careers',()=>{
