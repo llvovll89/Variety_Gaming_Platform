@@ -53,6 +53,9 @@ export class BalloonEngine {
   private ended = false;
   private timeRemaining = GAME_DURATION_SECONDS;
   private bestScoreAtStart: number;
+  private muted = false;
+  private keyboardPoint: { x: number; y: number } | null = null;
+  private reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   constructor(canvas: HTMLCanvasElement, characterImageUrl: string, bestScore: number) {
     this.canvas = canvas;
@@ -73,12 +76,23 @@ export class BalloonEngine {
   }
 
   resize(width: number, height: number, dpr: number): void {
+    const oldWidth = this.transform.viewportWidth / this.transform.scale;
     this.canvas.width = Math.round(width * dpr);
     this.canvas.height = Math.round(height * dpr);
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.transform = computeLetterboxTransform(width, height);
+    const newWidth = width / this.transform.scale;
+    for (const balloon of this.balloons) {
+      const padding = balloon.radius + 30;
+      balloon.baseX = Math.max(padding, Math.min(newWidth - padding, balloon.baseX / oldWidth * newWidth));
+      balloon.x = balloon.baseX;
+    }
+    if (this.keyboardPoint) {
+      this.keyboardPoint.x = Math.min(width, this.keyboardPoint.x);
+      this.keyboardPoint.y = Math.min(height, this.keyboardPoint.y);
+    }
   }
 
   start(): void {
@@ -115,6 +129,20 @@ export class BalloonEngine {
     else this.pause();
   }
 
+  setMuted(muted: boolean): void { this.muted = muted; }
+
+  handleKey(key: string): void {
+    if (this.paused || this.ended) return;
+    const w = this.transform.viewportWidth, h = this.transform.viewportHeight;
+    this.keyboardPoint ??= { x: w / 2, y: h / 2 };
+    const p = this.keyboardPoint;
+    if (key === "ArrowLeft") p.x = Math.max(0, p.x - 28);
+    if (key === "ArrowRight") p.x = Math.min(w, p.x + 28);
+    if (key === "ArrowUp") p.y = Math.max(0, p.y - 28);
+    if (key === "ArrowDown") p.y = Math.min(h, p.y + 28);
+    if (key === " " || key === "Enter") this.handleScreenTap(p.x, p.y);
+  }
+
   /** Pops every balloon under a tap/click, given in canvas CSS-pixel coordinates. */
   handleScreenTap(screenX: number, screenY: number): void {
     if (this.paused || this.ended) return;
@@ -128,7 +156,7 @@ export class BalloonEngine {
       this.popEffects.push({ x: b.x, y: b.y, hue: b.hue, age: 0 });
       this.score += 1;
     }
-    this.popSound.playPop(randRange(0.9, 1.15));
+    if (!this.muted) this.popSound.playPop(randRange(0.9, 1.15));
     this.uiStore.publish(this.buildSnapshot());
   }
 
@@ -155,7 +183,14 @@ export class BalloonEngine {
     }
     this.advancePopEffects(dt);
 
-    renderBalloons(this.ctx, this.transform, this.balloons, this.popEffects, this.mascotImage, this.decorTime);
+    renderBalloons(this.ctx, this.transform, this.balloons, this.popEffects, this.mascotImage, this.reducedMotion.matches ? 0 : this.decorTime, this.reducedMotion.matches);
+    if (this.keyboardPoint) {
+      const { x, y } = this.keyboardPoint;
+      this.ctx.strokeStyle = "#183b56"; this.ctx.lineWidth = 3;
+      this.ctx.beginPath(); this.ctx.arc(x, y, 15, 0, Math.PI * 2); this.ctx.stroke();
+      this.ctx.beginPath(); this.ctx.moveTo(x - 22, y); this.ctx.lineTo(x + 22, y);
+      this.ctx.moveTo(x, y - 22); this.ctx.lineTo(x, y + 22); this.ctx.stroke();
+    }
 
     this.uiTimer -= dt;
     if (this.uiTimer <= 0) {
@@ -170,8 +205,9 @@ export class BalloonEngine {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = this.spawnInterval * randRange(SPAWN_INTERVAL_JITTER_MIN, SPAWN_INTERVAL_JITTER_MAX);
-      const count = randInt(1, this.balloonsPerWave);
-      for (let i = 0; i < count; i++) this.balloons.push(spawnBalloon(this.riseSpeed));
+      const widthMultiplier = Math.min(3, Math.max(1, this.transform.viewportWidth / this.transform.scale / 420));
+      const count = Math.ceil(randInt(1, this.balloonsPerWave) * widthMultiplier);
+      for (let i = 0; i < count; i++) this.balloons.push(spawnBalloon(this.riseSpeed, this.transform.viewportWidth / this.transform.scale));
     }
   }
 

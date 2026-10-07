@@ -10,6 +10,7 @@ export interface Balloon {
   radius: number;
   hue: number;
   age: number;
+  shape: "round" | "heart" | "star";
 }
 
 export interface PopEffect {

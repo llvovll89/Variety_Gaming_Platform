@@ -18,11 +18,11 @@ let nextBalloonId = 1;
 
 // Golden-angle step keeps consecutive balloons visually distinct, same trick used for the
 // obstacle/orb hues in the other two games.
-const HUE_STEP = 137.508;
+const HUES = [4, 44, 199, 158, 326];
 
-export function spawnBalloon(riseSpeed: number): Balloon {
+export function spawnBalloon(riseSpeed: number, arenaWidth = LOGICAL_WIDTH): Balloon {
   const radius = randRange(BALLOON_RADIUS_MIN, BALLOON_RADIUS_MAX);
-  const baseX = randRange(radius + BALLOON_SWAY_AMPLITUDE_MAX, LOGICAL_WIDTH - radius - BALLOON_SWAY_AMPLITUDE_MAX);
+  const baseX = randRange(radius + BALLOON_SWAY_AMPLITUDE_MAX, arenaWidth - radius - BALLOON_SWAY_AMPLITUDE_MAX);
   const id = nextBalloonId++;
   return {
     id,
@@ -34,7 +34,8 @@ export function spawnBalloon(riseSpeed: number): Balloon {
     swayAmplitude: randRange(BALLOON_SWAY_AMPLITUDE_MIN, BALLOON_SWAY_AMPLITUDE_MAX),
     swaySpeed: randRange(BALLOON_SWAY_SPEED_MIN, BALLOON_SWAY_SPEED_MAX),
     radius,
-    hue: (id * HUE_STEP) % 360,
+    hue: HUES[id % HUES.length],
+    shape: id % 5 === 0 ? "star" : id % 4 === 0 ? "heart" : "round",
     age: 0,
   };
 }

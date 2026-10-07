@@ -40,6 +40,12 @@ export function useBalloonEngine(
       engine.handleScreenTap(e.clientX - rect.left, e.clientY - rect.top);
     };
     canvas.addEventListener("pointerdown", onPointerDown);
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Enter"].includes(e.key)) {
+        e.preventDefault(); engine.handleKey(e.key);
+      }
+    };
+    canvas.addEventListener("keydown", onKeyDown);
 
     engine.start();
 
@@ -49,6 +55,7 @@ export function useBalloonEngine(
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("blur", onBlur);
       canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("keydown", onKeyDown);
       engine.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

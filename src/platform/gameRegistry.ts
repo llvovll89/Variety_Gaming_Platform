@@ -183,16 +183,14 @@ export const GAMES: GameDefinition[] = [
   {
     id: "hachuping-balloon",
     title: "풍선 터뜨리기",
-    description: "떠오르는 풍선을 톡톡 터치해서 터뜨리는 놀이 (7세 미만도 쉽게)",
+    description: "반짝이는 풍선과 별, 하트를 톡! 60초 동안 즐기는 하늘 위 풍선 축제.",
     thumbnail: '/art/hub/hachuping-balloon.jpg',
     cover: '/art/hub/hachuping-balloon-large.jpg',
     previewThumbnail: '/art/hub/hachuping-balloon-small.jpg',
-    spotlightText: "떠오르는 풍선을 톡톡 터치하는 놀이.",
+    spotlightText: "풍선도 별도 하트도, 톡! 하늘 가득 색종이가 팡!",
     accentColor: "#ffb020",
     genres: ["키즈", "캐주얼"],
     tags: ["풍선", "터치", "유아", "반응 속도"],
-    releaseStatus: "coming-soon",
-    disabled: true,
     Component: HachupingBalloonApp,
   },
 ];

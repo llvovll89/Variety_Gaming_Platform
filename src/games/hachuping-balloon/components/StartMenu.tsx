@@ -1,42 +1,17 @@
+import { useState } from "react";
 import CharacterPicker from "../../../shared/profile/CharacterPicker";
 import type { Profile } from "../../../shared/profile/useProfile";
-
-interface StartMenuProps {
-  profile: Profile;
-  bestScore: number;
-  onStart: () => void;
-}
-
-export default function StartMenu({ profile, bestScore, onStart }: StartMenuProps) {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-linear-to-b from-[#bfe6ff] to-[#eaf7ff] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="motion-safe:animate-panel-in flex w-full max-w-md flex-col items-center gap-4 rounded-3xl bg-white/85 p-7 text-center shadow-[0_24px_60px_-12px_rgba(217,119,6,0.25)] backdrop-blur-sm">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#d97706]">풍선 터뜨리기</h1>
-        <p className="text-sm text-[#5b4630]">60초 동안 떠오르는 풍선을 톡톡 터치해서 최대한 많이 터뜨려보아요!</p>
-        {bestScore > 0 && <p className="-mt-2 text-xs text-[#8a7256]">최고 기록 {bestScore}</p>}
-
-        <CharacterPicker
-          defaultImage={profile.defaultCharacterImage}
-          selectedId={profile.characterId}
-          onSelect={profile.selectCharacter}
-          customImage={profile.customImage}
-          onUploadFile={profile.uploadPhoto}
-          tone="light"
-        />
-
-        <input
-          value={profile.name}
-          onChange={(e) => profile.setName(e.target.value.slice(0, 12))}
-          placeholder="이름을 입력하세요"
-          className="w-full rounded-xl border border-[#d97706]/30 bg-white px-3 py-2.5 text-center text-[#3a2a10] placeholder-[#b09a7a] outline-none focus:border-[#d97706]"
-        />
-        <button
-          onClick={onStart}
-          className="w-full rounded-full bg-[#ffb020] px-6 py-3 text-base font-bold text-[#3a2a10] transition hover:brightness-105 active:scale-95"
-        >
-          시작하기
-        </button>
-      </div>
-    </div>
-  );
+interface Props { profile: Profile; bestScore: number; onStart: () => void }
+export default function StartMenu({ profile, bestScore, onStart }: Props) {
+ const [customize, setCustomize] = useState(false);
+ return <div className="balloon-menu">
+ <div className="balloon-art"><img src="/art/hub/hachuping-balloon-large.jpg" alt="파란 하늘에 떠오르는 알록달록 풍선과 색종이" /></div>
+ <section className="balloon-intro"><p className="balloon-round-note">작은 손으로 즐기는 60초</p>
+ <h1>풍선<br />터뜨리기<span>톡, 톡, 팡!</span></h1>
+ <p className="balloon-description">하늘 가득 떠오르는 풍선을 눌러보세요.<br />놓쳐도 괜찮아요. 또 올라오니까!</p>
+ <button className="balloon-primary" onClick={onStart}>풍선 터뜨리러 가기</button>
+ <div className="balloon-player"><img src={profile.characterImage} alt="" /><span>{profile.name}의 풍선 축제</span><button onClick={() => setCustomize(!customize)} aria-expanded={customize}>바꾸기</button></div>
+ {customize && <div className="balloon-customize"><label>플레이어 이름<input value={profile.name} maxLength={12} onChange={e => profile.setName(e.target.value)} /></label>
+ <CharacterPicker defaultImage={profile.defaultCharacterImage} selectedId={profile.characterId} onSelect={profile.selectCharacter} customImage={profile.customImage} onUploadFile={profile.uploadPhoto} tone="light" /></div>}
+ <p className="balloon-best">내 최고 기록 <strong>{bestScore}</strong>개</p></section></div>;
 }

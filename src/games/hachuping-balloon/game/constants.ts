@@ -43,7 +43,7 @@ export const RAMP_INTERVAL_MIN = 8;
 export const RAMP_INTERVAL_MAX = 12;
 
 // Pop effect
-export const POP_EFFECT_LIFETIME = 0.4; // seconds
+export const POP_EFFECT_LIFETIME = 0.75; // seconds
 
 // Mascot (decorative, non-interactive character bobbing at the bottom of the arena)
 export const MASCOT_RADIUS = 34;
