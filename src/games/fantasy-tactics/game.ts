@@ -272,6 +272,24 @@ export class Battle {
     this.facings[u.id] = { x: p.x - path[path.length - 2].x, y: p.y - path[path.length - 2].y };
     u.x = p.x; u.y = p.y; u.moved = true; return true;
   }
+  /** Find a legal approach and resolve movement plus a normal attack together. */
+  approachAttack(p: Point) {
+    const u = this.actor, enemy = this.at(p);
+    if (!this.canAct(u) || enemy?.team !== 'enemy') return false;
+    if (this.targets('attack', u).some(t => key(t) === key(p))) return this.act(p, 'attack');
+    if (u.moved) return false;
+    const paths = [...this.paths(u).values()].filter(path => {
+      const end = path.at(-1)!;
+      return path.length > 1 && this.targets('attack', { ...u, ...end }).some(t => key(t) === key(p));
+    });
+    const danger = (q: Point) => Number(this.burning.some(t => key(t) === key(q))) + Number(this.bossWarning.some(t => key(t) === key(q)));
+    paths.sort((a, b) => a.length - b.length || danger(a.at(-1)!) - danger(b.at(-1)!) || this.tile(b.at(-1)!).height - this.tile(a.at(-1)!).height);
+    const path = paths[0];
+    if (!path || !this.moveTo(path.at(-1)!)) return false;
+    if (!this.act(p, 'attack')) { this.undoMove(); return false; }
+    if (this.lastEvent) this.lastEvent.path = path;
+    return true;
+  }
   undoMove() {
     const u = this.actor;
     if (!this.canUndo()) return false;

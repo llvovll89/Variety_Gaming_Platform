@@ -5,3 +5,10 @@
 @media(max-width:950px){.ft-camp-layout{grid-template-columns:minmax(0,1fr) 300px}.ft-camp-window{padding:11px}.ft-camp-heading h1{font-size:20px}}
 .ft-app .ft-camp-next .ft-primary{width:125px;flex-shrink:0}.ft-camp-next small{white-space:nowrap}
 @media(max-width:760px){.ft-camp{padding:14px 7px}.ft-camp-layout{grid-template-columns:1fr}.ft-camp-heading{gap:9px;margin-bottom:12px}.ft-camp-heading h1{font-size:18px}.ft-camp-heading>div>span,.ft-camp-heading>span{font-size:9px}.ft-app .ft-camp-name{min-width:52px;padding:3px 5px;font-size:10px}.ft-camp-name small{font-size:8px}.ft-camp-rest{font-size:9px;padding:9px 7px}.ft-camp-window{padding:14px}.ft-camp-portraits{gap:7px}.ft-camp-portraits .ft-portrait{max-width:62px;margin:auto}.ft-camp-conversation{min-height:210px}.ft-camp-conversation p{min-height:60px}.ft-camp-route svg{max-height:85px}.ft-camp-save{font-size:9px}}
+@media(max-width:760px){
+  .ft-camp-heading>div>span,.ft-camp-heading>span,.ft-camp-rest,.ft-camp-save,.ft-camp-route>span,.ft-camp-route p{font-size:12px;line-height:1.6}
+  .ft-app .ft-camp-name{min-height:44px;font-size:13px;padding:6px}
+  .ft-camp-name small,.ft-camp-portraits span,.ft-camp-next small,.ft-camp-conversation>span{font-size:12px}
+  .ft-camp-conversation p{font-size:15px;line-height:1.75}
+  .ft-camp-portraits button{min-height:44px}
+}

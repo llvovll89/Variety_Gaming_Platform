@@ -331,3 +331,36 @@ test('equipment save validation rejects unknown, duplicate and incompatible gear
   }
   const before=b.allies.map(u=>u.xp);b.checkResult();assert.deepEqual(b.allies.map(u=>u.xp),before);assert.equal(b.inventory.filter(id=>id==='acc-focus').length,1);
 });
+
+
+test('enemy click approaches along a legal path and attacks once with a combined animation', () => {
+  const b = playing(), u = b.actor, enemy = b.units.find(v => v.team === 'enemy');
+  const hp = enemy.hp, start = {x:u.x,y:u.y}, legal = b.paths(u);
+  assert.ok(b.approachAttack(enemy));
+  assert.ok(u.moved); assert.ok(u.acted); assert.ok(enemy.hp < hp);
+  const event = b.lastEvent;
+  assert.equal(event.kind, 'damage'); assert.deepEqual(event.path[0], start);
+  assert.deepEqual(event.path, legal.get(key(u)));
+  assert.ok(distance(u,enemy) <= b.attackRange(u));
+  const after = enemy.hp; assert.equal(b.approachAttack(enemy), false); assert.equal(enemy.hp,after);
+});
+
+test('unreachable enemies and allies do not consume movement or actions', () => {
+  const b=playing(), before=serialize(b), enemy=b.units.find(v=>v.team==='enemy' && v.x===9);
+  assert.equal(b.approachAttack(enemy),false); assert.equal(serialize(b),before);
+  assert.equal(b.approachAttack(b.allies[1]),false); assert.equal(serialize(b),before);
+});
+
+test('enemy click after moving attacks in range and refuses an extra move', () => {
+  const b=playing(), u=b.actor, enemy=b.units.find(v=>v.team==='enemy');
+  assert.ok(b.moveTo({x:4,y:5}));
+  const before=serialize(b); assert.equal(b.approachAttack(enemy),false); assert.equal(serialize(b),before);
+  enemy.x=5;enemy.y=5;assert.ok(b.approachAttack(enemy));assert.ok(u.acted);
+  assert.equal(b.lastEvent.path,undefined);
+});
+
+test('ranged enemy click attacks without moving when already in range', () => {
+  const b=playing(); b.selected='theo';const u=b.actor, enemy=b.units.find(v=>v.team==='enemy');
+  enemy.x=u.x+2;enemy.y=u.y;
+  assert.ok(b.approachAttack(enemy));assert.equal(u.moved,false);assert.ok(u.acted);
+});

@@ -1,5 +1,5 @@
 import { eventDuration, facing, motion, moveDuration } from './animation';
-import { sprite } from './art';
+import { sprite, spriteHit } from './art';
 import { Battle, HEIGHT, WIDTH, key, type Mode, type Point, type Role, type Tile, type Unit } from './game';
 
 export const VIEW_W = 1120, VIEW_H = 670;
@@ -245,6 +245,9 @@ export function pickTile(b: Battle, point: Point): Tile | null {
 }
 export function pickUnit(b: Battle, point: Point): Unit | null {
   const order = b.units.filter(u => u.hp > 0).sort((a, d) => d.x + d.y - a.x - a.y);
-  return order.find(u => { const p = project(u, b.tile(u).height); return Math.abs(point.x - p.x) < 23 && point.y > p.y - (u.role === 'boss' || u.role === 'spear' ? 108 : 85) && point.y < p.y + 7; }) ?? null;
+  return order.find(u => {
+    const p = project(u, b.tile(u).height), delta = b.facings[u.id] ?? (u.team === 'ally' ? { x: 1, y: 0 } : { x: -1, y: 0 });
+    return spriteHit(u.role, point.x - p.x, point.y - p.y, facing({ x: 0, y: 0 }, delta), u.team === 'enemy' || !!u.promoted);
+  }) ?? null;
 }
 export function clampCursor(p: Point) { return { x: Math.max(0, Math.min(WIDTH - 1, p.x)), y: Math.max(0, Math.min(HEIGHT - 1, p.y)) }; }

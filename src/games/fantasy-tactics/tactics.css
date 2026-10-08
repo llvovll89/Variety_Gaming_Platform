@@ -84,3 +84,36 @@
 @media(max-width:760px){.ft-terrain-panel{padding:9px}.ft-terrain-heading{align-items:flex-start;flex-direction:column;gap:3px}.ft-terrain-actions{gap:5px}.ft-terrain-actions button{padding:7px;font-size:11px}.ft-terrain-actions small{font-size:9px}.ft-terrain-targets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .ft-growth select {display:block;max-width:100%;margin-top:6px;padding:8px;border:1px solid #65778a;border-radius:6px;background:#17273a;color:#f4eedb;}
+
+/* Preserve the navy windows while making text and touch targets readable. */
+.ft-map-viewport{overflow:auto;overscroll-behavior-x:contain}
+.ft-app button:not(:disabled):active{transform:translateY(1px)}
+@media(max-width:760px){
+  .ft-shell,.ft-layout,.ft-field,.ft-inspector{min-width:0}
+  .ft-header button{font-size:13px}
+  .ft-chapter h1{font-size:18px;line-height:1.4}
+  .ft-chapter>div>span,.ft-turn>span{font-size:12px}
+  .ft-map-caption{font-size:13px;line-height:1.5}
+  .ft-map-caption>span{min-width:0;overflow-wrap:anywhere}
+  .ft-battle-screen .ft-canvas{min-width:640px;touch-action:pan-x pan-y}
+  .ft-mobile-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}
+  .ft-mobile-controls label{font-size:13px;color:#d5daeb}
+  .ft-mobile-controls select{font-size:16px;min-width:0;text-overflow:ellipsis}
+  .ft-mobile-controls>button{font-size:14px}
+  .ft-mobile-status{font-size:13px;line-height:1.65}
+  .ft-mobile-actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .ft-mobile-actions button{font-size:13px;white-space:nowrap}
+  .ft-app .ft-primary,.ft-app .ft-secondary{min-height:44px;font-size:14px}
+  .ft-unit-heading span,.ft-unit-heading p,.ft-stat-line,.ft-action-bottom>button,.ft-action-bottom>span{font-size:12px}
+  .ft-commands span,.ft-command-help b{font-size:14px}
+  .ft-commands small,.ft-command-help p,.ft-targets button,.ft-growth-note,.ft-report,.ft-report summary{font-size:12px;line-height:1.6}
+  .ft-dialogue p,.ft-modal>p{font-size:15px;line-height:1.7}
+  .ft-dialogue-actions{gap:8px;flex-wrap:wrap}
+  .ft-overlay{padding:12px}
+  .ft-modal{max-width:100%;max-height:calc(100dvh - 24px);padding:18px}
+  .ft-terrain-actions button,.ft-terrain-targets button{font-size:13px}
+  .ft-terrain-actions small,.ft-terrain-targets small,.ft-terrain-panel>p{font-size:12px}
+  .ft-growth h2,.ft-sidequest h3{font-size:16px}
+  .ft-growth p,.ft-sidequest p,.ft-growth article b,.ft-growth article small,.ft-app .ft-growth-actions button{font-size:13px}
+  .ft-growth-actions{grid-template-columns:1fr}
+}
