@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+const KitchenFighterApp = lazy(() => import('../games/kitchen-fighter/KitchenFighterApp'));
 const HachupingSliderApp = lazy(() => import('../games/hachuping-slither/HachupingSliderApp'));
 const HachupingJumpApp = lazy(() => import('../games/hachuping-jump/HachupingJumpApp'));
 const RuneRangerApp = lazy(() => import('../games/hachuping-dodge/survivor/SurvivorApp'));
@@ -16,6 +17,20 @@ import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: 'kitchen-fighter',
+    title: '밥상 대격돌',
+    description: '주걱·파리채·골프채를 들고 주방에서 붙는 3D 격투. 사이드스텝, 대시, 띄우기 콤보까지.',
+    thumbnail: '/art/hub/kitchen-fighter.jpg',
+    cover: '/art/hub/kitchen-fighter-large.jpg',
+    previewThumbnail: '/art/hub/kitchen-fighter-small.jpg',
+    spotlightText: '무기는 생활용품, 승부는 진심. 뒤로 걸으면 가드, Q/E로 옆으로 피해서 반격하세요.',
+    accentColor: '#a34f42',
+    genres: ['액션', '캐주얼'],
+    tags: ['격투', '3D', '주걱', '콤보', '필살기', '2인'],
+    featuredText: 'CPU 또는 친구와 같은 키보드로 붙는 3판 2선승 주방 격투. 내 사진을 넣어 선수로 쓸 수도 있습니다.',
+    Component: KitchenFighterApp,
+  },
   {
     id: 'ghost-movers',
     title: '유령 이삿짐센터',
