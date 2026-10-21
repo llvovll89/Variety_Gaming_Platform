@@ -50,3 +50,19 @@ uses the eight subjects and costume descriptions above in row-major order.
 New officers have dedicated named abilities using existing battle effect types.
 All 72 officers remain recruitable at grades 1–5; rarity chances are unchanged.
 Abilities, stats, titles and dialogue are fictional game content.
+
+## Fifth expansion, 2026-10-21
+
+Saved project asset: `public/art/three-kingdoms-card/heroes-expansion-5.png`.
+Created with the built-in imagegen tool; no CLI/API fallback. The generated
+1254 × 1254 PNG was inspected and copied into the project without editing.
+It contains sixteen equal cells in a 4 × 4 atlas. Catalog tile indexes follow
+`EXPANSION5_HEROES` in row-major order. All existing atlas mappings are unchanged.
+The catalog now contains 88 officers, recruitable at all five grades.
+
+Final generation prompt:
+
+> Create ONE production sprite atlas image for an East Asian Three Kingdoms strategy card game. A perfect SQUARE 4 columns x 4 rows grid, all 16 equal SQUARE portrait tiles touching with ZERO gaps, ZERO borders, ZERO text, ZERO labels, ZERO watermarks. Ideally 2048x2048 or highest square resolution. Each tile contains one distinct adult Han Chinese historical-inspired character chest-up centered, full head and headdress contained safely within its own tile with comfortable margin. Realistic painterly cinematic game card art, finely painted faces, subdued dark backgrounds, detailed Han-era silk, leather and iron, cohesive restrained black and silver UI-compatible lighting. Never span multiple cells. Exact row-major order: Row1 Shu green accents: Fei Yi calm middle-aged slender male civil minister with tall black court hat and jade silk; Dong Yun stern clean-shaven middle-aged male civil censor with dark green cap and scroll; Zhang Yi (Zhang Ni) rugged middle-aged male frontier warrior with scar and battered green lamellar; Liao Hua elderly male veteran with gray beard, weathered face and green-black armor. Row2 Wei blue accents: Cao Hong stocky bearded middle-aged male in heavy dark blue armor and broad helmet; Li Dian composed slim adult male officer with trimmed beard and blue scholar-warrior cap; Yue Jin short formidable muscular male commander with compact metal helmet and steel-blue lamellar; Chen Qun elderly male dignified minister with long thin beard and blue-black robes and court hat. Row3 Wu muted red accents: Han Dang mature strong male veteran with gray moustache and red bronze armor; Jiang Qin sharp-eyed adult male river raider with red headwrap and leather armor; Pan Zhang broad rough-faced male warrior with black beard and red-iron helm; Bu Lian Shi elegant adult woman in dignified dark crimson court silk, ornate restrained golden hairpin, composed intelligent gaze. Row4 independent warlords purple accents: Gao Shun severe clean-shaven male commander with iron-gray armor and muted purple cords; Chen Gong gaunt thoughtful middle-aged male strategist with short beard and dark plum scholar hat; Liu Biao elderly aristocratic male governor in purple brocade and formal tall hat; Cai Yan adult scholarly woman in dark plum silk, simple silver hair ornament, holding bamboo slips, wise melancholic eyes. Art must look like original handcrafted collectible strategy game portraits, no anime, no modern fashion. All faces visibly different. Every tile exactly equal size, no extra frame outside grid.
+
+Stats, abilities, titles, costume choices and dialogue are fictional game content.
+The generated images are original assets, not images copied from 삼국지W.

@@ -1,0 +1,4 @@
+import { UNIT_KEYS, UNITS, unitMultiplier, type Unit } from "../lib/tactics";
+export default function UnitMatchups({ selected }: { selected: Unit }) {
+  return <details className="unit-reference"><summary>병종 상성표 보기</summary><p className="muted small">행은 공격, 열은 방어 병종입니다. 수치는 가하는 피해 배율입니다.</p><div className="matchup-table-scroll"><table className="matchup-table"><caption className="sr-only">6개 병종 상성표</caption><thead><tr><th scope="col">공격 / 방어</th>{UNIT_KEYS.map(u => <th scope="col" key={u}>{UNITS[u].name}</th>)}</tr></thead><tbody>{UNIT_KEYS.map(a => <tr key={a} className={a === selected ? "selected-unit" : ""}><th scope="row">{UNITS[a].name}</th>{UNIT_KEYS.map(d => { const value = unitMultiplier(a, d); return <td key={d} className={value > 1 ? "matchup-good" : value < 1 ? "matchup-bad" : ""}>{value.toFixed(2)}</td>; })}</tr>)}</tbody></table></div></details>;
+}

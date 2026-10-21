@@ -3,18 +3,14 @@ import { createPortal } from "react-dom";
 import type { GameProps } from "../../platform/types";
 import GameDemo from "./components/GameDemo";
 import styles from "./three-kingdoms-card.css?inline";
+// Font faces belong to the document; they are available inside the game's shadow root.
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 
 export default function ThreeKingdomsCardApp({ onExit }: GameProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const [shadowRoot, setShadowRoot] = useState<ShadowRoot | null>(null);
 
   useEffect(() => {
-    // @font-face does not register inside a shadow root, so the display serif loads in the document.
-    const id = "tkw-serif-font";
-    if (!document.getElementById(id)) {
-      const link = Object.assign(document.createElement("link"), { id, rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&display=swap" });
-      document.head.appendChild(link);
-    }
     if (!hostRef.current) return;
     setShadowRoot(hostRef.current.shadowRoot ?? hostRef.current.attachShadow({ mode: "open" }));
   }, []);

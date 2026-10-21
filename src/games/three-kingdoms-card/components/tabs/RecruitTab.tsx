@@ -3,7 +3,7 @@ import { HERO_CATALOG, HERO_ROSTER_LIMIT, RARITIES, type HeroKey } from "../../l
 import { HeroPortrait } from "../HeroVisual";
 import { number, type TabProps } from "./shared";
 
-const FEATURED: readonly string[] = ["zhangbao", "jiangwan", "zhonghui", "wangyuanji", "sunjian", "dingfeng", "wenchou", "zhurong"];
+const FEATURED: readonly string[] = ["feiyi", "dongyun", "zhangni", "liaohua", "caohong", "lidian", "yuejin", "chenqun", "handang", "jiangqin", "panzhang", "bulianshi", "gaoshun", "chengong", "liubiao", "caiyan"];
 
 export default function RecruitTab({ state, act, onShowCatalog, onPreview }: TabProps & { onShowCatalog: () => void; onPreview: (key: HeroKey) => void }) {
   const ownedCount = state.collected.length;
@@ -13,15 +13,15 @@ export default function RecruitTab({ state, act, onShowCatalog, onPreview }: Tab
   const ticketsForFive = Math.min(5, state.recruitmentTickets);
   return <section className="recruit-page">
     <div className="page-title">
-      <div><h1>한 번의 인연이,<br className="mobile-break" /> 천하를 바꾼다.</h1></div>
+      <div><h1>장수 모집</h1><p className="muted small">초빙장 또는 금으로 장수를 영입합니다.</p></div>
       <span className="subtle-tag">만난 장수 {ownedCount} / {HERO_CATALOG.length}명</span>
     </div>
     <div className="summon-hall">
       <div className="hall-mist" />
       <div className="hall-copy">
         <span className="hall-label">천하 초빙</span>
-        <h2>난세에 잠든<br />영웅을 부르다.</h2>
-        <p>당신을 기다리는 이름들.<br />같은 이름, 서로 다른 잠재력.<br />1성부터 5성까지, 인연은 지금 시작됩니다.</p>
+        <h2>인재를 구하노라</h2>
+        <p>무장에게는 병권을, 지장에게는 군략을.<br />장수의 능력과 특기를 살펴<br />영지에 필요한 인재를 맞이하십시오.</p>
         <div className="hall-seal" aria-hidden="true">招賢</div>
       </div>
       <div className="hall-portraits" aria-hidden="true">
@@ -66,7 +66,7 @@ export default function RecruitTab({ state, act, onShowCatalog, onPreview }: Tab
       <button className="outline-button" disabled={!nextReward || ownedCount < nextReward.count} onClick={() => act({ type: "claimCollection" })}>보상 받기</button>
     </div>
     <div className="section-heading">
-      <div><h2>새로 합류한 장수 8명</h2></div>
+      <div><h2>새로 합류한 장수 16명</h2></div>
       <button className="quiet-button" onClick={onShowCatalog}>전체 {HERO_CATALOG.length}명 보기</button>
     </div>
     <div className="catalog-strip">

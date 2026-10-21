@@ -7,22 +7,21 @@ export default function TerritoryTab({ state, act }: TabProps) {
   const rates = production(state);
   const politicsBonus = Math.max(0, ...state.heroes.map(h => h.politics)) / 10;
   return <section>
-    <div className="territory-banner">
+    <div className="territory-banner territory-ledger">
       <div>
-        <p className="eyebrow">{state.lordName} 군주의 터전</p>
-        <h1>{state.castleName}</h1>
-        <p>작은 영지에서 시작하는 새로운 천하.<br />생산 기반을 넓혀 다음 원정을 준비하세요.</p>
+        <h2>내정 현황</h2>
+        <p>건물을 강화해 군자금과 군량을 확보하십시오.</p>
         <span className="subtle-tag">정치 보너스 +{politicsBonus.toFixed(1)}%</span>
       </div>
     </div>
 
-    <div className="section-heading"><h2>일일 과제</h2><span className="muted small">매일 자정에 초기화됩니다.</span></div>
+    <div id="daily-quests" className="section-heading"><h2>일일 과제</h2><span className="muted small">매일 자정에 초기화됩니다.</span></div>
     <ul className="daily-list">
       {DAILY_QUESTS.map((q, i) => {
         const progress = Math.min(q.goal, state.daily.progress[i]);
         const claimed = state.daily.claimed[i];
         return <li key={q.name} className={claimed ? "is-claimed" : ""}>
-          <div><strong>{q.name} {q.goal}회</strong><small>보상 {q.reward}</small></div>
+          <div><strong>{q.name} {q.goal}회</strong><small>{i === 2 ? "건물 강화·연구 시작·장수 파견 · " : ""}보상 {q.reward}</small></div>
           <progress aria-label={`${q.name} 진행도`} value={progress} max={q.goal} />
           <span>{progress} / {q.goal}</span>
           <button className="outline-button" disabled={claimed || progress < q.goal} onClick={() => act({ type: "claimDaily", index: i })}>{claimed ? "수령 완료" : "보상 받기"}</button>
@@ -30,7 +29,7 @@ export default function TerritoryTab({ state, act }: TabProps) {
       })}
     </ul>
 
-    <div className="section-heading"><h2>영지 경영</h2><span className="muted small">머무르지 않아도 자원은 생산됩니다.</span></div>
+    <div id="territory-management" className="section-heading"><h2>영지 경영</h2><span className="muted small">머무르지 않아도 자원은 생산됩니다.</span></div>
     <div className="building-grid">
       {state.buildings.map(b => {
         const rule = BUILDINGS[b.type];

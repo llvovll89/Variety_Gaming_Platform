@@ -9,10 +9,12 @@ export type BattleTroop = {
   commander: HeroStats; deputies: HeroStats[]; unit?: Unit;
 };
 export type Side = "ATTACKER" | "DEFENDER";
+export type BattleFrame = { turn: number; attacker: number; defender: number; message: string };
 export type BattleResult = {
   winner: Side | "DRAW"; turns: number; logs: string[];
   attackerRemaining: number; defenderRemaining: number;
   experienceReward: number;
+  replay?: { attackerName: string; defenderName: string; frames: BattleFrame[] };
 };
 
 export function aggregateStats(troop: BattleTroop) {
@@ -52,6 +54,7 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
   const a = { troop: attacker, stats: aggregateStats(attacker), skills: aggregateSkills(attacker), soldiers: attacker.currentTroops, start: attacker.currentTroops };
   const d = { troop: defender, stats: aggregateStats(defender), skills: aggregateSkills(defender), soldiers: defender.currentTroops, start: defender.currentTroops };
   const logs: string[] = [];
+  const frames: BattleFrame[] = [{ turn: 0, attacker: a.soldiers, defender: d.soldiers, message: "양군이 전장에 도착했습니다." }];
   let turns = 0;
   if (a.soldiers > 0 && d.soldiers > 0) {
     const aLead = a.stats.leadership + a.skills.initiative; const dLead = d.stats.leadership + d.skills.initiative;
@@ -79,6 +82,7 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
         const reflected = Math.min(source.soldiers, Math.floor(damage * target.skills.counter));
         if (reflected > 0) { source.soldiers -= reflected; logs.push(`${turn}턴: ${target.troop.name}의 반격! ${reflected}명 피해를 되돌렸습니다.`); }
         logs.push(`${turn}턴: ${source.troop.name} → ${target.troop.name}, ${damage}명 피해. 남은 병력 ${target.soldiers}명.`);
+        frames.push({ turn, attacker: a.soldiers, defender: d.soldiers, message: `${source.troop.name}${skill ? " 화공" : fury ? " 맹장 일격" : " 공격"} · ${damage}명 피해${reflected ? ` · 반격 ${reflected}명` : ""}` });
       }
     }
   }
@@ -87,5 +91,6 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
     : winner === "DEFENDER" ? attacker.currentTroops - a.soldiers : 0;
   logs.push(winner === "DRAW" ? "전투 종료: 무승부." : `전투 종료: ${winner === "ATTACKER" ? attacker.name : defender.name} 승리.`);
   return { winner, turns, logs, attackerRemaining: a.soldiers, defenderRemaining: d.soldiers,
+    replay: { attackerName: attacker.commander.name, defenderName: defender.commander.name, frames },
     experienceReward: Math.floor(destroyed * 0.5) };
 }

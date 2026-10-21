@@ -5,6 +5,11 @@ const expandedX = [0, 230, 459, 687, 915, 1145];
 const expandedY = [0, 220, 440, 664, 883, 1103, 1374];
 export function portraitStyle(key: string) {
   const hero = catalogHero(key);
+  if (hero.atlas === "expansion5") return {
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-5.png')",
+    backgroundSize: "400% 400%",
+    backgroundPosition: `${(hero.tile % 4) * 100 / 3}% ${Math.floor(hero.tile / 4) * 100 / 3}%`,
+  };
   if (hero.atlas === "expansion3") return {
     backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-3.png')",
     backgroundSize: "400% 400%",

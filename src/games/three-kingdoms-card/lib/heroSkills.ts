@@ -74,6 +74,22 @@ export const HERO_SKILLS: Record<string, readonly [string, SkillKind, SkillKind]
   dingfeng: ["설중돌격", "ambush", "guard"],
   wenchou: ["하북쌍벽", "fury", "initiative"],
   zhurong: ["남중의화염", "fire", "attack"],
+  feiyi: ["조정화합", "fiscal", "tutor"],
+  dongyun: ["강직", "guard", "fiscal"],
+  zhangni: ["남중수호", "counter", "guard"],
+  liaohua: ["노장불굴", "desperate", "recover"],
+  caohong: ["호위돌파", "guard", "ambush"],
+  lidian: ["겸양의진", "tactics", "guard"],
+  yuejin: ["선등", "ambush", "attack"],
+  chenqun: ["군정정비", "fiscal", "tutor"],
+  handang: ["노궁의위용", "fury", "guard"],
+  jiangqin: ["장강순시", "initiative", "plunder"],
+  panzhang: ["매복참격", "ambush", "counter"],
+  bulianshi: ["온화한덕", "recover", "tutor"],
+  gaoshun: ["함진영", "guard", "attack"],
+  chengong: ["백문루의계", "tactics", "fire"],
+  liubiao: ["형주경영", "fiscal", "guard"],
+  caiyan: ["호가의울림", "recover", "tutor"],
 };
 
 /** 등급에 맞게 제한된 특수능력 목록(1~2성은 빈 배열). */

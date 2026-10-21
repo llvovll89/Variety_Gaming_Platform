@@ -2,6 +2,7 @@ import { ADDITIONAL_HEROES } from "./additionalHeroes";
 import { EXPANSION_HEROES } from "./expansionHeroes";
 import { EXPANSION3_HEROES } from "./expansion3Heroes";
 import { EXPANSION4_HEROES } from "./expansion4Heroes";
+import { EXPANSION5_HEROES } from "./expansion5Heroes";
 
 export const HERO_CATALOG = [
   { key: "guanyu", name: "관우", title: "미염공", faction: "촉", role: "무장", quote: "의리를 저버리는 칼은 들지 않소.", stats: [94, 97, 73, 60, 93], atlas: "original", tile: 0 },
@@ -14,6 +15,7 @@ export const HERO_CATALOG = [
   ...EXPANSION_HEROES.map(hero => ({ ...hero, atlas: "expansion2" as const })),
   ...EXPANSION3_HEROES.map((hero, tile) => ({ ...hero, tile, atlas: "expansion3" as const })),
   ...EXPANSION4_HEROES.map(hero => ({ ...hero, atlas: "expansion4" as const })),
+  ...EXPANSION5_HEROES.map((hero, tile) => ({ ...hero, tile, atlas: "expansion5" as const })),
 ] as const;
 export type HeroKey = typeof HERO_CATALOG[number]["key"];
 export const FACTIONS = ["촉", "위", "오", "군웅"] as const;

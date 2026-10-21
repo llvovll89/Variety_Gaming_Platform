@@ -18,10 +18,11 @@ const sharedPortraits = new Map(Object.values(createOfficers()).flatMap(officer 
 const dedicatedPortraits = new Map<string,{atlas:number;tile:number}>(PK_PORTRAIT_IDS.flatMap((ids,atlas)=>ids.map((id,tile)=>[id,{atlas:atlas+1,tile}])));
 
 export function officerPortraitSource(id:string): {kind:'shared';key:string} | {kind:'pk';atlas:number;tile:number} {
-  const shared=sharedPortraits.get(id);
-  if(shared) return {kind:'shared',key:shared};
+  // Preserve existing PK identities when the shared card catalog gains more officers.
   const dedicated=dedicatedPortraits.get(id);
   if(dedicated) return {kind:'pk',...dedicated};
+  const shared=sharedPortraits.get(id);
+  if(shared) return {kind:'shared',key:shared};
   // Custom officers receive a stable illustrated face, with no model or appearance editor.
   let hash=0;for(const c of id)hash=(Math.imul(hash,31)+c.charCodeAt(0))>>>0;
   return {kind:'pk',atlas:hash%4+1,tile:Math.floor(hash/4)%16};
