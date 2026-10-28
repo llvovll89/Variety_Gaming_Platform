@@ -1,6 +1,9 @@
+import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
+import { readableInk } from '../../platform/hubCatalog';
 interface GameOverScreenProps {
   finalScore: number;
   bestScore?: number;
+  previousBest?: number;
   accentColor?: string;
   onRestart: () => void;
   onMainMenu: () => void;
@@ -9,6 +12,7 @@ interface GameOverScreenProps {
 export default function GameOverScreen({
   finalScore,
   bestScore,
+  previousBest,
   accentColor = "#ec4899",
   onRestart,
   onMainMenu,
@@ -20,7 +24,7 @@ export default function GameOverScreen({
         style={{ boxShadow: `0 0 40px -12px ${accentColor}66, 0 24px 60px -12px rgba(0,0,0,0.6)` }}
       >
         <h2 className="text-2xl font-extrabold tracking-tight" style={{ color: accentColor }}>
-          사망!
+          이번 한 판 완료!
         </h2>
         <p className="text-white/75">
           최종 점수 <span className="text-xl font-bold text-white">{finalScore}</span>
@@ -28,9 +32,10 @@ export default function GameOverScreen({
         {bestScore !== undefined && (
           <p className="-mt-2 text-sm text-white/45">최고 기록 {bestScore}</p>
         )}
+        {bestScore !== undefined && <ScoreFeedback score={finalScore} previousBest={previousBest ?? bestScore}/>}
         <button
           onClick={onRestart}
-          style={{ backgroundColor: accentColor }}
+          style={{ backgroundColor: accentColor, color: readableInk(accentColor) === "dark" ? "#1a1a1a" : "#fff" }}
           className="w-full rounded-full px-6 py-3 text-base font-bold text-[#1a1a1a] transition hover:brightness-105 active:scale-95"
         >
           다시 시작
@@ -41,6 +46,7 @@ export default function GameOverScreen({
         >
           메인 메뉴
         </button>
+        <NextGameActions/>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { Suspense, useState } from "react";
+import { PlaySession } from "./platform/PlaySession";
 import Hub from "./platform/Hub";
 import { GAMES, getGameById } from "./platform/gameRegistry";
 import { useProfile } from "./shared/profile/useProfile";
@@ -7,9 +8,12 @@ import { recordRecentGame } from "./platform/hubCatalog";
 
 export default function App() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [launchIntent, setLaunchIntent] = useState<"start" | "resume">("start");
   const activeGame = activeGameId ? getGameById(activeGameId) : undefined;
   const profile = useProfile();
-  const selectGame = (gameId: string) => {
+  const selectGame = (gameId: string, intent: "start" | "resume" = "start") => {
+    if (!getGameById(gameId)) return;
+    setLaunchIntent(intent);
     recordRecentGame(gameId, GAMES);
     setActiveGameId(gameId);
   };
@@ -21,7 +25,9 @@ export default function App() {
     return (
       <div className="relative h-full w-full">
         <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
-          <Component onExit={() => setActiveGameId(null)} profile={gameProfile} />
+          <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: () => setActiveGameId(null) }}>
+            <Component key={activeGame.id} onExit={() => setActiveGameId(null)} profile={gameProfile} launchIntent={launchIntent} />
+          </PlaySession.Provider>
         </Suspense>
       </div>
     );

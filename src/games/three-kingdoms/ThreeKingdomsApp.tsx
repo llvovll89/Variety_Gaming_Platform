@@ -23,8 +23,9 @@ import type { GameEngine } from "./game/engine";
 import type { FactionId, GameState } from "./game/types";
 
 /** Map-first command desk, with city navigation and contextual officer assignments. */
-export default function ThreeKingdomsApp({ onExit }: GameProps) {
-  const [factionId, setFactionId] = useState<FactionId | null>(null);
+export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
+  const [initialSave] = useState(() => launchIntent === "resume" ? loadGame() : null);
+  const [factionId, setFactionId] = useState<FactionId | null>(initialSave?.playerFactionId ?? null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const [overview, setOverview] = useState(false);
   const [editor, setEditor] = useState(false);
@@ -32,7 +33,7 @@ export default function ThreeKingdomsApp({ onExit }: GameProps) {
   const snapshot = useUISnapshot(engine?.ui ?? null, emptySnapshot());
   // A restored save is handed to the engine once it exists, since the engine builds a fresh
   // scenario in its constructor and only then can adopt someone else's board.
-  const resumeRef = useRef<GameState | null>(null);
+  const resumeRef = useRef<GameState | null>(initialSave);
 
   const handleReady = useCallback((next: GameEngine) => {
     setEngine(next);

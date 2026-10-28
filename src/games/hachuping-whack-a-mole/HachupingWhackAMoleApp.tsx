@@ -26,7 +26,7 @@ export default function HachupingWhackAMoleApp({onExit}:GameProps) {
   const [difficulty,setDifficulty]=useState<DifficultyLevel>('normal');
   const [muted,setMuted]=useState(false);
   const [rank,setRank]=useState<number|null>(null);
-  const {highScore,submitScore}=useHighScore(ID);
+  const {highScore,previousBest,submitScore}=useHighScore(ID);
   const {leaderboard,submitScore:submitRanking}=useLeaderboard(ID);
   const s=useUISnapshot(engine?.uiStore??null,FALLBACK);
   const start=useCallback((d:DifficultyLevel)=>{setDifficulty(d);setEngine(null);setRank(null);setPlayKey(k=>k+1);setScreen('playing');},[]);
@@ -40,7 +40,7 @@ export default function HachupingWhackAMoleApp({onExit}:GameProps) {
       <HUD uiSnapshot={s}/>
       {s.status==='ready'&&<div className="mole-countdown" role="status"><span>손가락 준비!</span><strong key={Math.ceil(s.countdown)}>{Math.max(1,Math.ceil(s.countdown))}</strong><p>두더지가 올라오면 톡!</p></div>}
       {s.status==='paused'&&<GameDialog label="일시정지" onClose={()=>engine?.resumeGame()}><div className="mole-pause-panel"><PauseIcon size={36} weight="fill"/><h2>잠깐, 숨 고르기.</h2><p>남은 시간 {Math.ceil(s.timeRemaining)}초 · 현재 {s.score}점</p><button autoFocus className="mole-primary" onClick={()=>engine?.resumeGame()}><PlayIcon size={19} weight="fill"/> 계속하기</button><button className="mole-quiet" onClick={menu}><ArrowLeftIcon size={18}/> 메뉴로 돌아가기</button></div></GameDialog>}
-      {screen==='game-over'&&<GameOverWithLeaderboard finalScore={s.finalScore??s.score} bestScore={highScore} leaderboard={leaderboard} playerRank={rank} onRestart={()=>start(difficulty)} onMainMenu={menu} snapshot={s}/>}
+      {screen==='game-over'&&<GameOverWithLeaderboard previousBest={previousBest} finalScore={s.finalScore??s.score} bestScore={highScore} leaderboard={leaderboard} playerRank={rank} onRestart={()=>start(difficulty)} onMainMenu={menu} snapshot={s}/>}
     </>}
   </div>;
 }
