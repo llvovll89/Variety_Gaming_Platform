@@ -1,3 +1,4 @@
+import { NextGameActions } from '../../../../platform/PlaySession';
 import { activeTroop, SWEEP_LIMIT, sweepReward, troopSlots, type DemoBattle } from "../../lib/demoGame";
 import { heroSkills } from "../../lib/heroSkills";
 import { troopSynergy } from "../../lib/synergy";
@@ -116,6 +117,7 @@ export default function SortieTab({ state, act, onNavigate, selectedBattle, onSe
         <details className="report-transcript"><summary>전투 전문 · {report.logs.length}건</summary><ol className="battle-lines">
           {report.logs.map((log, i) => <li className={log.includes("계략 발동") ? "strategy-line" : ""} key={i}>{log}</li>)}
         </ol></details>
+        <NextGameActions/>
       </article>
       : <div className="empty-report"><span>戰</span><p>첫 출정의 기록이 이곳에 남습니다.</p></div>}
   </section>;

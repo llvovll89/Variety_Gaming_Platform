@@ -1,3 +1,4 @@
+import { NextGameActions, ScoreFeedback } from '../../../platform/PlaySession';
 import { useEffect, useRef, useState } from 'react';
 import type { GameProps } from '../../../platform/types';
 import { choosePromotion, weaponStats, chooseUpgrade, createWorld, DIFFICULTIES, HEIGHT, nextStage, spawnEnemy, STAGES, stepWorld, UPGRADES, WIDTH, type Difficulty, type World } from './world';
@@ -28,10 +29,11 @@ export default function SurvivorApp({onExit}:GameProps) {
   const pointer=useRef<{x:number;y:number}|null>(null);
   const [ui,setUi]=useState(()=>structuredClone(world.current));
   const [best,setBest]=useState(()=>readBest('hard'));
+  const [previousBest, setPreviousBest] = useState(best);
   const bestRef=useRef(best);
   const publish=()=>setUi(structuredClone(world.current));
   const resetInput=()=>{keys.current.clear();pointer.current=null;};
-  const start=()=>{world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
+  const start=()=>{setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const mainMenu=()=>{world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const selectLoadout=(change:Partial<Loadout>)=>{world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
   const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
@@ -98,7 +100,7 @@ export default function SurvivorApp({onExit}:GameProps) {
       ui.status==='upgrade'?<><span className="survivor-kicker">레벨 {ui.level}</span><h2 id="ranger-dialog-title">룬을 새겨 힘을 얻으세요</h2><p>능력 하나를 선택하세요. 선택하는 동안 전투가 멈춥니다.</p><div className="survivor-upgrades">{ui.choices.map((key,i)=>{const Icon=upgradeIcons[key];return <button autoFocus={i===0} key={key} onClick={()=>{chooseUpgrade(world.current,key);resetInput();publish();}}><span className="survivor-upgrade-symbol"><Icon size={26} weight="duotone"/></span><small>{ui.upgrades[key]>0?`강화 ${ui.upgrades[key]+1}단계`:'새로운 능력'}</small><strong>{UPGRADES[key].name}</strong><p>{UPGRADES[key].description}</p><span className="survivor-upgrade-select">선택하기 <kbd>{i+1}</kbd></span></button>;})}</div><small>모든 레벨업은 체력 10을 회복합니다.</small></>:
       ui.status==='paused'?<><span className="survivor-kicker">원정 일시정지</span><h2 id="ranger-dialog-title">잠시 쉬어가기</h2><p>{DIFFICULTIES[ui.difficulty].name} · LV {ui.level} · {ui.kills} 처치 · {clock(ui.time)}</p><button autoFocus className="survivor-primary" onClick={pause}>계속하기</button><button onClick={mainMenu}>원정 종료 · 메뉴로</button></>:
       ui.status==='clear'?<><span className="survivor-kicker">지역 탈환</span><h2 id="ranger-dialog-title">{stage.name} 탈환!</h2><p>능력치는 유지되고 체력이 모두 회복됩니다.<br/>다음 목적지: {STAGES[ui.stage+1].name}</p><button autoFocus className="survivor-primary" onClick={()=>{nextStage(world.current);resetInput();publish();}}>다음 지역으로</button></>:
-      <><span className="survivor-kicker">{ui.status==='victory'?'원정 완료':'원정 종료'}</span><h2 id="ranger-dialog-title">{ui.status==='victory'?'왕좌를 되찾았습니다.':'다음 원정을 기약하며.'}</h2><p>{DIFFICULTIES[ui.difficulty].name} · {ui.status==='victory'?`${STAGES.length}개 지역의 보스를 모두 쓰러뜨렸습니다.`:`${stage.name}에서 원정이 끝났습니다.`}</p><div className="survivor-results"><div><strong>{ui.kills}</strong><span>몬스터 처치</span></div><div><strong>{ui.level}</strong><span>도달 레벨</span></div><div><strong>{clock(ui.time)}</strong><span>생존 시간</span></div></div><button autoFocus className="survivor-primary" onClick={start}>새 원정 시작</button><button onClick={mainMenu}>게임 메뉴</button></>}
+      <><span className="survivor-kicker">{ui.status==='victory'?'원정 완료':'원정 종료'}</span><h2 id="ranger-dialog-title">{ui.status==='victory'?'왕좌를 되찾았습니다.':'다음 원정을 기약하며.'}</h2><p>{DIFFICULTIES[ui.difficulty].name} · {ui.status==='victory'?`${STAGES.length}개 지역의 보스를 모두 쓰러뜨렸습니다.`:`${stage.name}에서 원정이 끝났습니다.`}</p><div className="survivor-results"><div><strong>{ui.kills}</strong><span>몬스터 처치</span></div><div><strong>{ui.level}</strong><span>도달 레벨</span></div><div><strong>{clock(ui.time)}</strong><span>생존 시간</span></div></div><p>이 난이도 최고 기록 {best}처치</p><ScoreFeedback score={ui.kills} previousBest={previousBest} unit="처치"/><button autoFocus className="survivor-primary" onClick={start}>새 원정 시작</button><button onClick={mainMenu}>게임 메뉴</button><NextGameActions/></>}
     </section></div>}
     <span className="sr-only">전장 크기 {WIDTH} × {HEIGHT}</span>
   </div>;

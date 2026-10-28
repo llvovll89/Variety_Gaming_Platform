@@ -1,3 +1,4 @@
+import { NextGameActions } from '../../../platform/PlaySession';
 import { HANJA_FONT } from "../game/constants";
 import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import type { UISnapshot } from "../game/types";
@@ -83,6 +84,7 @@ export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
             나가기
           </button>
         </div>
+        <NextGameActions/>
       </div>
     </div>
   );

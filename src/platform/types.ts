@@ -3,6 +3,7 @@ import type { Profile } from "../shared/profile/useProfile";
 
 export interface GameProps {
   onExit: () => void;
+  launchIntent?: "start" | "resume";
   /** Cross-game player identity (name + character), owned by the platform shell. */
   profile: Profile;
 }

@@ -1,3 +1,4 @@
+import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeftIcon, PauseIcon, SpeakerHighIcon, SpeakerSlashIcon } from "@phosphor-icons/react";
 import GameCanvas from "./components/GameCanvas";
@@ -14,9 +15,9 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
  const [playing, setPlaying] = useState(false), [playKey, setPlayKey] = useState(0);
  const [engine, setEngine] = useState<BalloonEngine | null>(null);
  const [muted, setMuted] = useState(false);
- const { highScore, submitScore } = useHighScore("hachuping-balloon");
+ const { highScore, previousBest, submitScore } = useHighScore("hachuping-balloon");
  const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK);
- useEffect(() => { if(snapshot.score > 0) submitScore(snapshot.score); }, [snapshot.score, submitScore]);
+ useEffect(() => { if(snapshot.status === "gameover") submitScore(snapshot.score); }, [snapshot.status, snapshot.score, submitScore]);
  useEffect(() => { engine?.setMuted(muted); }, [engine, muted]);
  useEffect(() => {
   if (playing && snapshot.status === "playing") document.querySelector<HTMLCanvasElement>(".balloon-app canvas")?.focus({ preventScroll: true });
@@ -45,9 +46,9 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
  <h2 id="balloon-dialog-title">{paused ? "잠깐 쉬어가요" : "하늘 가득 팡팡!"}</h2>
  <p>{paused ? "풍선들도 기다리고 있어요." : "60초 동안 터뜨린 풍선"}</p>
  <strong className="balloon-result">{snapshot.score}<small>개</small></strong>
- {ended && <p>내 최고 기록 {Math.max(highScore, snapshot.score)}개</p>}
+ {ended && <><p>내 최고 기록 {Math.max(highScore, snapshot.score)}개</p><ScoreFeedback score={snapshot.score} previousBest={previousBest} unit="개"/></>}
  <button autoFocus className="balloon-primary" onClick={paused ? () => engine?.resume() : start}>{paused ? "계속 놀기" : "한 번 더 놀기"}</button>
- <button className="balloon-secondary" onClick={menu}>처음 화면으로</button>
+ <button className="balloon-secondary" onClick={menu}>처음 화면으로</button>{ended && <NextGameActions/>}
  </section></div>}
  </div>;
 }

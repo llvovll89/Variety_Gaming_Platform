@@ -3,13 +3,21 @@ import { ArrowRightIcon, ArrowUpRightIcon, CaretLeftIcon, CaretRightIcon, Deskto
 import type { GameDefinition, GameGenre } from "./types";
 import { availableGames, comingSoonGames, filterHubGames, HUB_GENRES, readRecentGameIds } from "./hubCatalog";
 import { safeGetItem, safeSetItem } from "../shared/storage";
+import { PLAY_INFO, TIME_CHOICES, gamesForTime, type TimeChoice } from "./playExperience";
+import { savedProgressLabel } from "./savedProgress";
 import "./hub.css";
 
 interface HubProps {
   games: GameDefinition[];
-  onSelect: (gameId: string) => void;
+  onSelect: (gameId: string, intent?: "start" | "resume") => void;
   profile: { name: string; characterImage: string };
 }
+function PlayFacts({ game }: { game: GameDefinition }) {
+  const info = PLAY_INFO[game.id];
+  if (!info) return null;
+  return <span className="hub-play-facts"><span>{info.duration}</span><span>{info.controls}</span><span>{info.experience}</span><span>{info.save}</span></span>;
+}
+
 type Theme = "system" | "light" | "dark";
 const THEME_KEY = "gh-hub-theme";
 const THEME_NAMES = { system: "시스템 설정", light: "밝은 화면", dark: "어두운 화면" };
@@ -31,6 +39,10 @@ function Cover({ game, featured = false }: { game: GameDefinition; featured?: bo
 }
 
 export default function Hub({ games, onSelect, profile }: HubProps) {
+  const [timeChoice, setTimeChoice] = useState<TimeChoice>("short");
+  const [quickIndex, setQuickIndex] = useState(0);
+  const [saves, setSaves] = useState<Record<string, string>>({});
+  const [savesLoading, setSavesLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<"전체" | GameGenre>("전체");
   const [theme, setTheme] = useState<Theme>(() => {
@@ -46,6 +58,18 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
   const upcoming = useMemo(() => comingSoonGames(games), [games]);
   const recent = useMemo(() => readRecentGameIds(games).map(id => games.find(game => game.id === id))
     .filter((game): game is GameDefinition => Boolean(game)), [games]);
+  const quickGames = gamesForTime(games, timeChoice);
+  const quickGame = quickGames[quickIndex % (quickGames.length || 1)];
+  const resumable = [...recent, ...playableAll.filter(game => !recent.some(item => item.id === game.id))].filter(game => saves[game.id]);
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(playableAll.map(async game => [game.id, await savedProgressLabel(game.id)] as const)).then(entries => {
+      if (cancelled) return;
+      setSaves(Object.fromEntries(entries.filter((entry): entry is readonly [string, string] => entry[1] !== null)));
+      setSavesLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [playableAll]);
   const [stageId, setStageId] = useState(() => (playableAll.find(game => game.id === "ghost-movers") ?? playableAll[0])?.id);
   const stage = playableAll.find(game => game.id === stageId) ?? playableAll[0];
   const resolvedTheme = theme === "system" ? systemDark ? "dark" : "light" : theme;
@@ -77,6 +101,21 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
       </div>
     </header>
     <main className="hub-main">
+      <section className="hub-start" aria-label="바로 플레이">
+        <div className="hub-continue">
+          <h2>{resumable.length ? '이어서 하기' : recent.length ? '다시 만나 반가워요' : '오늘의 첫 한 판'}</h2>
+          {savesLoading ? <p role="status">저장된 진행을 확인하고 있어요…</p> : resumable[0] ? <>
+            <div className="hub-continue-game"><img src={resumable[0].thumbnail} alt="" width={112} height={63}/><span><strong>{resumable[0].title}</strong><small>{saves[resumable[0].id]}</small></span></div>
+            <p>{['ghost-movers', 'ten-seconds'].includes(resumable[0].id) ? '완료한 퍼즐을 기억했어요. 마지막으로 열린 퍼즐부터 시작해요.' : '이 브라우저에 저장된 진행에서 계속할 수 있어요.'}</p>
+            <button type="button" className="hub-play" onClick={() => onSelect(resumable[0].id, 'resume')}><PlayIcon size={17} weight="fill"/>이어서 하기</button>
+          </> : <><p>{recent[0] ? recent[0].title + '에서 한 번 더 도전해 볼까요?' : '시간에 맞는 게임을 골라 가볍게 시작해 보세요.'}</p>{recent[0] && <button type="button" className="hub-play" onClick={() => onSelect(recent[0].id)}><PlayIcon size={17} weight="fill"/>다시 플레이</button>}</>}
+        </div>
+        <div className="hub-quick">
+          <h2>지금 한 판</h2><p>얼마나 쉬어갈까요? 한 판 기준으로 골랐어요.</p>
+          <div className="hub-time-choices" role="group" aria-label="플레이 시간">{TIME_CHOICES.map(choice => <button key={choice.id} type="button" aria-pressed={timeChoice === choice.id} onClick={() => { setTimeChoice(choice.id); setQuickIndex(0); }}>{choice.label}</button>)}</div>
+          {quickGame ? <div className="hub-quick-pick" aria-live="polite"><span><strong>{quickGame.title}</strong><small>{PLAY_INFO[quickGame.id]?.duration} · {PLAY_INFO[quickGame.id]?.controls}</small></span><div><button type="button" className="hub-play" onClick={() => onSelect(quickGame.id)}><PlayIcon size={17} weight="fill"/>시작하기</button>{quickGames.length > 1 && <button type="button" className="hub-another" onClick={() => setQuickIndex(index => index + 1)}>다른 게임</button>}</div></div> : <p role="status">이 시간에 맞는 게임을 준비하고 있어요. 다른 시간을 골라 주세요.</p>}
+        </div>
+      </section>
       {stage && <section className="hub-feature" aria-label="추천 게임">
         <div className="hub-feature-stage">
           <div className="hub-feature-art"><Cover key={stage.id} game={stage} featured /></div>
@@ -84,7 +123,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
             <p className="hub-feature-category">{stage.genres.join(" / ")}</p>
             <h1>{stage.title}</h1>
             <p className="hub-feature-description">{stage.spotlightText ?? stage.description}</p>
-            <button type="button" className="hub-play" onClick={() => onSelect(stage.id)}><PlayIcon size={18} weight="fill" />시작하기</button>
+            <PlayFacts game={stage} /><button type="button" className="hub-play" onClick={() => onSelect(stage.id)}><PlayIcon size={18} weight="fill" />시작하기</button>
           </div>
         </div>
         <div className="hub-feature-picker">
@@ -99,9 +138,9 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
       </section>}
 
       {recent.length > 0 && <section className="hub-block" aria-labelledby="recent-title">
-        <h2 id="recent-title">이어서 하기</h2>
-        <div className="hub-recent-row">{recent.map(game => <button key={game.id} type="button" className="hub-recent" onClick={() => onSelect(game.id)}>
-          <img src={game.thumbnail} alt="" width={112} height={63} loading="lazy" /><span><strong>{game.title}</strong><small>{game.genres.join(" / ")}</small></span><PlayIcon size={17} weight="fill" />
+        <h2 id="recent-title">최근 플레이</h2>
+        <div className="hub-recent-row">{recent.map(game => <button key={game.id} type="button" className="hub-recent" onClick={() => onSelect(game.id, saves[game.id] ? "resume" : "start")}>
+          <img src={game.thumbnail} alt="" width={112} height={63} loading="lazy" /><span><strong>{game.title}</strong><small>{saves[game.id] ? "이어하기 · " + saves[game.id] : "새로운 한 판"}</small></span><PlayIcon size={17} weight="fill" />
         </button>)}</div>
       </section>}
 
@@ -115,7 +154,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-genres" role="group" aria-label="장르">{HUB_GENRES.map(item => <button key={item} type="button" aria-pressed={genre === item} onClick={() => setGenre(item)}>{item}<small>{filterHubGames(games, "", item).length}</small></button>)}</div>
         <p className="sr-only" role="status">게임 {playable.length}개</p>
         {playable.length > 0 ? <div className="hub-game-grid">{playable.map(game => <button key={game.id} type="button" className="hub-game" onClick={() => onSelect(game.id)} aria-label={`${game.title} 시작하기`}>
-          <Cover game={game} /><span className="hub-game-caption"><span className="hub-game-genre">{game.genres.join(" / ")}</span><strong>{game.title}</strong><span className="hub-game-description">{game.description}</span><span className="hub-game-launch">시작하기<ArrowUpRightIcon size={17} /></span></span>
+          <Cover game={game} /><span className="hub-game-caption"><span className="hub-game-genre">{game.genres.join(" / ")}</span><strong>{game.title}</strong><span className="hub-game-description">{game.description}</span><PlayFacts game={game} /><span className="hub-game-launch">시작하기<ArrowUpRightIcon size={17} /></span></span>
         </button>)}</div> : <div className="hub-empty"><MagnifyingGlassIcon size={36} /><h3>검색 결과가 없어요</h3><p>{query ? `‘${query}’에 맞는 ${genre === "전체" ? "" : `${genre} `}게임을 찾지 못했어요.` : `${genre} 게임이 아직 없어요.`}<br />검색어를 바꾸거나 다른 장르를 선택해 주세요.</p><button type="button" onClick={clearFilters}>검색 초기화</button></div>}
       </section>
 
