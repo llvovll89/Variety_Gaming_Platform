@@ -61,12 +61,9 @@ export function routeTo(s:State,point:Point):Direction[]|null {
   return null;
 }
 function walkRoute(s:State,route:Direction[]) {for(const direction of route){if(s.status!=='playing')break;s=act(s,{type:'move',direction});}return s;}
-function targetCargo(s:State,id:string):State {
+function cargoApproach(s:State,id:string) {
   const f=s.furniture.find(f=>f.id===s.active),c=s.cargo.find(c=>c.id===id&&!c.delivered&&c.id!==s.carry?.cargoId);
-  if(!f)return {...s,message:'가구를 먼저 눌러 빙의하세요. 짐은 가구 앞에서 능력으로 옮겨요.'};
-  if(!c)return s;
-  if(f.kind==='lamp')return {...s,message:'스탠드는 짐 대신 전동문을 조작해요. 능력 버튼이나 Space를 누르세요.'};
-  if(s.carry?.furnitureId===f.id)return {...s,message:'이미 짐을 실었어요. 빈 바닥으로 이동한 뒤 원하는 방향으로 내려놓으세요.'};
+  if(!f||!c||f.kind==='lamp'||s.carry?.furnitureId===f.id)return null;
   const range=f.kind==='fan'?5:f.kind==='vacuum'||f.kind==='fridge'?4:1,min=f.kind==='vacuum'?2:1;
   const options:{route:Direction[];direction:Direction;distance:number}[]=[];
   for(let d=0;d<4;d++)for(let distance=min;distance<=range;distance++){
@@ -75,7 +72,28 @@ function targetCargo(s:State,id:string):State {
     if(clear)options.push({route,direction:d as Direction,distance});
   }
   options.sort((a,b)=>a.route.length-b.route.length||a.distance-b.distance);
-  const best=options[0];if(!best)return {...s,message:'이 짐에 다가갈 길이 없어요. 문을 열거나 다른 가구를 먼저 옮겨 보세요.'};
+  return options[0]??null;
+}
+export type TravelCommand = Extract<Command,{type:'navigate'|'target'}>;
+export type TravelPlan = { command:TravelCommand; path:Point[]; cost:number; remaining:number|null; exhaustsBudget:boolean };
+/** Read-only preview uses exactly the route chosen by the existing execution commands. */
+export function planTravel(s:State,command:TravelCommand):TravelPlan|null {
+  if(s.status!=='playing')return null;
+  const f=s.furniture.find(f=>f.id===s.active);if(!f)return null;
+  const route=command.type==='navigate'?routeTo(s,command.point):cargoApproach(s,command.id)?.route;
+  if(!route)return null;
+  const path:Point[]=[{x:f.x,y:f.y}];
+  for(const direction of route)path.push(shifted(path[path.length-1],DIRECTIONS[direction]));
+  const remaining=s.relaxed?null:Math.max(0,LEVELS[s.levelIndex].budget-s.steps-route.length);
+  return {command,path,cost:route.length,remaining,exhaustsBudget:!s.relaxed&&route.length>=LEVELS[s.levelIndex].budget-s.steps};
+}
+function targetCargo(s:State,id:string):State {
+  const f=s.furniture.find(f=>f.id===s.active),c=s.cargo.find(c=>c.id===id&&!c.delivered&&c.id!==s.carry?.cargoId);
+  if(!f)return {...s,message:'가구를 먼저 눌러 빙의하세요. 짐은 가구 앞에서 능력으로 옮겨요.'};
+  if(!c)return s;
+  if(f.kind==='lamp')return {...s,message:'스탠드는 짐 대신 전동문을 조작해요. 능력 버튼이나 Space를 누르세요.'};
+  if(s.carry?.furnitureId===f.id)return {...s,message:'이미 짐을 실었어요. 빈 바닥으로 이동한 뒤 원하는 방향으로 내려놓으세요.'};
+  const best=cargoApproach(s,id);if(!best)return {...s,message:'이 짐에 다가갈 길이 없어요. 문을 열거나 다른 가구를 먼저 옮겨 보세요.'};
   const moved=walkRoute(s,best.route);if(moved.status!=='playing')return moved;
   return {...act(moved,{type:'face',direction:best.direction}),message:`짐을 바라보고 있어요. ${FURNITURE[f.kind].ability}: 능력 버튼 또는 Space를 누르세요.`};
 }

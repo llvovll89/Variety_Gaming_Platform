@@ -57,10 +57,11 @@ function nightNeighborhood(scene:T.Scene,width:number,height:number) {
 }
 export class MovingScene {
   renderer:T.WebGLRenderer;scene=new T.Scene();camera=new T.OrthographicCamera();
+  routeMarkers=new T.Group();
   objects=new Map<string,T.Group>();tiles=new Map<string,T.Mesh>();gates:T.Group[]=[];root=new T.Group();ghost=ghostModel();halo=new T.Group();arrow=new T.Group();
   targets=new Map<string,T.Vector3>();state:State;zoom=1;frame=0;lastTime=0;activeName:T.Sprite;onSelect:(id:string)=>void;resizeObserver:ResizeObserver;pointer:{x:number;y:number}|null=null;reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   constructor(public host:HTMLElement,state:State,onSelect:(id:string)=>void,public onPoint:(p:Point)=>void=()=>{},public onCargo:(id:string)=>void=()=>{}) {
-    this.state=state;this.onSelect=onSelect;const l=LEVELS[state.levelIndex];this.scene.background=new T.Color('#17243d');this.scene.fog=new T.Fog('#17243d',29,48);this.scene.add(this.root);
+    this.state=state;this.onSelect=onSelect;const l=LEVELS[state.levelIndex];this.scene.background=new T.Color('#17243d');this.scene.fog=new T.Fog('#17243d',29,48);this.scene.add(this.root);this.root.add(this.routeMarkers);
     this.renderer=new T.WebGLRenderer({antialias:true,alpha:false});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.3;host.append(this.renderer.domElement);
     this.camera.position.set(12,16,18);this.camera.lookAt(0,0,0);
     this.scene.add(new T.HemisphereLight('#b3c6ef','#956f53',1.25));const light=new T.DirectionalLight('#ffdfad',2.6);light.position.set(-5,12,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-10,right:10,top:10,bottom:-10});light.shadow.bias=-.001;light.shadow.normalBias=.035;this.scene.add(light);const moon=new T.DirectionalLight('#a9bcff',1.1);moon.position.set(6,6,-7);this.scene.add(moon);
@@ -105,6 +106,18 @@ export class MovingScene {
     for(const [id,tile] of this.tiles){const l=LEVELS[state.levelIndex],goal=l.goals.find(g=>key(g)===id);(tile.material as T.MeshStandardMaterial).color.set(state.ice.includes(id)?'#99d9e8':goal?'#c5dab8':(Number(id.split(',')[0])+Number(id.split(',')[1]))%2?'#edceb0':'#e2bf9b');}
     for(const gate of this.gates){const bars=gate.userData.bars as T.Mesh;bars.scale.y=state.powered?.04:1;bars.position.y=state.powered?.88:.4;}
     this.halo.visible=!!active;this.arrow.visible=!!active;this.activeName.visible=!!active;
+  }
+  showRoute(path:Point[]) {
+    this.routeMarkers.traverse(object=>{const mesh=object as T.Mesh;if(mesh.geometry)mesh.geometry.dispose();if(mesh.material)for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material])material.dispose();});
+    this.routeMarkers.clear();
+    if(!path.length)return;
+    const positions=path.map(p=>this.world(p).setY(.065));
+    const line=new T.Line(new T.BufferGeometry().setFromPoints(positions),new T.LineBasicMaterial({color:'#b9ecda'}));this.routeMarkers.add(line);
+    positions.slice(1).forEach((position,index)=>{
+      const last=index===positions.length-2;
+      const marker=new T.Mesh(new T.RingGeometry(last ? .22 : .08,last ? .32 : .15,24),new T.MeshBasicMaterial({color:last?'#fff0bd':'#b9ecda',side:T.DoubleSide}));
+      marker.rotation.x=-Math.PI/2;marker.position.copy(position);this.routeMarkers.add(marker);
+    });
   }
   down=(e:PointerEvent)=>{this.pointer={x:e.clientX,y:e.clientY};};cancel=()=>{this.pointer=null;};
   up=(e:PointerEvent)=>{const down=this.pointer;this.pointer=null;if(!down||Math.hypot(e.clientX-down.x,e.clientY-down.y)>10)return;const rect=this.host.getBoundingClientRect(),ray=new T.Raycaster();ray.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),this.camera);const hit=ray.intersectObjects([...this.objects.values()].filter(object=>object.visible),true)[0];if(hit){let o:T.Object3D|null=hit.object;while(o&&!o.userData.furnitureId&&!o.userData.cargoId)o=o.parent;if(o?.userData.furnitureId){this.onSelect(o.userData.furnitureId);return;}if(o?.userData.cargoId){this.onCargo(o.userData.cargoId);return;}}const floor=ray.ray.intersectPlane(new T.Plane(new T.Vector3(0,1,0),0),new T.Vector3());if(floor){const l=LEVELS[this.state.levelIndex],point={x:Math.round(floor.x+l.width/2),y:Math.round(floor.z+l.height/2)};if(point.x>0&&point.y>0&&point.x<l.width-1&&point.y<l.height-1)this.onPoint(point);}};
