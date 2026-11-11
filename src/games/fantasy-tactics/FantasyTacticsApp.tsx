@@ -23,6 +23,9 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const [screen, setScreen] = useState<'title' | 'battle'>(launchIntent === "resume" && saved ? "battle" : "title");
   const [revision, setRevision] = useState(0), [mode, setMode] = useState<Mode>('move');
   const [hover, setHover] = useState<Point | null>(null), [grid, setGrid] = useState(false);
+  const [pending, setPending] = useState<Point | null>(null);
+  const previewPanel = useRef<HTMLDivElement>(null);
+  useEffect(() => { if(pending) previewPanel.current?.scrollIntoView({block:'nearest'}); }, [pending]);
   const [paused, setPaused] = useState(false), [help, setHelp] = useState(false), [confirmNew, setConfirmNew] = useState(false);
   const [storageMessage, setStorageMessage] = useState(''), [hint, setHint] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,6 +33,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const dialog = useRef<HTMLDivElement>(null), board = useRef<HTMLCanvasElement>(null), busyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlay = screen === 'title' ? (confirmNew ? 'new' : '') : gearOpen ? 'gear' : help ? 'help' : paused ? 'paused' : (!busy && ['intro', 'won', 'lost', 'ending'].includes(battle.phase)) ? battle.phase : '';
   const update = () => setRevision(n => n + 1);
+  useEffect(() => { setPending(null); }, [battle, revision, mode, overlay]);
   const resetMode = () => { setMode('move'); setHover(null); setHint(''); };
   const start = (resume = false) => {
     setMobilePanel(null);
@@ -72,12 +76,17 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
     setBusy(true); if (busyTimer.current) clearTimeout(busyTimer.current);
     busyTimer.current = setTimeout(() => { setBusy(false); }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 80 : Math.max(120, eventDuration(battle.lastEvent)));
   };
-  const actAt = (p: Point) => {
+  const actAt = (p: Point, confirmed = false) => {
     if (overlay || busy || screen !== 'battle' || battle.phase !== 'player') return;
     const u = battle.at(p);
     if (mode === 'move' && u?.team === 'ally') { select(u); return; }
+    if (!confirmed && (mode === 'move' || mode === 'attack')) {
+      const legal = u?.team === 'enemy' ? !!battle.approachPath(p) : mode === 'move' && !battle.actor.moved && battle.canAct() && battle.targets('move').some(t=>key(t)===key(p));
+      if (legal) { setPending({x:p.x,y:p.y}); setHover(p); setHint(''); return; }
+    }
+    setPending(null);
     if (((mode === 'move' || mode === 'attack') && u?.team === 'enemy') ? battle.approachAttack(p) : battle.act(p, mode)) { lockBriefly(); setHint(''); if (mode !== 'move') setMode('move'); update(); }
-    else setHint(u?.team === 'enemy' && (mode === 'move' || mode === 'attack') ? '공격 가능한 이동 칸이 없어요. 다른 동료나 대상을 선택하세요.' : mode === 'chest' ? '상자의 인접 칸으로 이동하세요. 적이 서 있는 상자는 열 수 없어요.' : mode === 'move' ? '파란 이동 칸을 선택하세요. 적을 바로 누르면 이동 후 공격합니다.' : '사거리, 마나와 대상의 상태를 확인하세요.');
+    else setHint(u?.team === 'enemy' && (mode === 'move' || mode === 'attack') ? '공격 가능한 이동 칸이 없어요. 다른 동료나 대상을 선택하세요.' : mode === 'chest' ? '상자의 인접 칸으로 이동하세요. 적이 서 있는 상자는 열 수 없어요.' : mode === 'move' ? '파란 이동 칸을 선택하고 미리보기에서 확인하세요.' : '사거리, 마나와 대상의 상태를 확인하세요.');
   };
   const actor = battle.actor, actorStats = battle.stats(battle.actor), skill = battle.skill(mode), canAct = screen === 'battle' && battle.canAct() && !busy && !overlay;
   const targetTeam = skill?.effect === 'heal' || skill?.effect === 'ward' ? 'ally' : 'enemy';
@@ -89,21 +98,22 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const line = (battle.sideQuest ? rescueDialogue : stage.dialogue)[battle.dialogue];
   const speaker = battle.roster.find(u => u.name === line.speaker);
 
-  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`}>
+  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`} onKeyDownCapture={e=>{if(e.key==='Escape'&&pending){e.preventDefault();e.stopPropagation();setPending(null);setHover(null);}}}>
     <header className="ft-header"><button onClick={onExit}><ArrowLeft size={17} />게임 목록</button><span className="ft-brand">별빛 원정대</span><div>{screen === 'battle' && <button disabled={!!overlay} onClick={()=>setGearOpen(true)}>장비·가방</button>}<button onClick={() => setHelp(true)} disabled={screen === 'title' || !!overlay}>게임 방법</button>{screen === 'battle' && <button onClick={() => setPaused(true)} disabled={!!overlay} aria-label="일시 정지"><Pause size={19} /></button>}</div></header>
     {screen === 'battle' && battle.phase === 'camp' ? <CampScreen battle={battle} revision={revision} locked={!!overlay} onGear={()=>setGearOpen(true)} onUpdate={update} onSideQuest={() => { const next=battle.startSideQuest();if(next){setBattle(next);resetMode();update();} }} onDepart={() => { const next = battle.nextStage(); if (next) { setBattle(next); resetMode(); update(); } }} /> : <div className="ft-shell">
       <div className="ft-chapter"><div><span>{screen === 'title' ? '별의 등대를 찾아서' : battle.sideQuest ? '외전 · 별빛 구출 작전' : `${battle.stage>=3?'2부':'1부'} · 제${battle.stage + 1}장 · ${stage.place}`}</span><h1>{screen === 'title' ? '별빛 원정대' : battle.sideQuest ? '숲길의 작은 영웅들' : stage.name}</h1></div>{screen === 'battle' && <div className={`ft-turn ${battle.phase === 'enemy' ? 'is-enemy' : ''}`}><b>{battle.round}</b><span>번째 차례<strong>{battle.phase === 'enemy' ? '적이 움직입니다' : battle.phase === 'player' ? '아군의 차례' : '별빛 원정대'}</strong></span></div>}</div>
       <div className={`ft-layout ${screen === 'title' ? 'ft-title-layout' : ''}`}>
         <section className="ft-field" aria-label={`${stage.place} 전장`}>
           <div className="ft-map-caption"><span>{screen === 'title' ? '여울숲의 오래된 다리' : battle.objective}</span><button onClick={() => setGrid(v => !v)} aria-pressed={grid} aria-label="격자와 높이 표시"><GridFour size={18} /></button></div>
-          <div className="ft-map-viewport"><BattleCanvas battle={battle} mode={screen === 'title' ? 'move' : mode} hover={hover} grid={grid} revision={revision} canvasRef={board} interactive={screen === 'battle' && !overlay && !busy && battle.phase === 'player'}
-            onHover={setHover} onCell={actAt} onCancel={() => { resetMode(); if (battle.undoMove()) update(); }} /></div>
+          <div className="ft-map-viewport"><BattleCanvas battle={battle} mode={screen === 'title' ? 'move' : mode} hover={pending??hover} grid={grid} revision={revision} canvasRef={board} interactive={screen === 'battle' && !overlay && !busy && battle.phase === 'player'}
+            onHover={p=>{if(!pending)setHover(p);}} onCell={actAt} onCancel={() => { if(pending){setPending(null);setHover(null);return;} resetMode(); if (battle.undoMove()) update(); }} /></div>
+          {screen === 'battle' && (pending || hover) && !overlay && !busy && battle.canAct() && <div ref={previewPanel} className="ft-action-preview" aria-label="행동 미리보기"><div role="status"><b>{pending?'실행 전 확인':'미리보기'} · {(pending??hover)!.x+1}열 {(pending??hover)!.y+1}행</b><p>{battle.preview((pending??hover)!,mode)}</p>{skill&&<small>MP {battle.skillCost(mode)} 사용 · 남은 MP {Math.max(0,actor.mp-battle.skillCost(mode))}</small>}</div>{pending&&<div className="ft-preview-buttons"><button onClick={()=>actAt(pending,true)}>확인 · {battle.at(pending)?.team==='enemy'?'공격':'이동'}</button><button onClick={()=>{setPending(null);setHover(null);}}>취소</button></div>}</div>}
           {screen === 'battle' && <div className="ft-mobile-controls" inert={!!overlay}>
             <label>동료<select aria-label="전장의 동료 선택" value={actor.id} disabled={battle.phase !== 'player' || busy} onChange={e => { const u = battle.allies.find(v => v.id === e.target.value); if (u) select(u); }}>{battle.allies.map(u => <option key={u.id} value={u.id} disabled={u.hp === 0}>{u.name}{u.hp === 0 ? ' · 쓰러짐' : u.acted ? ' · 완료' : ''}</option>)}</select></label>
             <label>행동<select aria-label="전장의 행동 선택" value={mode} disabled={!canAct} onChange={e => { setMode(e.target.value as Mode); setHint(''); }}><option value="move" disabled={actor.moved}>이동</option><option value="attack">공격</option><option value="chest">보물상자 열기</option>{battle.sideQuest&&<option value="rescue">주민 구출</option>}{battle.environmentEnabled&&<><option value="cut" disabled={!battle.targets('cut').length}>다리 끊기</option><option value="push" disabled={!battle.targets('push').length}>밀어내기</option><option value="ignite" disabled={!battle.targets('ignite').length}>불붙이기</option></>}{battle.skills(actor).map((s, i) => <option key={s.name} value={`skill${i}`} disabled={actor.mp < battle.skillCost(`skill${i}` as Mode)}>{s.name} · MP {battle.skillCost(`skill${i}` as Mode)}</option>)}</select></label>
             <button disabled={!canAct} onClick={() => { battle.wait(); resetMode(); update(); }}>대기</button>
             <button disabled={!canAct || !battle.canUndo()} onClick={() => { battle.undoMove(); resetMode(); update(); }} aria-label="전장에서 이동 취소"><ArrowCounterClockwise size={18} /></button>
-            <div className="ft-mobile-status" role="status" aria-live="polite"><span>{actor.name} · HP {actor.hp}/{actor.maxHp} · MP {actor.mp}/{actor.maxMp}</span><b>{hint || (battle.phase === 'enemy' ? '적이 움직이고 있어요' : actor.acted ? '다른 동료를 선택하세요' : mode === 'move' ? '파란 칸으로 이동 · 적을 누르면 이동 후 공격' : mode === 'rescue' ? '인접한 주민 칸을 눌러 구출하세요' : mode === 'chest' ? '인접한 상자를 누르세요' : `${skill?.name ?? '공격'} · 대상을 누르세요`)}</b></div>
+            <div className="ft-mobile-status" role="status" aria-live="polite"><span>{actor.name} · HP {actor.hp}/{actor.maxHp} · MP {actor.mp}/{actor.maxMp}</span><b>{hint || (battle.phase === 'enemy' ? '적이 움직이고 있어요' : actor.acted ? '다른 동료를 선택하세요' : mode === 'move' ? '칸·적 선택 → 미리보기 → 확인' : mode === 'rescue' ? '인접한 주민 칸을 눌러 구출하세요' : mode === 'chest' ? '인접한 상자를 누르세요' : `${skill?.name ?? '공격'} · 대상을 누르세요`)}</b></div>
             <div className="ft-mobile-actions">
               <button disabled={!canAct || !battle.potions || actor.hp === actor.maxHp} onClick={() => { if (battle.potion()) { lockBriefly(); update(); resetMode(); } }}><Flask size={16} />회복 {battle.potions}</button>
               <button aria-expanded={mobilePanel === 'unit'} aria-controls="ft-unit-panel" onClick={() => setMobilePanel(p => p === 'unit' ? null : 'unit')}>상세</button>
@@ -133,9 +143,9 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
             <button disabled={!canAct || !battle.potions || actor.hp === actor.maxHp} onClick={() => { if (battle.potion()) { lockBriefly(); update(); resetMode(); } }}><Flask size={21} /><span>회복약<small>HP +30 · {battle.potions}개</small></span></button>
             <button disabled={!canAct} onClick={() => { battle.wait(); resetMode(); update(); }}><Hourglass size={21} /><span>대기<small>행동 마치기</small></span></button>
           </div>
-          <p className="ft-growth-note">{actor.promoted ? `전직 완료 · ${actor.level>=5 ? JOBS[actor.role]?.hidden.name+' 해금' : 'Lv.5 히든스킬'}` : 'Lv.3 야영지 전직 · Lv.5 히든스킬'}</p><div className="ft-command-help"><b>{mode === 'chest' ? '보물상자를 선택하세요' : mode === 'move' ? '이동할 곳을 선택하세요' : mode === 'attack' ? '공격할 적을 선택하세요' : skill?.name}</b><p>{hint || (mode === 'chest' ? '인접한 상자를 열면 행동 1회를 씁니다. 장비는 캠프에서 장착하세요.' : '') || skill?.description || (mode === 'move' ? '파란 칸으로 이동하세요. 적을 바로 누르면 사거리 안으로 이동해 공격합니다.' : '적을 가리키면 예상 피해를 확인할 수 있어요. 직선으로 3칸 이동한 근접 공격은 돌진이 됩니다.')}</p></div>
+          <p className="ft-growth-note">{actor.promoted ? `전직 완료 · ${actor.level>=5 ? JOBS[actor.role]?.hidden.name+' 해금' : 'Lv.5 히든스킬'}` : 'Lv.3 야영지 전직 · Lv.5 히든스킬'}</p><div className="ft-command-help"><b>{mode === 'chest' ? '보물상자를 선택하세요' : mode === 'move' ? '이동할 곳을 선택하세요' : mode === 'attack' ? '공격할 적을 선택하세요' : skill?.name}</b><p>{hint || (mode === 'chest' ? '인접한 상자를 열면 행동 1회를 씁니다. 장비는 캠프에서 장착하세요.' : '') || skill?.description || (mode === 'move' ? '칸이나 적을 선택해 경로·피해를 확인한 뒤 실행하세요. 취소하면 행동을 쓰지 않아요.' : '적을 가리키면 예상 피해를 확인할 수 있어요. 직선으로 3칸 이동한 근접 공격은 돌진이 됩니다.')}</p></div>
           {placingTrap&&<div className="ft-targets" aria-label="덫 설치 위치">{battle.targets(mode).map(p=><button key={key(p)} disabled={!canAct} onClick={()=>actAt(p)}>({p.x+1}, {p.y+1})<small>덫 설치</small></button>)}</div>}
-          {nativeTargets.length > 0 && <div className="ft-targets" aria-label="대상 선택">{nativeTargets.map(u => <button key={u.id} disabled={!canAct || !battle.targets(mode).some(t => key(t) === key(u)) || (skill?.effect === 'heal' && u.hp === u.maxHp)} onClick={() => actAt(u)} onMouseEnter={() => setHover(u)}>{u.name}<small>{battle.preview(u, mode)}</small></button>)}</div>}
+          {nativeTargets.length > 0 && <div className="ft-targets" aria-label="대상 선택">{nativeTargets.map(u => <button key={u.id} disabled={!canAct || !(mode === 'attack' ? battle.approachPath(u) : battle.targets(mode).some(t => key(t) === key(u))) || (skill?.effect === 'heal' && u.hp === u.maxHp)} onClick={() => actAt(u)} onMouseEnter={() => setHover(u)}>{u.name}<small>{battle.preview(u, mode)}</small></button>)}</div>}
           {battle.sideQuest&&<div className="ft-rescue-list" aria-label="주민 구출">{battle.civilians.map(v=><button key={v.id} disabled={!canAct||battle.rescued.includes(v.id)} onClick={()=>{if(battle.rescue(v.id)){resetMode();update();}else setHint('주민의 인접 칸으로 이동하세요. 구출은 행동 1회를 사용합니다.');}}>{v.name}<small>{battle.rescued.includes(v.id)?'구출 완료':'인접 칸에서 구출'}</small></button>)}</div>}<div className="ft-chest-list" aria-label="전장의 보물상자">{battle.treasures.map(t=><button key={t.id} disabled={!canAct||!battle.canOpen(t.id)} onClick={()=>{if(battle.openChest(t.id)){resetMode();update();}}}>{t.name}<small>{battle.opened.includes(t.id)?'개봉 완료':battle.canOpen(t.id)?'열기':'가까이 이동'}</small></button>)}</div>
           <div className="ft-action-bottom"><button disabled={!canAct || !battle.canUndo()} onClick={() => { battle.undoMove(); resetMode(); update(); }}><ArrowCounterClockwise size={16} />이동 취소</button><span>EXP {actor.xp} / 80</span></div>
           <button className="ft-primary" disabled={battle.phase !== 'player' || !!overlay || busy} onClick={() => { battle.endTurn(); resetMode(); update(); }}>아군 차례 마치기</button>

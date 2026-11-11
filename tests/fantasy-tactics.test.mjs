@@ -345,6 +345,29 @@ test('enemy click approaches along a legal path and attacks once with a combined
   const after = enemy.hp; assert.equal(b.approachAttack(enemy), false); assert.equal(enemy.hp,after);
 });
 
+test('approach previews are read-only and match the executed path and damage across chapters', () => {
+  for(let stage=0;stage<=FINAL_STAGE;stage++) {
+    const b=playing(stage), enemy=b.units.find(v=>v.team==='enemy'&&b.approachPath(v));
+    if(!enemy)continue;
+    const before=serialize(b), path=b.approachPath(enemy), text=b.preview(enemy,'move');
+    const amount=Number(text.match(/−(\d+) HP/)[1]);
+    assert.equal(b.preview(enemy,'attack'),text);assert.equal(serialize(b),before);
+    assert.ok(b.approachAttack(enemy));
+    assert.equal(b.lastEvent.text,`−${amount}`);
+    if(path.length>1)assert.deepEqual(b.lastEvent.path,path);
+  }
+});
+
+test('movement previews report terrain danger and refuse a second movement',()=>{
+  const b=playing(), p={x:3,y:5}, before=serialize(b);
+  b.burning.push({...p,turns:2});b.bossWarning.push(p);
+  assert.match(b.preview(p,'move'),/이동 1칸/);
+  assert.match(b.preview(p,'move'),/불길 주의.*보스 공격 예고/);
+  b.burning=[];b.bossWarning=[];assert.equal(serialize(b),before);
+  assert.ok(b.moveTo(p));assert.equal(b.preview({x:4,y:5},'move'),'이동할 수 없는 칸');
+  assert.equal(b.approachPath({x:9,y:3}),null);
+});
+
 test('unreachable enemies and allies do not consume movement or actions', () => {
   const b=playing(), before=serialize(b), enemy=b.units.find(v=>v.team==='enemy' && v.x===9);
   assert.equal(b.approachAttack(enemy),false); assert.equal(serialize(b),before);

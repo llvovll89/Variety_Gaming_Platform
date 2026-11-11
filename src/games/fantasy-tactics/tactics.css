@@ -117,3 +117,5 @@
   .ft-growth p,.ft-sidequest p,.ft-growth article b,.ft-growth article small,.ft-app .ft-growth-actions button{font-size:13px}
   .ft-growth-actions{grid-template-columns:1fr}
 }
+
+.ft-action-preview{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1b284e;border-top:1px solid #78829d;color:#f1e8cd}.ft-action-preview b{font-size:13px}.ft-action-preview p{margin:5px 0;font-size:14px;line-height:1.5}.ft-preview-buttons{display:flex;gap:8px;flex-shrink:0}.ft-preview-buttons button{min-height:44px;padding:10px 14px}.ft-preview-buttons button:first-child{background:#3b507f;color:#fff3c4}@media(max-width:760px){.ft-action-preview{align-items:stretch;flex-direction:column;padding:10px 12px}.ft-preview-buttons button{flex:1}}
