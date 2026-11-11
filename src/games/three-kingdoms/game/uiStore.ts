@@ -2,6 +2,7 @@ import type { UISnapshot } from "./types";
 
 export function emptySnapshot(): UISnapshot {
   return {
+    save: { status: 'idle', savedAt: null, turn: null },
     screen: "menu",
     year: 194,
     month: 6,

@@ -1054,6 +1054,21 @@ test('save validation rejects missing data and broken references without changin
   } finally { delete globalThis.localStorage; }
 });
 
+test('save reports failures and retries without overwriting the last successful envelope',()=>{
+  const memory=new Map(), key='arcade:three-kingdoms:save';let blocked=false;
+  globalThis.localStorage={getItem:k=>memory.get(k)??null,setItem:(k,v)=>{if(blocked)throw new Error('quota');memory.set(k,v);}};
+  try{
+    const s=createGameState('caocao'), first=saveGame(s);
+    assert.equal(first.status,'saved');assert.equal(JSON.parse(memory.get(key)).savedAt,first.savedAt);
+    const original=memory.get(key);s.turn++;blocked=true;
+    assert.deepEqual(saveGame(s),{status:'failed'});assert.equal(memory.get(key),original);
+    blocked=false;assert.equal(saveGame(s).status,'saved');assert.equal(loadGame().turn,s.turn);
+    const latest=memory.get(key);s.phase='ai';
+    assert.deepEqual(saveGame(s),{status:'skipped'});assert.equal(memory.get(key),latest);
+    s.phase='player';delete globalThis.localStorage;assert.deepEqual(saveGame(s),{status:'failed'});
+  }finally{delete globalThis.localStorage;}
+});
+
 test('campaign saves remain loadable after AI dispatch, combat and turn resolution', () => {
   const memory = new Map();
   globalThis.localStorage = { getItem: k => memory.get(k) ?? null, setItem: (k, value) => memory.set(k, value) };

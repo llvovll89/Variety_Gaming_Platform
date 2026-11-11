@@ -77,7 +77,8 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
         onEndTurn={() => engine?.endTurn()}
         onSkip={() => engine?.skipPlayback()}
         onOverview={() => setOverview(true)}
-        onExit={() => { engine?.save(); onExit(); }}
+        onSave={() => engine?.save()}
+        onExit={() => { if (engine?.save()) onExit(); }}
       />
       {help && <div className="tk-help-panel"><div><b>一 · 도시 관리</b><p>내 도시 선택 → 내정·군사·건설 분류 → 담당 무장 선택 → 명령. 명령은 다음 순에 실행됩니다.</p></div><div><b>二 · 전장 지휘</b><p>군사 → 부대 편성·출진. 부대를 선택한 뒤 파란 칸으로 이동하고 붉은 적을 눌러 공격합니다.</p></div><div><b>三 · 시간 진행</b><p>명령을 마치면 10일 진행. 진행 중 가속 버튼으로 연출을 건너뛸 수 있습니다.</p></div><button onClick={()=>setHelp(false)}>닫기</button></div>}
       <div className="tk-war-room">

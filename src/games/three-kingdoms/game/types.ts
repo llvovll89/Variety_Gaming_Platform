@@ -199,6 +199,7 @@ export interface FactionStanding {
 }
 
 export interface UISnapshot {
+  save: { status: 'idle' | 'saved' | 'failed'; savedAt: number | null; turn: number | null };
   day?: 1 | 11 | 21;
   screen: "menu" | "playing" | "ended";
   year: number;

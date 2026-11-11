@@ -65,6 +65,7 @@ export class GameEngine {
   private pointers = new PointerTracker();
 
   private state: GameState;
+  private saveStatus: UISnapshot['save'] = { status: 'idle', savedAt: null, turn: null };
   private camera: Camera = { x: 0, y: 0, zoom: 1 };
   private view: Viewport = { width: 1, height: 1 };
   private selection: Selection = { kind: "none" };
@@ -288,7 +289,7 @@ export class GameEngine {
     const selected = this.selection.kind === "unit" ? this.state.units[this.selection.unitId] : null;
     if (this.selection.kind === "unit" && !selected) this.selection = { kind: "none" };
     if (selected) this.refreshUnitOverlay(selected);
-    saveGame(this.state);
+    this.save();
     this.markDirty();
     this.publish();
   }
@@ -705,8 +706,14 @@ export class GameEngine {
     this.publish();
   }
 
-  save(): void {
-    saveGame(this.state);
+  save(): boolean {
+    const result = saveGame(this.state);
+    if (result.status === 'skipped') return false;
+    this.saveStatus = result.status === 'saved'
+      ? { status: 'saved', savedAt: result.savedAt, turn: this.state.turn }
+      : { ...this.saveStatus, status: 'failed' };
+    this.publish();
+    return result.status === 'saved';
   }
 
   /** Replace the board with a restored save. */
@@ -729,6 +736,7 @@ export class GameEngine {
     const s = this.state;
     const f = s.factions[s.playerFactionId];
     const snapshot: UISnapshot = {
+      save: this.saveStatus,
       screen: s.result === "playing" ? "playing" : "ended",
       year: s.year,
       day: s.day ?? 1,

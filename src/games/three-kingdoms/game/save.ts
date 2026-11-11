@@ -21,13 +21,16 @@ interface Envelope {
   state: GameState;
 }
 
-export function saveGame(state: GameState): void {
-  if (state.phase !== "player") return;
+export type SaveWriteResult = { status: 'saved'; savedAt: number } | { status: 'failed' | 'skipped' };
+
+export function saveGame(state: GameState): SaveWriteResult {
+  if (state.phase !== "player") return { status: 'skipped' };
   try {
     const envelope: Envelope = { version: VERSION, savedAt: Date.now(), state };
-    safeSetItem(KEY, JSON.stringify(envelope));
+    localStorage.setItem(KEY, JSON.stringify(envelope));
+    return { status: 'saved', savedAt: envelope.savedAt };
   } catch {
-    // Serialisation should never fail, but a lost save must never take the game down.
+    return { status: 'failed' };
   }
 }
 
