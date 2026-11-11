@@ -111,26 +111,47 @@ export class Fight {
       if (f.push) { f.x = Math.max(90, Math.min(990, f.x + f.push * dt)); f.push *= Math.exp(-dt * 12); if (Math.abs(f.push) < 6) f.push = 0; }
       if (f.buffer && f.buffer.expires < this.elapsed) f.buffer = null;
       if (f.buffer && !f.action && !f.stun && (!f.air || f.jumping)) { const move = f.buffer.move; f.buffer = null; this.attack(i, move); }
-      if (f.action) {
-        const action = f.action, spec = MOVES[action.move], weapon = WEAPONS[f.weapon]; action.elapsed += dt;
-        if (!action.hit && action.elapsed >= spec.startup * weapon.speed) {
-          action.hit = true;
-          const range = weapon.range + spec.reach;
-          if (Math.abs(f.x - other.x) < range && Math.abs(f.z - other.z) < 32 && Math.abs(f.air - other.air) < 155 && !(spec.level === 'low' && other.air > 35 && !f.air) && !(spec.level === 'high' && other.input.crouch && !other.air)) {
-            action.elapsed = spec.startup * weapon.speed;
-            const retreatGuard = other.input.x * other.facing < 0;
-            const block = (other.input.guard || retreatGuard) && !other.action && other.stun === 0 && !other.air && (spec.level === 'low' ? other.input.crouch : !other.input.crouch);
-            const damage = Math.round(spec.damage * weapon.damage * (block ? .12 : Math.max(.45, 1 - f.combo * .12)));
+    });
+    // Advance both actions first. Earlier startup wins; equal startup trades hits.
+    // Never let the array index decide which same-time attack gets cancelled.
+    const intents: { index: number; action: NonNullable<Fighter['action']>; at: number }[] = [];
+    this.fighters.forEach((f, index) => {
+      if (!f.action) return;
+      const action = f.action, startup = MOVES[action.move].startup * WEAPONS[f.weapon].speed;
+      const before = action.elapsed; action.elapsed += dt;
+      if (!action.hit && action.elapsed >= startup) intents.push({ index, action, at: Math.max(0, startup - before) });
+    });
+    intents.sort((a, b) => a.at - b.at);
+    for (let start = 0; start < intents.length;) {
+      let end = start + 1;
+      while (end < intents.length && Math.abs(intents[end].at - intents[start].at) < 1e-9) end++;
+      const impacts: (() => void)[] = [];
+      for (const { index, action } of intents.slice(start, end)) {
+        const f = this.fighters[index], other = this.fighters[1 - index];
+        if (f.action !== action || f.hp <= 0) continue;
+        const spec = MOVES[action.move], weapon = WEAPONS[f.weapon];
+        action.hit = true;
+        const range = weapon.range + spec.reach;
+        if (Math.abs(f.x - other.x) < range && Math.abs(f.z - other.z) < 32 && Math.abs(f.air - other.air) < 155 && !(spec.level === 'low' && other.air > 35 && !f.air) && !(spec.level === 'high' && other.input.crouch && !other.air)) {
+          action.elapsed = spec.startup * weapon.speed;
+          const retreatGuard = other.input.x * other.facing < 0;
+          const block = (other.input.guard || retreatGuard) && !other.action && other.stun === 0 && !other.air && (spec.level === 'low' ? other.input.crouch : !other.input.crouch);
+          const damage = Math.round(spec.damage * weapon.damage * (block ? .12 : Math.max(.45, 1 - f.combo * .12)));
+          impacts.push(() => {
             other.hp = Math.max(0, other.hp - damage); other.gauge = Math.min(100, other.gauge + (block ? 4 : 11));
             f.gauge = Math.min(100, f.gauge + (block ? 4 : 12));
             other.push = f.facing * (block ? 130 : action.move === 'ultimate' ? 780 : action.move === 'heavy' ? 340 : 264);
             if (!block) { other.stun = spec.launch ? .7 : action.move === 'heavy' ? .32 : .21; other.action = null; other.dashTime = 0; if (spec.launch) { other.air = 1; other.vy = spec.launch * 2.2; other.jumping = false; } f.combo++; f.comboTime = 1.25; }
             const e: HitEvent = { x: other.x - f.facing * 24, z: other.z, y: other.air + (spec.level === 'low' ? 60 : 190), text: block ? '가드!' : action.move === 'ultimate' ? weapon.ultimate : f.combo > 1 ? `${f.combo}연타!` : '', kind: block ? 'block' : action.move === 'ultimate' ? 'super' : 'hit', weapon: f.weapon, life: .4 };
-            this.effects.push(e); this.sounds.push(e); this.hitstop = block ? .025 : action.move === 'ultimate' ? .16 : .065;
-          }
+            this.effects.push(e); this.sounds.push(e); this.hitstop = Math.max(this.hitstop, block ? .025 : action.move === 'ultimate' ? .16 : .065);
+          });
         }
-        if (action.elapsed >= spec.duration * weapon.speed) f.action = null;
       }
+      impacts.forEach(apply => apply());
+      start = end;
+    }
+    this.fighters.forEach(f => {
+      if (f.action && f.action.elapsed >= MOVES[f.action.move].duration * WEAPONS[f.weapon].speed) f.action = null;
     });
     const [a, b] = this.fighters;
     if (Math.abs(a.z - b.z) < 35 && Math.abs(a.x - b.x) < 76) {

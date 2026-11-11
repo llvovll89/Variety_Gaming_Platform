@@ -34,6 +34,7 @@ export class ColorMatchEngine {
   private rafId: number | null = null;
   private lastTime: number | null = null;
   private paused = false;
+  private destroyed = false;
   private bestScoreAtStart: number;
   private onGameOver: (finalScore: number) => void;
   private uiTimer = 0;
@@ -91,6 +92,9 @@ export class ColorMatchEngine {
   }
 
   startGame = (): void => {
+    if (this.destroyed) return;
+    this.cancelLoop();
+    this.paused = false;
     this.gameState = this.initializeGameState();
     this.gameState.status = "playing";
     this.wrongFlashTimers.clear();
@@ -101,12 +105,15 @@ export class ColorMatchEngine {
   };
 
   pauseGame = (): void => {
+    if (this.destroyed || this.gameState.status !== 'playing') return;
+    this.cancelLoop();
     this.paused = true;
     this.gameState.status = "paused";
     this.updateUI();
   };
 
   resumeGame = (): void => {
+    if (this.destroyed || this.gameState.status !== 'paused') return;
     this.paused = false;
     this.gameState.status = "playing";
     this.lastTime = null; // Reset lastTime to avoid large dt
@@ -115,10 +122,8 @@ export class ColorMatchEngine {
   };
 
   endGame = (): void => {
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
-    }
+    if (this.destroyed || this.gameState.gameOver) return;
+    this.cancelLoop();
     this.gameState.status = "game-over";
     this.gameState.gameOver = true;
     this.gameState.finalScore = this.gameState.score;
@@ -137,7 +142,7 @@ export class ColorMatchEngine {
   };
 
   selectOption = (optionId: number): void => {
-    if (this.gameState.status !== "playing" || this.gameState.gameOver) return;
+    if (this.destroyed || this.gameState.status !== "playing" || this.gameState.gameOver) return;
 
     const option = this.gameState.options.find((o) => o.id === optionId);
     if (!option) return;
@@ -156,16 +161,19 @@ export class ColorMatchEngine {
       this.gameState.timeRemaining -= WRONG_PENALTY_SECONDS;
       this.wrongFlashTimers.set(optionId, WRONG_FLASH_DURATION);
       playWrongSound();
+      if (this.gameState.timeRemaining <= 0) {
+        this.gameState.timeRemaining = 0;
+        this.endGame();
+        return;
+      }
     }
 
     this.updateUI();
   };
 
   private gameLoop = (now: number): void => {
-    if (this.paused) {
-      this.rafId = requestAnimationFrame(this.gameLoop);
-      return;
-    }
+    this.rafId = null;
+    if (this.destroyed || this.paused || this.gameState.status !== 'playing') return;
 
     let dt = 0.016; // default to ~60fps
     if (this.lastTime !== null) {
@@ -175,7 +183,7 @@ export class ColorMatchEngine {
 
     this.update(dt);
 
-    this.rafId = requestAnimationFrame(this.gameLoop);
+    if (!this.destroyed && this.gameState.status === 'playing') this.rafId = requestAnimationFrame(this.gameLoop);
   };
 
   private update = (dt: number): void => {
@@ -234,10 +242,12 @@ export class ColorMatchEngine {
 
   getCanvasSize = () => ({ width: LOGICAL_WIDTH, height: LOGICAL_HEIGHT });
 
-  destroy = (): void => {
+  private cancelLoop = (): void => {
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
   };
+
+  destroy = (): void => { this.destroyed = true; this.cancelLoop(); };
 }

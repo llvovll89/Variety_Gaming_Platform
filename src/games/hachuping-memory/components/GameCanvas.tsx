@@ -40,12 +40,13 @@ export default function GameCanvas({ engine, onReady }: GameCanvasProps) {
       onReady(engine);
     }
 
+    let animationId = 0;
     const animate = () => {
       rendererRef.current?.render(engine.uiStore.getSnapshot().gameState);
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
 
-    const animationId = requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
 
     return () => cancelAnimationFrame(animationId);
   }, [engine, onReady]);

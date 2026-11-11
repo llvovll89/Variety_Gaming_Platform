@@ -15,6 +15,32 @@ test('standing guard blocks high attacks but low attacks require crouching guard
   const low = battle(); low.fighters[1].input.guard = true; low.attack(0, 'low'); advance(low, .3); assert.equal(low.fighters[1].hp, 91);
   const block = battle(); block.fighters[1].input.guard = true; block.fighters[1].input.crouch = true; block.attack(0, 'low'); advance(block, .3); assert.equal(block.fighters[1].hp, 99);
 });
+
+test('same-time attacks trade equally for both player indices, including a double knockout', () => {
+  for (const dt of [.01, .05]) {
+    const f = battle(); f.attack(0, 'jab'); f.attack(1, 'jab');
+    for (let t = 0; t < .2; t += dt) f.step(dt);
+    assert.deepEqual(f.fighters.map(p => p.hp), [94, 94]);
+    assert.deepEqual(f.fighters.map(p => p.gauge), [23, 23]);
+    assert.equal(f.effects.length, 2);
+  }
+  const ko = battle(); ko.fighters.forEach(p => { p.hp = 6; });
+  ko.attack(0, 'jab'); ko.attack(1, 'jab'); advance(ko, .2);
+  assert.deepEqual(ko.fighters.map(p => p.hp), [0, 0]);
+  assert.equal(ko.winner, null); assert.deepEqual(ko.fighters.map(p => p.wins), [0, 0]);
+});
+
+test('an earlier attack cancels a slower one regardless of player index within the same frame', () => {
+  for (const fast of [0, 1]) {
+    const f = battle(); const slow = 1 - fast;
+    f.attack(fast, 'jab'); f.attack(slow, 'heavy');
+    // Both startups cross in this frame, but jab lands 10ms before heavy.
+    f.fighters[fast].action.elapsed = .08; f.fighters[slow].action.elapsed = .22;
+    f.step(.05);
+    assert.equal(f.fighters[fast].hp, 100); assert.equal(f.fighters[slow].hp, 94);
+    assert.equal(f.fighters[slow].action, null);
+  }
+});
 test('sidestep and crouch dodge attacks while golf has a longer reach', () => {
   const f = battle(); f.fighters[1].z = 50; f.attack(0, 'heavy'); advance(f, .4); assert.equal(f.fighters[1].hp, 100);
   const crouch = battle(); crouch.fighters[1].input.crouch = true; crouch.attack(0, 'jab'); advance(crouch, .3); assert.equal(crouch.fighters[1].hp, 100);

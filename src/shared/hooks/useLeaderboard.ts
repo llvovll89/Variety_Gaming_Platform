@@ -1,13 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { gameStorageKey, safeGetItem, safeSetItem } from "../storage";
-
-export interface LeaderboardEntry {
-  score: number;
-  timestamp: number; // milliseconds since epoch
-}
+import { insertLeaderboard, parseLeaderboard, type LeaderboardEntry } from '../leaderboard';
+export type { LeaderboardEntry } from '../leaderboard';
 
 const LEADERBOARD_KEY_SUFFIX = "leaderboard";
-const MAX_ENTRIES = 10;
 
 export interface UseLeaderboardResult {
   leaderboard: LeaderboardEntry[];
@@ -16,41 +12,19 @@ export interface UseLeaderboardResult {
 
 export function useLeaderboard(gameId: string): UseLeaderboardResult {
   const key = gameStorageKey(gameId, LEADERBOARD_KEY_SUFFIX);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    const raw = safeGetItem(key);
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw) as LeaderboardEntry[];
-      return Array.isArray(parsed) ? parsed.sort((a, b) => b.score - a.score).slice(0, MAX_ENTRIES) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(() => parseLeaderboard(safeGetItem(key)));
+  const current = useRef(leaderboard);
 
   const submitScore = useCallback(
     (score: number): number | null => {
-      setLeaderboard((prev) => {
-        const newEntry: LeaderboardEntry = { score, timestamp: Date.now() };
-        const updated = [...prev, newEntry]
-          .sort((a, b) => b.score - a.score)
-          .slice(0, MAX_ENTRIES);
-
-        // Persist to storage
-        safeSetItem(key, JSON.stringify(updated));
-
-        return updated;
-      });
-
-      // Return rank if score made top 10
-      const updatedList = leaderboard
-        .concat({ score, timestamp: Date.now() })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, MAX_ENTRIES);
-
-      const entryRank = updatedList.findIndex((e) => e.score === score) + 1;
-      return entryRank <= MAX_ENTRIES ? entryRank : null;
+      const { entries, rank } = insertLeaderboard(current.current, score);
+      if (entries === current.current) return null;
+      current.current = entries;
+      setLeaderboard(entries);
+      safeSetItem(key, JSON.stringify(entries));
+      return rank;
     },
-    [key, leaderboard],
+    [key],
   );
 
   return { leaderboard, submitScore };

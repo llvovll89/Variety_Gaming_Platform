@@ -1,12 +1,15 @@
 import { UIStore } from "./uiStore";
 import type { GameState, MemoryCard, AnimalType } from "./types";
 import { GAME_CONFIG, ANIMALS } from "./constants";
+type Task = { run: () => void; remaining: number; startedAt: number; timer: ReturnType<typeof setTimeout> | null };
 
 export class MemoryGameEngine {
   uiStore: UIStore;
   private state: GameState;
+  private tasks = new Set<Task>();
+  private destroyed = false;
 
-  constructor() {
+  constructor(bestScore = 0) {
     this.state = {
       stage: 1,
       sequence: [],
@@ -16,7 +19,7 @@ export class MemoryGameEngine {
       isPlayerTurn: false,
       gameOver: false,
       score: 0,
-      highScore: this.loadHighScore(),
+      highScore: Number.isFinite(bestScore) && bestScore >= 0 ? Math.floor(bestScore) : 0,
       message: "시작하세요!",
       status: "idle",
     };
@@ -53,8 +56,11 @@ export class MemoryGameEngine {
   }
 
   startGame(): void {
+    if (this.destroyed) return;
+    this.cancelTasks();
     this.state.status = "playing";
     this.state.isPlayingSequence = true;
+    this.state.isPlayerTurn = false;
     this.state.playerSequence = [];
     this.state.score = 0;
     this.state.gameOver = false;
@@ -66,6 +72,8 @@ export class MemoryGameEngine {
   }
 
   private startNewRound(): void {
+    this.state.isPlayingSequence = true;
+    this.state.isPlayerTurn = false;
     // 모든 카드 숨기기
     this.state.cards.forEach((card) => {
       card.isRevealed = false;
@@ -82,7 +90,7 @@ export class MemoryGameEngine {
     this.state.message = messages[Math.floor(Math.random() * messages.length)];
     this.uiStore.publish(this.state);
     
-    setTimeout(() => this.playSequence(), 500);
+    this.schedule(() => this.playSequence(), 500);
   }
 
   private addToSequence(): void {
@@ -90,21 +98,25 @@ export class MemoryGameEngine {
     this.state.sequence.push(randomIndex);
   }
 
-  private async playSequence(): Promise<void> {
+  private playSequence(index = 0): void {
     this.state.isPlayingSequence = true;
     this.state.isPlayerTurn = false;
     this.uiStore.publish(this.state);
 
-    for (const cardIndex of this.state.sequence) {
-      await this.delay(GAME_CONFIG.sequenceDelay);
+    const cardIndex = this.state.sequence[index];
+    this.schedule(() => {
       this.state.cards[cardIndex].isRevealed = true;
       this.uiStore.publish(this.state);
+      this.schedule(() => {
+        this.state.cards[cardIndex].isRevealed = false;
+        this.uiStore.publish(this.state);
+        if (index + 1 < this.state.sequence.length) this.playSequence(index + 1);
+        else this.beginPlayerTurn();
+      }, GAME_CONFIG.cardAnimationDuration);
+    }, GAME_CONFIG.sequenceDelay);
+  }
 
-      await this.delay(GAME_CONFIG.cardAnimationDuration);
-      this.state.cards[cardIndex].isRevealed = false;
-      this.uiStore.publish(this.state);
-    }
-
+  private beginPlayerTurn(): void {
     this.state.isPlayingSequence = false;
     this.state.isPlayerTurn = true;
     this.state.playerSequence = [];
@@ -120,6 +132,7 @@ export class MemoryGameEngine {
 
   playerClickCard(cardIndex: number): void {
     if (
+      this.destroyed || !Number.isInteger(cardIndex) || !this.state.cards[cardIndex] ||
       !this.state.isPlayerTurn ||
       this.state.isPlayingSequence ||
       this.state.gameOver ||
@@ -134,14 +147,16 @@ export class MemoryGameEngine {
     this.uiStore.publish(this.state);
 
     // 카드를 잠깐 보여줬다가 숨기기
-    setTimeout(() => {
+    this.schedule(() => {
       this.state.cards[cardIndex].isRevealed = false;
       this.uiStore.publish(this.state);
     }, GAME_CONFIG.cardAnimationDuration);
 
     // 틀린 경우
     if (cardIndex !== expectedIndex) {
-      setTimeout(() => this.endGame(), 500);
+      this.state.isPlayerTurn = false;
+      this.uiStore.publish(this.state);
+      this.schedule(() => this.endGame(), 500);
       return;
     }
 
@@ -158,7 +173,7 @@ export class MemoryGameEngine {
       this.uiStore.publish(this.state);
       
       // 다음 라운드로
-      setTimeout(() => this.nextRound(), GAME_CONFIG.transitionDelay);
+      this.schedule(() => this.nextRound(), GAME_CONFIG.transitionDelay);
       return;
     }
   }
@@ -178,10 +193,11 @@ export class MemoryGameEngine {
 
     this.uiStore.publish(this.state);
     
-    setTimeout(() => this.startNewRound(), GAME_CONFIG.transitionDelay);
+    this.schedule(() => this.startNewRound(), GAME_CONFIG.transitionDelay);
   }
 
   private endGame(): void {
+    this.cancelTasks();
     this.state.gameOver = true;
     this.state.isPlayerTurn = false;
     this.state.isPlayingSequence = false;
@@ -196,38 +212,48 @@ export class MemoryGameEngine {
 
     if (this.state.score > this.state.highScore) {
       this.state.highScore = this.state.score;
-      this.saveHighScore(this.state.highScore);
     }
 
     this.uiStore.publish(this.state);
   }
 
   togglePause(): void {
+    if (this.destroyed) return;
     if (this.state.status === "playing") {
+      for (const task of this.tasks) {
+        if (task.timer !== null) clearTimeout(task.timer);
+        task.timer = null;
+        task.remaining = Math.max(0, task.remaining - (Date.now() - task.startedAt));
+      }
       this.state.status = "paused";
       this.state.message = "⏸️ 일시정지 중...";
     } else if (this.state.status === "paused") {
       this.state.status = "playing";
       this.state.message = "▶️ 다시 시작!";
-    }
+      for (const task of this.tasks) this.arm(task);
+    } else return;
     this.uiStore.publish(this.state);
   }
 
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  private schedule(run: () => void, remaining: number): void {
+    if (this.destroyed) return;
+    const task: Task = { run, remaining, startedAt: Date.now(), timer: null };
+    this.tasks.add(task);
+    if (this.state.status === 'playing') this.arm(task);
   }
 
-  private loadHighScore(): number {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("hachuping-memory-highscore");
-      return stored ? parseInt(stored, 10) : 0;
-    }
-    return 0;
+  private arm(task: Task): void {
+    task.startedAt = Date.now();
+    task.timer = setTimeout(() => {
+      if (!this.tasks.delete(task) || this.destroyed || this.state.status !== 'playing') return;
+      task.timer = null; task.run();
+    }, task.remaining);
   }
 
-  private saveHighScore(score: number): void {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("hachuping-memory-highscore", String(score));
-    }
+  private cancelTasks(): void {
+    for (const task of this.tasks) if (task.timer !== null) clearTimeout(task.timer);
+    this.tasks.clear();
   }
+
+  destroy(): void { this.destroyed = true; this.cancelTasks(); }
 }

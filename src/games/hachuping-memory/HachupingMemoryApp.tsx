@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import GameOverScreen from '../../shared/components/GameOverScreen';
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
@@ -31,16 +32,20 @@ const FALLBACK_SNAPSHOT = emptySnapshot({
 export default function HachupingMemoryApp({ onExit }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
   const [engine, setEngine] = useState<MemoryGameEngine | null>(null);
-  const { highScore } = useHighScore(GAME_ID);
+  const { highScore, previousBest, submitScore } = useHighScore(GAME_ID, ['hachuping-memory-highscore']);
+  const resultDialog = useRef<HTMLDialogElement>(null);
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
+  useEffect(() => () => engine?.destroy(), [engine]);
+  useEffect(() => { if (snapshot.status === 'game-over') { submitScore(snapshot.score); resultDialog.current?.showModal(); } }, [snapshot.status, snapshot.score, submitScore]);
 
   const handleStart = useCallback(() => {
-    const newEngine = new MemoryGameEngine();
+    engine?.destroy();
+    const newEngine = new MemoryGameEngine(highScore);
     setEngine(newEngine);
     setScreen("playing");
     newEngine.startGame();
-  }, []);
+  }, [engine, highScore]);
 
   const handleMainMenu = useCallback(() => {
     setEngine(null);
@@ -127,6 +132,9 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
           onMainMenu={handleMainMenu}
         />
       )}
+      {snapshot.status === 'game-over' && <dialog ref={resultDialog} aria-label="기억력 게임 결과" onCancel={e => { e.preventDefault(); handleMainMenu(); }} style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', maxWidth: 'none', maxHeight: 'none', border: 0, padding: 0, background: 'transparent' }}>
+        <GameOverScreen finalScore={snapshot.score} bestScore={highScore} previousBest={previousBest} accentColor={ACCENT_COLOR} onRestart={handleStart} onMainMenu={handleMainMenu}/>
+      </dialog>}
     </div>
   );
 }

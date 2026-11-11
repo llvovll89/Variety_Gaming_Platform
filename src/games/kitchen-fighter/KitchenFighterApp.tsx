@@ -43,6 +43,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   const [screen, setScreen] = useState<'setup' | 'battle'>('setup');
   const [paused, setPaused] = useState(false); const pauseRef = useRef(false);
   const [muted, setMuted] = useState(false); const [error, setError] = useState('');
+  const [renderReady, setRenderReady] = useState(false), [renderError, setRenderError] = useState('');
   const [loading, setLoading] = useState<number | null>(null);
   const [activeControls, setActiveControls] = useState<string[]>([]);
   const [hud, setHud] = useState({ hp: [100, 100], gauge: [0, 0], wins: [0, 0], time: 60, phase: 'ready', round: 1, winner: null as number | null });
@@ -91,8 +92,10 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   useEffect(() => {
     let raf = 0, previous = 0, uiTime = 0;
     const el = canvas.current; if (!el) return;
+    setRenderReady(false); setRenderError('');
     let scene: KitchenScene;
-    try { scene = new KitchenScene(el); } catch { setError('3D 경기장을 시작할 수 없습니다. 브라우저의 하드웨어 가속을 켜고 다시 열어 주세요.'); return; }
+    try { scene = new KitchenScene(el); } catch { setRenderError('3D 경기장을 시작할 수 없습니다. 게임 허브로 돌아가 브라우저의 하드웨어 가속을 켠 뒤 다시 열어 주세요.'); return; }
+    setRenderReady(true);
     const frame = (now: number) => {
       const dt = previous ? Math.min((now - previous) / 1000, .05) : 0; previous = now;
       const f = fight.current, pressed = (code: string) => keys.current.has(code) || touch.current.has(code);
@@ -126,6 +129,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
     finally { URL.revokeObjectURL(url); setLoading(null); }
   }
   function start() {
+    if (!renderReady) return;
     fight.current = new Fight(mode, characters.map(ch => ch.weapon) as [Weapon, Weapon], difficulty);
     direction.current = null; pause(false); audio.current?.unlock(); setHud({ hp: [100, 100], gauge: [0, 0], wins: [0, 0], time: 60, phase: 'ready', round: 1, winner: null }); setScreen('battle');
   }
@@ -135,6 +139,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
       {screen === 'battle' && <button aria-label="일시정지" onClick={() => pause(!paused)}><Pause size={20} /></button>}
       <button aria-label={muted ? '소리 켜기' : '소리 끄기'} onClick={() => { setMuted(!muted); if (audio.current) { audio.current.muted = !muted; audio.current.unlock(); } }}>{muted ? <SpeakerSlash size={21} /> : <SpeakerHigh size={21} />}</button>
     </div></header>
+    {renderError && <p className="kf-error" role="alert">{renderError}</p>}
     <div className={`kf-content ${screen === 'setup' ? 'kf-setup' : 'kf-battle'}`}>
       {screen === 'setup' && <div className="kf-intro"><h1>선수 선택</h1><p>주걱, 파리채, 골프채. 오늘은 뭘 들고 붙을까요?</p></div>}
       <div className={`kf-arena ${screen === 'setup' ? 'kf-preview' : ''}`}>
@@ -155,7 +160,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
           {ch.photo && <div className="kf-photo-adjust"><label>크기<input type="range" min=".5" max="2" step=".05" value={ch.zoom} onChange={e => update(i, { zoom: Number(e.target.value) })} /></label><label>좌우<input type="range" min="-2" max="2" step=".05" value={ch.x} onChange={e => update(i, { x: Number(e.target.value) })} /></label><label>상하<input type="range" min="-2" max="2" step=".05" value={ch.y} onChange={e => update(i, { y: Number(e.target.value) })} /></label><button onClick={() => update(i, { photo: '', zoom: 1, x: 0, y: 0 })}>사진 지우기</button></div>}
         </section>)}</div>
         {error && <p className="kf-error" role="alert">{error}</p>}
-        <div className="kf-start-row"><div className="kf-mode"><button aria-pressed={mode === 'cpu'} className={mode === 'cpu' ? 'selected' : ''} onClick={() => setMode('cpu')}>혼자 · CPU 대전</button><button aria-pressed={mode === 'local'} className={mode === 'local' ? 'selected' : ''} onClick={() => setMode('local')}>둘이 · 같은 키보드</button></div>{mode === 'cpu' && <select aria-label="CPU 난이도" value={difficulty} onChange={e => setDifficulty(e.target.value as 'easy' | 'normal')}><option value="easy">CPU 쉬움</option><option value="normal">CPU 보통</option></select>}<button className="kf-primary kf-start" disabled={loading !== null} onClick={start}>한 판 붙기 <Play weight="fill" /></button></div>
+        <div className="kf-start-row"><div className="kf-mode"><button aria-pressed={mode === 'cpu'} className={mode === 'cpu' ? 'selected' : ''} onClick={() => setMode('cpu')}>혼자 · CPU 대전</button><button aria-pressed={mode === 'local'} className={mode === 'local' ? 'selected' : ''} onClick={() => setMode('local')}>둘이 · 같은 키보드</button></div>{mode === 'cpu' && <select aria-label="CPU 난이도" value={difficulty} onChange={e => setDifficulty(e.target.value as 'easy' | 'normal')}><option value="easy">CPU 쉬움</option><option value="normal">CPU 보통</option></select>}<button className="kf-primary kf-start" disabled={loading !== null || !renderReady} onClick={start}>한 판 붙기 <Play weight="fill" /></button></div>
         <p className="kf-privacy">사진 전체를 자르지 않고 사용합니다. 전신 사진이나 배경이 투명한 PNG를 넣으면 더 자연스럽습니다. 사진은 이 브라우저에만 저장됩니다.</p>
       </> : <div className="kf-touch-controls"><div className="kf-direction">{holdButton('KeyA', '왼쪽', 'A')}{holdButton('KeyD', '오른쪽', 'D')}{holdButton('KeyQ', '안쪽', 'Q')}{holdButton('KeyE', '바깥쪽', 'E')}{holdButton('KeyW', '점프', 'W')}{holdButton('ShiftLeft', '가드', 'Shift')}{holdButton('KeyS', '앉기', 'S')}</div><div className="kf-attack-buttons">{moveLabels.map(([move, label, letter]) => <button key={move} className={move === 'ultimate' ? 'kf-super' : ''} disabled={paused || hud.phase !== 'fight' || (move === 'ultimate' && hud.gauge[0] < 100)} onClick={e => { if (e.detail === 0) perform(0, move); }} onPointerDown={e => { e.preventDefault(); perform(0, move); }}><kbd>{letter}</kbd>{label}</button>)}</div></div>}
       <details className="kf-help"><summary>기술과 조작법 <span>60초, 2선승</span></summary><div className="kf-help-grid"><p><b>1P</b> A/D 이동, W 점프, S 앉기<br />Q/E 톡 치면 사이드스텝, 누르고 있으면 옆걸음<br />Shift 또는 Space 가드. 뒤로 걸어도 자동 가드.<br />J 약공격, K 강공격, L 하단, U 띄우기, I 필살기<br />CPU 대전에서는 방향키 좌우 이동, ↑ 점프, ↓ 앉기.</p><p><b>연결 기술</b> A A / D D 빠르게 입력하면 백대시 / 대시.<br />S → 상대 방향(A/D) → J: 띄우기.<br />공격이 끝나기 직전에 다음 공격을 입력하면 연결됩니다.<br />S + Shift 하단 가드. 게이지 100%에서 I.</p><p><b>{mode === 'local' ? '2P' : '모바일'}</b>{mode === 'local' ? <><br />←/→ 이동, ↑ 점프, ↓ 앉기, Home/End 옆걸음<br />1/2/3 공격, 4 띄우기, 5 필살기, 0 가드</> : <><br />버튼을 누르고 있으면 이동·가드·앉기.<br />여러 버튼을 함께 눌러도 됩니다.</>}<br />Esc 일시정지</p></div></details>

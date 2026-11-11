@@ -2,7 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, MapTrifoldIcon } from '@phosphor-icons/react';
 import { FACTION_BLURBS, PLAYABLE_FACTIONS } from '../game/scenario';
 import { SCENARIO_START } from '../game/constants';
-import { loadGame } from '../game/save';
+import { readSave } from '../game/save';
 import { OFFICER_COUNT } from '../game/officers';
 import { createGameState, citiesOf } from '../game/state';
 import { OfficerPortrait } from './OfficerPortrait';
@@ -13,7 +13,18 @@ const DIFFICULTY: Record<FactionId, string> = { caocao: '입문 추천', liubei:
 export function StartMenu({ onStart, onResume, onExit }: Props) {
   const [selected, setSelected] = useState<FactionId>('caocao');
   const state = useMemo(() => createGameState('caocao', 194), []);
-  const saved = useMemo(() => loadGame(), []);
+  const save = useMemo(() => readSave(), []);
+  const saved = save.status === 'valid' ? save.state : null;
+  const downloadOriginal = () => {
+    if (save.status !== 'invalid') return;
+    const url = URL.createObjectURL(new Blob([save.raw], { type: 'application/json' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'three-kingdoms-recovery.json'; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const start = () => {
+    if (save.status === 'invalid' && !window.confirm('새 국면을 저장하면 기존 기록이 바뀝니다. 필요한 원본을 먼저 내려받으셨나요? 새로 시작할까요?')) return;
+    onStart(selected);
+  };
   const faction = state.factions[selected];
   const cities = citiesOf(state, selected);
   const officers = Object.values(state.officers).filter(o => o.faction === selected);
@@ -30,7 +41,8 @@ export function StartMenu({ onStart, onResume, onExit }: Props) {
       <section className="tk-faction-setup" aria-label="세력 선택"><div className="tk-section-heading"><h2>천하를 이끌 군주</h2><p>당신의 첫 깃발을 선택하세요.</p></div>
         <div className="tk-faction-list">{PLAYABLE_FACTIONS.map(id => { const lord = state.officers[state.factions[id].leaderId]; return <button key={id} aria-pressed={selected===id} onClick={()=>setSelected(id)}>{lord && <OfficerPortrait officer={lord} state={state} size={42}/>}<span><strong>{state.factions[id].name}</strong><small>{DIFFICULTY[id]}</small></span>{selected===id && <CheckIcon className="tk-choice-mark" size={16} aria-hidden="true"/>}</button>; })}</div>
         <div className="tk-lord-summary" aria-live="polite"><div className="tk-lord-heading">{leader&&<OfficerPortrait officer={leader} state={state} size={80}/>}<div><small>{DIFFICULTY[selected]}</small><h3>{faction.name} <span>{faction.hanja}</span></h3><p>{cities.map(c=>c.name).join(' · ')}의 군주</p></div></div><p className="tk-faction-blurb">{FACTION_BLURBS[selected]}</p><dl className="tk-start-resources"><div><dt>병력</dt><dd>{total('troops')}</dd></div><div><dt>금</dt><dd>{total('gold')}</dd></div><div><dt>병량</dt><dd>{total('food')}</dd></div></dl><div className="tk-start-generals"><span>주요 무장 <small>전체 {officers.length}명</small></span><div>{generals.map(o=><div key={o.id}><OfficerPortrait officer={o} state={state} size={40}/><span>{o.name}</span></div>)}</div></div></div>
-        <button className="tk-campaign-start" onClick={()=>onStart(selected)}><span>{faction.name}로 천하에 나서다</span><ArrowRightIcon size={20} aria-hidden="true"/></button>
+        {save.status === 'invalid' && <section role="alert" style={{ padding: 16, margin: '16px 0', border: '1px solid #d4b678', lineHeight: 1.7 }}><h3>저장된 국면을 읽지 못했어요</h3><p>기존 기록은 그대로 보관 중입니다. 원본을 내려받아 보관하거나 새 국면을 시작할 수 있습니다.</p><button type="button" onClick={downloadOriginal} style={{ minHeight: 44, padding: '8px 12px' }}>기존 기록 원본 내려받기</button></section>}
+        <button className="tk-campaign-start" onClick={start}><span>{faction.name}로 천하에 나서다</span><ArrowRightIcon size={20} aria-hidden="true"/></button>
         {saved&&<button className="tk-resume" onClick={onResume}><strong>저장된 국면 이어하기</strong><span>{saved.factions[saved.playerFactionId]?.name} · {saved.year}년 {saved.month}월</span></button>}
         <p className="tk-start-note">10일마다 내정과 전장이 함께 움직입니다.<br/>장수·신장수 편집은 게임 내 PK 메뉴에서 이용하세요.</p>
       </section>
