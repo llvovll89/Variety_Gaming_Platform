@@ -2,8 +2,43 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 const output=await build({entryPoints:['src/games/ghost-movers/engine.ts'],bundle:true,write:false,platform:'node',format:'esm'});
-const {LEVELS,createState,act,stars,loadProgress,completeLevel,key,routeTo}=await import('data:text/javascript;base64,'+Buffer.from(output.outputFiles[0].text).toString('base64'));
+const {LEVELS,createState,act,stars,loadProgress,completeLevel,key,routeTo,planTravel}=await import('data:text/javascript;base64,'+Buffer.from(output.outputFiles[0].text).toString('base64'));
 const direction={U:0,R:1,D:2,L:3};
+test('preview does not move anything, matches confirmed travel cost, and retains per-step undo',()=>{
+ const s=act(createState(),{type:'possess',id:'sofa'}),before=JSON.stringify(s);
+ const plan=planTravel(s,{type:'navigate',point:{x:5,y:3}});
+ assert.ok(plan);assert.equal(plan.cost,5);assert.equal(plan.remaining,19);assert.equal(plan.exhaustsBudget,false);
+ assert.deepEqual(plan.path[0],{x:2,y:3});assert.deepEqual(plan.path.at(-1),{x:5,y:3});
+ assert.equal(JSON.stringify(s),before);
+ const moved=act(s,plan.command);assert.equal(moved.steps-s.steps,plan.cost);
+ assert.deepEqual({x:moved.furniture[0].x,y:moved.furniture[0].y},plan.path.at(-1));
+ assert.equal(act(moved,{type:'undo'}).steps,4);
+});
+test('cargo previews share the real approach planner and never include the ability cost',()=>{
+ for(const [level,furniture] of [[0,'sofa'],[1,'fan'],[8,'vacuum'],[11,'cart']]){
+  const s=act(createState(level),{type:'possess',id:furniture}),before=JSON.stringify(s);
+  const plan=planTravel(s,{type:'target',id:s.cargo[0].id});assert.ok(plan);
+  const moved=act(s,plan.command),actor=moved.furniture.find(f=>f.id===furniture);
+  assert.equal(moved.steps-s.steps,plan.cost);assert.deepEqual({x:actor.x,y:actor.y},plan.path.at(-1));
+  assert.deepEqual(moved.cargo,s.cargo);assert.equal(JSON.stringify(s),before);
+ }
+ const fan=act(createState(1),{type:'possess',id:'fan'});
+ assert.equal(planTravel(fan,{type:'target',id:'a'}).cost,0);
+});
+test('preview warns at the exact homecoming limit, supports relaxed mode, and refuses blocked routes',()=>{
+ let s=act(createState(),{type:'possess',id:'sofa'});s.steps=19;
+ let plan=planTravel(s,{type:'navigate',point:{x:5,y:3}});
+ assert.equal(plan.exhaustsBudget,true);assert.equal(plan.remaining,0);assert.equal(act(s,plan.command).status,'lost');
+ s={...s,steps:23};plan=planTravel(s,{type:'navigate',point:{x:5,y:3}});
+ assert.equal(plan.exhaustsBudget,true);assert.equal(act(s,plan.command).steps,24);
+ s={...s,relaxed:true};plan=planTravel(s,{type:'navigate',point:{x:5,y:3}});
+ assert.equal(plan.remaining,null);assert.equal(plan.exhaustsBudget,false);assert.equal(act(s,plan.command).status,'playing');
+ assert.equal(planTravel(s,{type:'navigate',point:{x:4,y:3}}),null);
+ assert.equal(planTravel(createState(),{type:'target',id:'a'}),null);
+ assert.equal(planTravel({...s,status:'lost'},{type:'navigate',point:{x:5,y:3}}),null);
+ const gate=act(createState(10),{type:'possess',id:'sofa'});
+ assert.equal(planTravel(gate,{type:'navigate',point:{x:6,y:2}}),null);
+});
 test('click-to-walk finds an empty route, never pushes cargo, and preserves individual undo turns',()=>{
  let s=act(createState(),{type:'possess',id:'sofa'}),before=JSON.stringify(s);
  assert.deepEqual(routeTo(s,{x:3,y:3}),[1]);assert.equal(routeTo(s,{x:4,y:3}),null);assert.equal(routeTo(s,{x:NaN,y:2}),null);
