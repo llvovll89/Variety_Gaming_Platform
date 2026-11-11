@@ -93,6 +93,7 @@ export function drawBattle(c: CanvasRenderingContext2D, b: Battle, mode: Mode, h
   const reachable = b.canAct() && !b.actor.moved && mode === 'move' ? new Set(b.targets(mode).map(key)) : new Set<string>();
   const targets = b.canAct() && mode !== 'move' ? new Set(b.targets(mode).map(key)) : new Set<string>();
   const area = hover && targets.has(key(hover)) ? new Set(b.area(hover, mode).map(key)) : new Set<string>();
+  const previewPath = hover && b.canAct() && (mode==='move'||mode==='attack') ? (b.at(hover)?.team==='enemy' ? b.approachPath(hover) : mode==='move'&&!b.actor.moved ? b.paths().get(key(hover)) : null) : null;
   const order = [...b.tiles].sort((a, d) => a.x + a.y - d.x - d.y || a.y - d.y);
   for (const t of order) {
     const p = project(t, t.height), depth = 14 + t.height * 19;
@@ -155,6 +156,11 @@ export function drawBattle(c: CanvasRenderingContext2D, b: Battle, mode: Mode, h
     if (hover && key(hover) === key(t)) { c.lineWidth = 2; diamond(c, p.x, p.y, '#ffffff18', '#fff5ce'); }
     if (grid && t.height > 0) { c.font = '11px sans-serif'; c.fillStyle = '#405e56'; c.fillText(`↑${t.height}`, p.x - 6, p.y + 4); }
 
+  }
+  if(previewPath&&previewPath.length>1){
+    c.save();c.strokeStyle='#fff0a5';c.lineWidth=4;c.setLineDash([7,5]);c.beginPath();
+    previewPath.forEach((t,i)=>{const p=project(t,b.tile(t).height);if(i===0)c.moveTo(p.x,p.y);else c.lineTo(p.x,p.y);});c.stroke();c.setLineDash([]);
+    previewPath.slice(1).forEach((t,i)=>{const p=project(t,b.tile(t).height);c.fillStyle='#243e35';c.beginPath();c.arc(p.x,p.y,10,0,Math.PI*2);c.fill();c.fillStyle='#fff0a5';c.font='bold 12px sans-serif';c.textAlign='center';c.fillText(String(i+1),p.x,p.y+4);});c.restore();
   }
   const visible = b.units.filter(u => u.hp > 0 || (elapsed < eventDuration(b.lastEvent) && b.lastEvent?.hits?.some(hit => hit.id === u.id)));
   visible.sort((a,d) => a.x+a.y-d.x-d.y).forEach(u => drawUnit(c,b,u,elapsed));

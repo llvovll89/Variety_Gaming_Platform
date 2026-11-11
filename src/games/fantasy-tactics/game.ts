@@ -272,20 +272,25 @@ export class Battle {
     this.facings[u.id] = { x: p.x - path[path.length - 2].x, y: p.y - path[path.length - 2].y };
     u.x = p.x; u.y = p.y; u.moved = true; return true;
   }
-  /** Find a legal approach and resolve movement plus a normal attack together. */
-  approachAttack(p: Point) {
+  /** Shared by the preview and execution so both choose the same approach. */
+  approachPath(p: Point): Point[] | null {
     const u = this.actor, enemy = this.at(p);
-    if (!this.canAct(u) || enemy?.team !== 'enemy') return false;
-    if (this.targets('attack', u).some(t => key(t) === key(p))) return this.act(p, 'attack');
-    if (u.moved) return false;
+    if (!this.canAct(u) || enemy?.team !== 'enemy') return null;
+    if (this.targets('attack', u).some(t => key(t) === key(p))) return [{x:u.x,y:u.y}];
+    if (u.moved) return null;
     const paths = [...this.paths(u).values()].filter(path => {
       const end = path.at(-1)!;
       return path.length > 1 && this.targets('attack', { ...u, ...end }).some(t => key(t) === key(p));
     });
     const danger = (q: Point) => Number(this.burning.some(t => key(t) === key(q))) + Number(this.bossWarning.some(t => key(t) === key(q)));
     paths.sort((a, b) => a.length - b.length || danger(a.at(-1)!) - danger(b.at(-1)!) || this.tile(b.at(-1)!).height - this.tile(a.at(-1)!).height);
-    const path = paths[0];
-    if (!path || !this.moveTo(path.at(-1)!)) return false;
+    return paths[0] ?? null;
+  }
+  approachAttack(p: Point) {
+    const path = this.approachPath(p);
+    if (!path) return false;
+    if (path.length === 1) return this.act(p, 'attack');
+    if (!this.moveTo(path.at(-1)!)) return false;
     if (!this.act(p, 'attack')) { this.undoMove(); return false; }
     if (this.lastEvent) this.lastEvent.path = path;
     return true;
@@ -339,6 +344,17 @@ export class Battle {
   }
   preview(p: Point, mode: Mode) {
     const u = this.actor, skill = this.skill(mode, u), affected = this.affected(p, mode);
+    if ((mode === 'move' || mode === 'attack') && this.at(p)?.team === 'enemy') {
+      const path = this.approachPath(p), v = this.at(p)!;
+      if (!path) return '공격 가능한 이동 칸이 없어요';
+      const projected: Battle = Object.assign(Object.create(Object.getPrototypeOf(this)), this, {routes:{...this.routes, ...(path.length>1?{[u.id]:path}:{})}});
+      const from = {...u,...path.at(-1)!}, amount = projected.damage(from,v);
+      return `${path.length>1?`이동 ${path.length-1}칸 · `:''}${v.name} −${amount} HP · 남은 HP ${Math.max(0,v.hp-amount)}${projected.isDash(from,v)?' · 돌진':''} · MP 0`;
+    }
+    if (mode === 'move') {
+      const path = !u.moved && this.canAct() ? this.paths().get(key(p)) : null;
+      return path && path.length>1 ? `이동 ${path.length-1}칸 / ${this.stats(u).move}칸 · 높이 ${this.tile(p).height}${this.burning.some(t=>key(t)===key(p))?' · 불길 주의':''}${this.bossWarning.some(t=>key(t)===key(p))?' · 보스 공격 예고':''}` : '이동할 수 없는 칸';
+    }
     if(u.role==='ranger'&&mode==='skill0')return this.targets(mode).some(t=>key(t)===key(p))?'덫 설치 · 적에게 피해 + 행동 종료':'설치할 수 없는 칸';
     if(u.role==='rogue'&&mode==='skill0'){const v=this.at(p),dest=v&&this.behind(v);return v&&dest&&this.targets(mode).some(t=>key(t)===key(p))?`뒤로 도약 · −${this.damage({...u,...dest},v,mode)} HP`:'착지할 뒤쪽 칸이 필요해요';}
     if(mode==='push')return this.pushPreview(p);
