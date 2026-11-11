@@ -97,7 +97,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#d4b678",
     genres: ["전략"],
     tags: ["삼국지", "카드", "수집", "영지", "부대 편성"],
-    featuredText: "72명의 장수를 모으고, 당신만의 영지에서 새로운 천하를 시작하세요.",
+    featuredText: "장수를 모으고, 당신만의 영지에서 새로운 천하를 시작하세요.",
     Component: ThreeKingdomsCardApp,
   },
   {

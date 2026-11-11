@@ -5,6 +5,7 @@ import { GAMES, getGameById } from "./platform/gameRegistry";
 import { useProfile } from "./shared/profile/useProfile";
 import { DEFAULT_CHARACTER_ID, GAME_CHARACTER_IMAGES } from "./shared/profile/characters";
 import { recordRecentGame } from "./platform/hubCatalog";
+import GameErrorBoundary from "./platform/GameErrorBoundary";
 
 export default function App() {
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
@@ -24,11 +25,13 @@ export default function App() {
     const gameProfile = { ...profile, defaultCharacterImage, characterImage: profile.characterId === DEFAULT_CHARACTER_ID ? defaultCharacterImage : profile.characterImage };
     return (
       <div className="relative h-full w-full">
-        <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
-          <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: () => setActiveGameId(null) }}>
-            <Component key={activeGame.id} onExit={() => setActiveGameId(null)} profile={gameProfile} launchIntent={launchIntent} />
-          </PlaySession.Provider>
-        </Suspense>
+        <GameErrorBoundary key={activeGame.id} title={activeGame.title} onExit={() => setActiveGameId(null)}>
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
+            <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: () => setActiveGameId(null) }}>
+              <Component key={activeGame.id} onExit={() => setActiveGameId(null)} profile={gameProfile} launchIntent={launchIntent} />
+            </PlaySession.Provider>
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     );
   }

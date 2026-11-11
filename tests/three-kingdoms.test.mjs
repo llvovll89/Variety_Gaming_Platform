@@ -43,7 +43,7 @@ const {
   canCapture, captureCity, resolveSupply, supplyReach, isSupplied, evaluateVictory,
   planInternal, planMilitary, explainMilitary, unitsOf, idleOfficers, factionGold,
   TACTICS, MAX_DEFENSE_BY_SCALE,
-  editOfficer, appearanceFor, saveGame, loadGame,
+  editOfficer, appearanceFor, saveGame, loadGame, readSave,
 } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 
 function allTiles() {
@@ -1022,6 +1022,49 @@ test('PK save migration adds missing officers once and preserves edits and custo
     assert.equal(restored.officers.guojia.name, '곽가');
     saveGame(restored);
     assert.equal(loadGame().cities.chenliu.officerIds.filter(id => id === 'guojia').length, 1);
+  } finally { delete globalThis.localStorage; }
+});
+
+test('save validation rejects missing data and broken references without changing the original', () => {
+  const key = 'arcade:three-kingdoms:save';
+  const memory = new Map();
+  globalThis.localStorage = { getItem: k => memory.get(k) ?? null, setItem: (k, value) => memory.set(k, value) };
+  try {
+    assert.equal(readSave().status, 'empty');
+    const original = createGameState('caocao');
+    const mutations = [
+      s => { delete s.units; }, s => { s.units = []; }, s => { delete s.internalOrders; },
+      s => { s.log = [null]; }, s => { s.map.tiles[0] = null; },
+      s => { s.officers.caocao.tactics = null; }, s => { s.officers.caocao.cityId = 'missing'; },
+      s => { s.cities.chenliu.officerIds.push('missing'); },
+      s => { s.factions.caocao.leaderId = 'missing'; }, s => { s.factionOrder.push('missing'); },
+      s => { s.map.tiles[0].unitId = 999; }, s => { s.map.tiles[0].q = 999; },
+      s => { s.cities.chenliu.gold = -1; },
+    ];
+    for (const mutate of mutations) {
+      const state = structuredClone(original); mutate(state);
+      const raw = JSON.stringify({ version: 1, savedAt: 0, state }); memory.set(key, raw);
+      assert.equal(loadGame(), null, mutate.toString());
+      assert.deepEqual(readSave(), { status: 'invalid', raw });
+      assert.equal(memory.get(key), raw);
+    }
+    for (const raw of ['null', '{broken', JSON.stringify({version:99,state:original})]) {
+      memory.set(key, raw); assert.equal(readSave().status, 'invalid'); assert.equal(memory.get(key), raw);
+    }
+  } finally { delete globalThis.localStorage; }
+});
+
+test('campaign saves remain loadable after AI dispatch, combat and turn resolution', () => {
+  const memory = new Map();
+  globalThis.localStorage = { getItem: k => memory.get(k) ?? null, setItem: (k, value) => memory.set(k, value) };
+  try {
+    for (const turn of [1, 10, 25, 45]) {
+      const s = autoplay(73, turn).state;
+      s.phase = 'player'; saveGame(s);
+      const restored = loadGame();
+      assert.ok(restored, `turn ${turn}: active campaign must restore`);
+      assert.deepEqual(restored, JSON.parse(JSON.stringify(s)));
+    }
   } finally { delete globalThis.localStorage; }
 });
 
