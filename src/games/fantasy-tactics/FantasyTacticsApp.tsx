@@ -30,8 +30,22 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const [storageMessage, setStorageMessage] = useState(''), [hint, setHint] = useState('');
   const [busy, setBusy] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<'unit' | 'log' | null>(null);
+  const unitPanel = useRef<HTMLElement>(null), logPanel = useRef<HTMLElement>(null);
+  const unitToggle = useRef<HTMLButtonElement>(null), logToggle = useRef<HTMLButtonElement>(null);
+  const closeMobilePanel = () => {
+    const trigger = mobilePanel === 'unit' ? unitToggle.current : logToggle.current;
+    setMobilePanel(null);
+    trigger?.focus({preventScroll:true});
+    trigger?.scrollIntoView({block:'nearest'});
+  };
   const dialog = useRef<HTMLDivElement>(null), board = useRef<HTMLCanvasElement>(null), busyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlay = screen === 'title' ? (confirmNew ? 'new' : '') : gearOpen ? 'gear' : help ? 'help' : paused ? 'paused' : (!busy && ['intro', 'won', 'lost', 'ending'].includes(battle.phase)) ? battle.phase : '';
+  useEffect(() => {
+    if (!mobilePanel || overlay || !window.matchMedia('(max-width:760px)').matches) return;
+    const panel = mobilePanel === 'unit' ? unitPanel.current : logPanel.current;
+    panel?.focus({preventScroll:true});
+    panel?.scrollIntoView({block:'start'});
+  }, [mobilePanel, overlay]);
   const update = () => setRevision(n => n + 1);
   useEffect(() => { setPending(null); }, [battle, revision, mode, overlay]);
   const resetMode = () => { setMode('move'); setHover(null); setHint(''); };
@@ -98,7 +112,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const line = (battle.sideQuest ? rescueDialogue : stage.dialogue)[battle.dialogue];
   const speaker = battle.roster.find(u => u.name === line.speaker);
 
-  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`} onKeyDownCapture={e=>{if(e.key==='Escape'&&pending){e.preventDefault();e.stopPropagation();setPending(null);setHover(null);}}}>
+  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`} onKeyDownCapture={e=>{if(e.key!=='Escape'||overlay)return;if(pending){e.preventDefault();e.stopPropagation();setPending(null);setHover(null);}else if(mobilePanel&&window.matchMedia('(max-width:760px)').matches){e.preventDefault();e.stopPropagation();closeMobilePanel();}}}>
     <header className="ft-header"><button onClick={onExit}><ArrowLeft size={17} />게임 목록</button><span className="ft-brand">별빛 원정대</span><div>{screen === 'battle' && <button disabled={!!overlay} onClick={()=>setGearOpen(true)}>장비·가방</button>}<button onClick={() => setHelp(true)} disabled={screen === 'title' || !!overlay}>게임 방법</button>{screen === 'battle' && <button onClick={() => setPaused(true)} disabled={!!overlay} aria-label="일시 정지"><Pause size={19} /></button>}</div></header>
     {screen === 'battle' && battle.phase === 'camp' ? <CampScreen battle={battle} revision={revision} locked={!!overlay} onGear={()=>setGearOpen(true)} onUpdate={update} onSideQuest={() => { const next=battle.startSideQuest();if(next){setBattle(next);resetMode();update();} }} onDepart={() => { const next = battle.nextStage(); if (next) { setBattle(next); resetMode(); update(); } }} /> : <div className="ft-shell">
       <div className="ft-chapter"><div><span>{screen === 'title' ? '별의 등대를 찾아서' : battle.sideQuest ? '외전 · 별빛 구출 작전' : `${battle.stage>=3?'2부':'1부'} · 제${battle.stage + 1}장 · ${stage.place}`}</span><h1>{screen === 'title' ? '별빛 원정대' : battle.sideQuest ? '숲길의 작은 영웅들' : stage.name}</h1></div>{screen === 'battle' && <div className={`ft-turn ${battle.phase === 'enemy' ? 'is-enemy' : ''}`}><b>{battle.round}</b><span>번째 차례<strong>{battle.phase === 'enemy' ? '적이 움직입니다' : battle.phase === 'player' ? '아군의 차례' : '별빛 원정대'}</strong></span></div>}</div>
@@ -116,8 +130,8 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
             <div className="ft-mobile-status" role="status" aria-live="polite"><span>{actor.name} · HP {actor.hp}/{actor.maxHp} · MP {actor.mp}/{actor.maxMp}</span><b>{hint || (battle.phase === 'enemy' ? '적이 움직이고 있어요' : actor.acted ? '다른 동료를 선택하세요' : mode === 'move' ? '칸·적 선택 → 미리보기 → 확인' : mode === 'rescue' ? '인접한 주민 칸을 눌러 구출하세요' : mode === 'chest' ? '인접한 상자를 누르세요' : `${skill?.name ?? '공격'} · 대상을 누르세요`)}</b></div>
             <div className="ft-mobile-actions">
               <button disabled={!canAct || !battle.potions || actor.hp === actor.maxHp} onClick={() => { if (battle.potion()) { lockBriefly(); update(); resetMode(); } }}><Flask size={16} />회복 {battle.potions}</button>
-              <button aria-expanded={mobilePanel === 'unit'} aria-controls="ft-unit-panel" onClick={() => setMobilePanel(p => p === 'unit' ? null : 'unit')}>상세</button>
-              <button aria-expanded={mobilePanel === 'log'} aria-controls="ft-battle-log" onClick={() => setMobilePanel(p => p === 'log' ? null : 'log')}>기록</button>
+              <button ref={unitToggle} aria-expanded={mobilePanel === 'unit'} aria-controls="ft-unit-panel" onClick={() => mobilePanel==='unit'?closeMobilePanel():setMobilePanel('unit')}>상세</button>
+              <button ref={logToggle} aria-expanded={mobilePanel === 'log'} aria-controls="ft-battle-log" onClick={() => mobilePanel==='log'?closeMobilePanel():setMobilePanel('log')}>기록</button>
               <button className="ft-mobile-end-turn" disabled={battle.phase !== 'player' || !!overlay || busy} onClick={() => { battle.endTurn(); resetMode(); update(); }}>차례 종료</button>
             </div>
           </div>}
@@ -130,7 +144,8 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
           <div className="ft-title-party">{battle.allies.map(u => <Portrait key={u.id} role={u.role} />)}</div>
           {saved && <button className="ft-primary" onClick={() => start(true)}>원정 이어하기 <small>제{saved.stage + 1}장 · {saved.phase === 'camp' ? '야영지' : `${saved.round}번째 차례`}</small></button>}
           <button className={saved ? 'ft-secondary' : 'ft-primary'} onClick={() => saved ? setConfirmNew(true) : start()}>새 원정 시작</button><small className="ft-save-note">진행 상황 자동 저장</small>
-        </aside> : <aside id="ft-unit-panel" className="ft-inspector" inert={!!overlay}>
+        </aside> : <aside ref={unitPanel} id="ft-unit-panel" className="ft-inspector" aria-label="동료 상세" tabIndex={-1} inert={!!overlay}>
+          <div className="ft-mobile-panel-heading"><h2>동료 상세</h2><button onClick={closeMobilePanel}>전장으로 돌아가기</button></div>
           <div className="ft-unit-heading"><Portrait promoted={actor.promoted} role={actor.role} /><div><span>{jobName(actor)||ROLE_LABEL[actor.role]}</span><h2>{actor.name} <small>Lv.{actor.level}</small></h2><p>{actor.hp === 0 ? '전투 불능' : actor.acted ? '행동 완료' : actor.moved ? '이동 완료 · 행동 가능' : '이동과 행동 가능'}</p></div></div>
           <Meter label="HP" value={actor.hp} max={actor.maxHp} /><Meter label="MP" value={actor.mp} max={actor.maxMp} mana />
           <div className="ft-stat-line"><span>공격 <b>{actorStats.attack}</b></span><span>방어 <b>{actorStats.defense}</b></span><span>이동 <b>{actorStats.move}</b></span></div>
@@ -151,9 +166,10 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
           <button className="ft-primary" disabled={battle.phase !== 'player' || !!overlay || busy} onClick={() => { battle.endTurn(); resetMode(); update(); }}>아군 차례 마치기</button>
         </aside>}
       </div>
-      {screen === 'battle' && <section id="ft-battle-log" className="ft-bottom" inert={!!overlay}>
+      {screen === 'battle' && <section ref={logPanel} id="ft-battle-log" className="ft-bottom" aria-label="전투 기록" tabIndex={-1} inert={!!overlay}>
+        <div className="ft-mobile-panel-heading"><h2>전투 기록</h2><button onClick={closeMobilePanel}>전장으로 돌아가기</button></div>
         <div className="ft-party" aria-label="원정대 동료">{battle.allies.map(u => <button key={u.id} className={`${u.id === actor.id ? 'is-selected' : ''} ${u.hp === 0 ? 'is-fallen' : ''}`} aria-pressed={u.id === actor.id} disabled={battle.phase !== 'player' || busy || u.hp === 0} onClick={() => select(u)}><Portrait promoted={u.promoted} role={u.role} /><div><b>{u.name}<small>Lv.{u.level}</small></b><span>{u.hp === 0 ? '전투 불능' : u.acted ? '행동 완료' : `${u.hp} / ${u.maxHp} HP`}</span><div className="ft-mini-meter"><i style={{ width: `${u.hp / u.maxHp * 100}%` }} /></div></div></button>)}</div>
-        <div className="ft-report"><div className="ft-report-heading"><b>전투 기록</b><span>{hovered ? `${hovered.name} · HP ${hovered.hp}/${hovered.maxHp}` : hover ? `높이 ${battle.tile(hover).height} · ${mode === 'move' ? '이동 칸 확인' : battle.preview(hover, mode)}` : '동료와 지형을 살펴보세요'}</span></div><p role="status" aria-live="polite">{battle.log.at(-1)}</p><details><summary>이전 기록 보기</summary>{battle.log.slice(0, -1).map((entry, i) => <p key={i}>{entry}</p>)}</details></div>
+        <div className="ft-report"><div className="ft-report-heading"><b>최근 행동</b><span>{hovered ? `${hovered.name} · HP ${hovered.hp}/${hovered.maxHp}` : hover ? `높이 ${battle.tile(hover).height} · ${mode === 'move' ? '이동 칸 확인' : battle.preview(hover, mode)}` : '동료와 지형을 살펴보세요'}</span></div><p role="status" aria-live="polite">{battle.log.at(-1)}</p>{battle.log.length>1?<details className="ft-log-history"><summary>이전 기록 {battle.log.length-1}개 · 최근 순</summary><ol aria-label="이전 전투 기록 · 최근 순">{battle.log.slice(0, -1).reverse().map((entry, i) => <li key={`${battle.log.length-i}:${entry}`}>{entry}</li>)}</ol></details>:<p className="ft-log-empty">아직 이전 기록이 없어요.</p>}</div>
       </section>}
       <footer className="ft-footer"><span>칸 클릭으로 조작 · 방향키로 칸 선택 · Enter 결정 · Esc 이동 취소</span><span><FloppyDisk size={14} />{storageMessage || '동료를 지휘하는 작은 모험'}</span></footer>
     </div>}
