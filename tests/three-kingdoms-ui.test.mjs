@@ -105,3 +105,16 @@ test('city navigation never moves an army, queues construction, or resolves an a
   assert.deepEqual(engine.selection,{kind:'city',cityId:'chenliu'},'a city shortcut still manages the city when an army stands on it');
   assert.equal(JSON.stringify(state),before);
 });
+
+test('engine publishes save failure and clears it after retry, preserving the last success time',()=>{
+  const engine=Object.create(GameEngine.prototype), state=createGameState('caocao');
+  Object.assign(engine,{state,saveStatus:{status:'idle',savedAt:null,turn:null}});
+  let published;engine.publish=()=>{published=engine.saveStatus;};let blocked=false;
+  globalThis.localStorage={setItem:()=>{if(blocked)throw new Error('disabled');}};
+  try{
+    assert.equal(engine.save(),true);const savedAt=published.savedAt;
+    blocked=true;assert.equal(engine.save(),false);assert.equal(published.status,'failed');assert.equal(published.savedAt,savedAt);
+    blocked=false;state.turn++;assert.equal(engine.save(),true);assert.equal(published.status,'saved');assert.equal(published.turn,state.turn);
+    state.phase='ai';const previous=published;assert.equal(engine.save(),false);assert.equal(published,previous);
+  }finally{delete globalThis.localStorage;}
+});
