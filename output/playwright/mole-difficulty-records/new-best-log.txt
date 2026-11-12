@@ -1,0 +1,37 @@
+### Result
+"PASS: new best 2400, all three modes played, focus and mute preserved"
+### Ran Playwright code
+```js
+await (﻿async (page)=>{
+ await page.goto('http://127.0.0.1:5180');
+ await page.evaluate(()=>{localStorage.setItem('arcade:hachuping-whack-a-mole:easy:highScore','100');localStorage.setItem('arcade:hachuping-whack-a-mole:easy:leaderboard',JSON.stringify([{score:100,timestamp:1}]));});
+ await page.getByRole('button',{name:'두더지 잡기 시작하기',exact:true}).click();
+ await page.getByRole('button',{name:'쉬움',exact:false}).click();
+ if(!await page.getByRole('button',{name:'쉬움',exact:false}).evaluate(el=>el===document.activeElement))throw Error('Selection focus');
+ await page.clock.install();
+ await page.getByRole('button',{name:'게임 시작',exact:true}).click();
+ await page.getByRole('button',{name:'소리 끄기',exact:true}).click();
+ await page.clock.runFor(3500);
+ await page.evaluate(()=>{window.hitTimer=setInterval(()=>document.querySelectorAll('.mole-target[data-active="true"]').forEach(el=>el.click()),100);});
+ await page.clock.runFor(30500);
+ await page.evaluate(()=>clearInterval(window.hitTimer));
+ await page.getByRole('heading',{name:'쉬움 TOP 10',exact:true}).waitFor();
+ const best=await page.evaluate(()=>Number(localStorage.getItem('arcade:hachuping-whack-a-mole:easy:highScore')));
+ if(best<=100)throw Error('New best was not saved');
+ await page.getByRole('button',{name:'난이도 선택으로',exact:true}).click();
+ await page.getByRole('button',{name:'어려움',exact:false}).click();
+ await page.getByRole('button',{name:'게임 시작',exact:true}).click();
+ await page.getByRole('button',{name:'소리 켜기',exact:true}).waitFor();
+ await page.clock.runFor(34000);
+ await page.getByRole('heading',{name:'어려움 TOP 10',exact:true}).waitFor();
+ if(await page.evaluate(()=>localStorage.getItem('arcade:hachuping-whack-a-mole:easy:highScore'))!==String(best))throw Error('Hard changed easy');
+ await page.setViewportSize({width:320,height:568});await page.screenshot({path:'output/playwright/mole-difficulty-records/result-320.png'});
+ await page.getByRole('button',{name:'난이도 선택으로',exact:true}).click();
+ await page.getByRole('button',{name:'쉬움',exact:false}).click();
+ if(!await page.locator('.mole-record').textContent().then(s=>s.replaceAll(',','').includes(String(best))))throw Error('New best read');
+ return 'PASS: new best '+best+', all three modes played, focus and mute preserved';
+}
+)(page);
+```
+### Events
+- New console entries: .playwright-cli\console-2026-11-12T13-06-37-789Z.log#L39-L46
