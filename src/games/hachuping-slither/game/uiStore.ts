@@ -19,6 +19,7 @@ export function emptySnapshot(): UISnapshot {
     leaderboard: [],
     minimap: { worldSize: WORLD_SIZE, player: null, trails: [], viewport: null },
     finalScore: null,
+    death: null,
   };
 }
 

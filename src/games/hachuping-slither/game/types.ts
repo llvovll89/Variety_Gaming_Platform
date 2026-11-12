@@ -54,7 +54,15 @@ export interface LeaderboardEntry {
   isPlayer: boolean;
 }
 
+export interface DeathSummary {
+  reason: 'wall' | 'self' | 'body' | 'head-on';
+  opponentName: string | null;
+  mutual: boolean;
+  position: Vector2;
+}
+
 export interface UISnapshot {
+  death: DeathSummary | null;
   status: "menu" | "playing" | "paused" | "dead";
   level: number;
   xp: number;

@@ -220,6 +220,7 @@ export class GameEngine {
         },
       },
       finalScore: player.alive ? null : Math.floor(player.score),
+      death: this.world.playerDeath ? { ...this.world.playerDeath, position: { ...this.world.playerDeath.position } } : null,
     };
   }
 }

@@ -5,7 +5,7 @@ import {
   SEGMENT_GRID_CELL_SIZE,
 } from "./constants";
 import { SpatialHashGrid } from "./spatialGrid";
-import type { Snake, Star } from "./types";
+import type { Snake, Star, DeathSummary } from "./types";
 import { getSegmentsFromNeck } from "./snake";
 import { distance } from "../../../utils/math";
 import { statsFor } from "./progression";
@@ -13,6 +13,9 @@ import { statsFor } from "./progression";
 export interface DeathEvent {
   victimId: number;
   killerId: number | null;
+  reason: DeathSummary['reason'];
+  opponentId?: number;
+  mutual?: boolean;
 }
 
 export interface StarPickupEvent {
@@ -101,7 +104,7 @@ export function findBodyCollisions(
 
       const hitRadius = owner.radius + attacker.radius * HEAD_HIT_RADIUS_FACTOR;
       if (d < hitRadius) {
-        events.push({ victimId: attacker.id, killerId: isSelf ? null : owner.id });
+        events.push({ victimId: attacker.id, killerId: isSelf ? null : owner.id, reason: isSelf ? 'self' : 'body', opponentId: isSelf ? undefined : owner.id });
         break;
       }
     }
@@ -135,12 +138,12 @@ export function findHeadOnCollisions(snakes: Snake[]): DeathEvent[] {
       const alignB = alignment(b, a);
 
       if (Math.abs(alignA - alignB) < HEAD_ON_ALIGNMENT_EPSILON) {
-        events.push({ victimId: a.id, killerId: null });
-        events.push({ victimId: b.id, killerId: null });
+        events.push({ victimId: a.id, killerId: null, reason: 'head-on', opponentId: b.id, mutual: true });
+        events.push({ victimId: b.id, killerId: null, reason: 'head-on', opponentId: a.id, mutual: true });
       } else if (alignA > alignB) {
-        events.push({ victimId: b.id, killerId: a.id });
+        events.push({ victimId: b.id, killerId: a.id, reason: 'head-on', opponentId: a.id });
       } else {
-        events.push({ victimId: a.id, killerId: b.id });
+        events.push({ victimId: a.id, killerId: b.id, reason: 'head-on', opponentId: b.id });
       }
     }
   }
