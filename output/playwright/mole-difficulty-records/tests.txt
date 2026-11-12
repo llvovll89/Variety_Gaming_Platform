@@ -1,0 +1,2096 @@
+
+> gh-arcade@0.0.1 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: wide and portrait spaces map taps without a horizontal dead zone
+ok 1 - wide and portrait spaces map taps without a horizontal dead zone
+  ---
+  duration_ms: 1.7194
+  type: 'test'
+  ...
+# Subtest: spawned models cover all three shapes and stay inside their arena
+ok 2 - spawned models cover all three shapes and stay inside their arena
+  ---
+  duration_ms: 1.7824
+  type: 'test'
+  ...
+# Subtest: forgiving tap pops overlapping balloons, preserves others, and updates score immediately
+ok 3 - forgiving tap pops overlapping balloons, preserves others, and updates score immediately
+  ---
+  duration_ms: 1.1266
+  type: 'test'
+  ...
+# Subtest: pause blocks taps and freezes the round; resume retains score and time
+ok 4 - pause blocks taps and freezes the round; resume retains score and time
+  ---
+  duration_ms: 0.5108
+  type: 'test'
+  ...
+# Subtest: the 60-second round ends once, blocks further scoring and retains the best
+ok 5 - the 60-second round ends once, blocks further scoring and retains the best
+  ---
+  duration_ms: 18.6277
+  type: 'test'
+  ...
+# Subtest: keyboard aiming uses the same hit detection as touch
+ok 6 - keyboard aiming uses the same hit detection as touch
+  ---
+  duration_ms: 0.4158
+  type: 'test'
+  ...
+# Subtest: balloons that leave the sky are removed and survivors keep rising
+ok 7 - balloons that leave the sky are removed and survivors keep rising
+  ---
+  duration_ms: 0.2697
+  type: 'test'
+  ...
+# Subtest: legacy save remains valid; successful writes retain exact previous snapshot and timestamp
+ok 8 - legacy save remains valid; successful writes retain exact previous snapshot and timestamp
+  ---
+  duration_ms: 20.5831
+  type: 'test'
+  ...
+# Subtest: simultaneous tabs admit one writer and never replace its save or backup with stale data
+ok 9 - simultaneous tabs admit one writer and never replace its save or backup with stale data
+  ---
+  duration_ms: 7.8703
+  type: 'test'
+  ...
+# Subtest: same-tab queued actions save in order without a false conflict
+ok 10 - same-tab queued actions save in order without a false conflict
+  ---
+  duration_ms: 2.6526
+  type: 'test'
+  ...
+# Subtest: primary and backup write failures preserve primary, and retry recovers
+ok 11 - primary and backup write failures preserve primary, and retry recovers
+  ---
+  duration_ms: 4.6616
+  type: 'test'
+  ...
+# Subtest: corrupt originals do not replace a valid recovery backup; deletion and clear are conflicts
+ok 12 - corrupt originals do not replace a valid recovery backup; deletion and clear are conflicts
+  ---
+  duration_ms: 0.8333
+  type: 'test'
+  ...
+# Subtest: unavailable locking or inaccessible storage reports failure without overwriting records
+ok 13 - unavailable locking or inaccessible storage reports failure without overwriting records
+  ---
+  duration_ms: 0.6949
+  type: 'test'
+  ...
+# Subtest: all difficulties generate connected mazes with reachable farthest exits and rewards
+ok 14 - all difficulties generate connected mazes with reachable farthest exits and rewards
+  ---
+  duration_ms: 102.1159
+  type: 'test'
+  ...
+# Subtest: walls block movement, walking route reaches victory and terminal state freezes
+ok 15 - walls block movement, walking route reaches victory and terminal state freezes
+  ---
+  duration_ms: 2.8636
+  type: 'test'
+  ...
+# Subtest: timeout loses exactly once; pause freezes both timer and actions
+ok 16 - timeout loses exactly once; pause freezes both timer and actions
+  ---
+  duration_ms: 1.3877
+  type: 'test'
+  ...
+# Subtest: anchor returns position but never restores time or collected rewards; charges are limited
+ok 17 - anchor returns position but never restores time or collected rewards; charges are limited
+  ---
+  duration_ms: 0.8313
+  type: 'test'
+  ...
+# Subtest: pulse costs real time and expires; cannot spend the last four seconds
+ok 18 - pulse costs real time and expires; cannot spend the last four seconds
+  ---
+  duration_ms: 1.0329
+  type: 'test'
+  ...
+# Subtest: seals and traps are reachable and do not overlap rewards
+ok 19 - seals and traps are reachable and do not overlap rewards
+  ---
+  duration_ms: 42.3708
+  type: 'test'
+  ...
+# Subtest: locked exit requires seals; active traps cost time and sleeping traps are safe
+ok 20 - locked exit requires seals; active traps cost time and sleeping traps are safe
+  ---
+  duration_ms: 0.8838
+  type: 'test'
+  ...
+# Subtest: recruitment gates, four-member swaps, reserves and growth survive saves and departure
+ok 21 - recruitment gates, four-member swaps, reserves and growth survive saves and departure
+  ---
+  duration_ms: 17.2572
+  type: 'test'
+  ...
+# Subtest: ranger traps spend mana once, stop enemies along their route and persist in saves
+ok 22 - ranger traps spend mana once, stop enemies along their route and persist in saves
+  ---
+  duration_ms: 2.3822
+  type: 'test'
+  ...
+# Subtest: shield frontal defense can be bypassed from behind and rogue blink rejects occupied landings
+ok 23 - shield frontal defense can be bypassed from behind and rogue blink rejects occupied landings
+  ---
+  duration_ms: 1.4557
+  type: 'test'
+  ...
+# Subtest: water mages extinguish nearby fire; shamans resurrect once and cannot recover drowned enemies
+ok 24 - water mages extinguish nearby fire; shamans resurrect once and cannot recover drowned enemies
+  ---
+  duration_ms: 3.5528
+  type: 'test'
+  ...
+# Subtest: sea camp screens show the correct route and departure while rescue quests remain limited to part one
+ok 25 - sea camp screens show the correct route and departure while rescue quests remain limited to part one
+  ---
+  duration_ms: 30.0349
+  type: 'test'
+  ...
+# Subtest: terrain controls expose keyboard-friendly coordinate targets, explanations and locked states
+ok 26 - terrain controls expose keyboard-friendly coordinate targets, explanations and locked states
+  ---
+  duration_ms: 3.9154
+  type: 'test'
+  ...
+# Subtest: all six boards draw with finite coordinates and can pick a visible terrain tile without raster assets
+ok 27 - all six boards draw with finite coordinates and can pick a visible terrain tile without raster assets
+  ---
+  duration_ms: 93.6135
+  type: 'test'
+  ...
+# Subtest: every chapter starts on valid terrain and supports saving both intro and first player turn
+ok 28 - every chapter starts on valid terrain and supports saving both intro and first player turn
+  ---
+  duration_ms: 31.4474
+  type: 'test'
+  ...
+# Subtest: completed part-one saves continue into all three sea chapters with growth, equipment and optional quests intact
+ok 29 - completed part-one saves continue into all three sea chapters with growth, equipment and optional quests intact
+  ---
+  duration_ms: 6.4461
+  type: 'test'
+  ...
+# Subtest: cutting an empty adjacent fragile bridge consumes one action and keeps a reachable permanent crossing
+ok 30 - cutting an empty adjacent fragile bridge consumes one action and keeps a reachable permanent crossing
+  ---
+  duration_ms: 3.9845
+  type: 'test'
+  ...
+# Subtest: occupied, permanent, distant and first-part bridges cannot be cut and never spend an action
+ok 31 - occupied, permanent, distant and first-part bridges cannot be cut and never spend an action
+  ---
+  duration_ms: 0.4388
+  type: 'test'
+  ...
+# Subtest: cutting a bridge removes affected undo routes and preserves valid save state
+ok 32 - cutting a bridge removes affected undo routes and preserves valid save state
+  ---
+  duration_ms: 1.9591
+  type: 'test'
+  ...
+# Subtest: push moves one cell, respects blocked landings and applies extra cliff damage
+ok 33 - push moves one cell, respects blocked landings and applies extra cliff damage
+  ---
+  duration_ms: 2.6976
+  type: 'test'
+  ...
+# Subtest: sea knockback defeats normal enemies but bosses resist and board-edge falls remain saveable
+ok 34 - sea knockback defeats normal enemies but bosses resist and board-edge falls remain saveable
+  ---
+  duration_ms: 2.413
+  type: 'test'
+  ...
+# Subtest: fire hurts both teams at the end of the player turn, respects wards, expires, and saves countdowns
+ok 35 - fire hurts both teams at the end of the player turn, respects wards, expires, and saves countdowns
+  ---
+  duration_ms: 2.71
+  type: 'test'
+  ...
+# Subtest: fire can resolve victory or defeat before enemy AI and cannot ignite water, bridges or repeat an existing fire
+ok 36 - fire can resolve victory or defeat before enemy AI and cannot ignite water, bridges or repeat an existing fire
+  ---
+  duration_ms: 3.0508
+  type: 'test'
+  ...
+# Subtest: flame magic ignites its grassy area while frost magic does not
+ok 37 - flame magic ignites its grassy area while frost magic does not
+  ---
+  duration_ms: 3.461
+  type: 'test'
+  ...
+# Subtest: invalid environment saves are rejected and final chapter ending round-trips
+ok 38 - invalid environment saves are rejected and final chapter ending round-trips
+  ---
+  duration_ms: 6.1531
+  type: 'test'
+  ...
+# Subtest: promotion is camp-only at level three, chooses a permanent upgrade and unlocks hidden skills at five
+ok 39 - promotion is camp-only at level three, chooses a permanent upgrade and unlocks hidden skills at five
+  ---
+  duration_ms: 18.7378
+  type: 'test'
+  ...
+# Subtest: reach promotion extends line length, ranged skills, and hidden skills execute with mana costs
+ok 40 - reach promotion extends line length, ranged skills, and hidden skills execute with mana costs
+  ---
+  duration_ms: 3.9238
+  type: 'test'
+  ...
+# Subtest: rescue side quest requires three rescues, survives saves and returns to camp with one-time rewards
+ok 41 - rescue side quest requires three rescues, survives saves and returns to camp with one-time rewards
+  ---
+  duration_ms: 8.4295
+  type: 'test'
+  ...
+# Subtest: rescue deadline fails after eight full turns and allows retry or camp return
+ok 42 - rescue deadline fails after eight full turns and allows retry or camp return
+  ---
+  duration_ms: 3.6762
+  type: 'test'
+  ...
+# Subtest: both rescue missions can be completed with legal movement and actions before the deadline
+ok 43 - both rescue missions can be completed with legal movement and actions before the deadline
+  ---
+  duration_ms: 63.1683
+  type: 'test'
+  ...
+# Subtest: boss telegraphs fixed cells, hits only those cells, preserves warnings and enters phase two
+ok 44 - boss telegraphs fixed cells, hits only those cells, preserves warnings and enters phase two
+  ---
+  duration_ms: 3.1642
+  type: 'test'
+  ...
+# Subtest: animation follows legal path segments and finishes movement before enemy attack
+ok 45 - animation follows legal path segments and finishes movement before enemy attack
+  ---
+  duration_ms: 2.8343
+  type: 'test'
+  ...
+# Subtest: area animation retains every affected target and attack origin after defeat
+ok 46 - area animation retains every affected target and attack origin after defeat
+  ---
+  duration_ms: 0.9282
+  type: 'test'
+  ...
+# Subtest: intro blocks commands; movement respects river, occupancy, range and unit elevation limits
+ok 47 - intro blocks commands; movement respects river, occupancy, range and unit elevation limits
+  ---
+  duration_ms: 1.3341
+  type: 'test'
+  ...
+# Subtest: movement undo and saved movement retain path, dash and one-action constraints
+ok 48 - movement undo and saved movement retain path, dash and one-action constraints
+  ---
+  duration_ms: 3.4171
+  type: 'test'
+  ...
+# Subtest: range, MP and invalid targets never consume an action; AoE damages enemies only
+ok 49 - range, MP and invalid targets never consume an action; AoE damages enemies only
+  ---
+  duration_ms: 0.6468
+  type: 'test'
+  ...
+# Subtest: switching heroes preserves each movement path; occupied origins cannot be undone
+ok 50 - switching heroes preserves each movement path; occupied origins cannot be undone
+  ---
+  duration_ms: 1.9782
+  type: 'test'
+  ...
+# Subtest: healing and potion cap HP and award XP only for effective support
+ok 51 - healing and potion cap HP and award XP only for effective support
+  ---
+  duration_ms: 0.724
+  type: 'test'
+  ...
+# Subtest: ward reduces real damage and expires at subsequent player rounds
+ok 52 - ward reduces real damage and expires at subsequent player rounds
+  ---
+  duration_ms: 1.676
+  type: 'test'
+  ...
+# Subtest: elevation changes damage, enemy AI respects walkable cells, and turns reset actions
+ok 53 - elevation changes damage, enemy AI respects walkable cells, and turns reset actions
+  ---
+  duration_ms: 1.6604
+  type: 'test'
+  ...
+# Subtest: boss objective ends with remaining enemies; complete party defeat is terminal
+ok 54 - boss objective ends with remaining enemies; complete party defeat is terminal
+  ---
+  duration_ms: 1.5005
+  type: 'test'
+  ...
+# Subtest: save validation rejects malformed identity, duplicate positions, impossible HP, and forged paths
+ok 55 - save validation rejects malformed identity, duplicate positions, impossible HP, and forged paths
+  ---
+  duration_ms: 7.7758
+  type: 'test'
+  ...
+# Subtest: all six chapters can be completed through legal actions with growth, restoration and final boss objective
+ok 56 - all six chapters can be completed through legal actions with growth, restoration and final boss objective
+  ---
+  duration_ms: 55.0896
+  type: 'test'
+  ...
+# Subtest: camp gates progression, restores party once, preserves growth and allows optional conversations
+ok 57 - camp gates progression, restores party once, preserves growth and allows optional conversations
+  ---
+  duration_ms: 1.018
+  type: 'test'
+  ...
+# Subtest: camp saves exact dialogue progress, heard topics and route; old saves still resume
+ok 58 - camp saves exact dialogue progress, heard topics and route; old saves still resume
+  ---
+  duration_ms: 6.5551
+  type: 'test'
+  ...
+# Subtest: all five camps complete all conversations safely and reset camp history on departure
+ok 59 - all five camps complete all conversations safely and reset camp history on departure
+  ---
+  duration_ms: 31.4044
+  type: 'test'
+  ...
+# Subtest: 24 distinct equipment items are obtainable and all eighteen chest positions are reachable
+ok 60 - 24 distinct equipment items are obtainable and all eighteen chest positions are reachable
+  ---
+  duration_ms: 2.7133
+  type: 'test'
+  ...
+# Subtest: opening a nearby chest consumes one action, saves loot and cannot be farmed after retry
+ok 61 - opening a nearby chest consumes one action, saves loot and cannot be farmed after retry
+  ---
+  duration_ms: 1.6299
+  type: 'test'
+  ...
+# Subtest: gear enforces role, ownership and unique assignment without stat accumulation
+ok 62 - gear enforces role, ownership and unique assignment without stat accumulation
+  ---
+  duration_ms: 1.1951
+  type: 'test'
+  ...
+# Subtest: equipment modifies mana, healing, damage, dash and saved movement range
+ok 63 - equipment modifies mana, healing, damage, dash and saved movement range
+  ---
+  duration_ms: 2.1051
+  type: 'test'
+  ...
+# Subtest: equipment save validation rejects unknown, duplicate and incompatible gear while old saves migrate
+ok 64 - equipment save validation rejects unknown, duplicate and incompatible gear while old saves migrate
+  ---
+  duration_ms: 3.8071
+  type: 'test'
+  ...
+# Subtest: enemy click approaches along a legal path and attacks once with a combined animation
+ok 65 - enemy click approaches along a legal path and attacks once with a combined animation
+  ---
+  duration_ms: 1.2003
+  type: 'test'
+  ...
+# Subtest: approach previews are read-only and match the executed path and damage across chapters
+ok 66 - approach previews are read-only and match the executed path and damage across chapters
+  ---
+  duration_ms: 11.5505
+  type: 'test'
+  ...
+# Subtest: movement previews report terrain danger and refuse a second movement
+ok 67 - movement previews report terrain danger and refuse a second movement
+  ---
+  duration_ms: 1.1783
+  type: 'test'
+  ...
+# Subtest: unreachable enemies and allies do not consume movement or actions
+ok 68 - unreachable enemies and allies do not consume movement or actions
+  ---
+  duration_ms: 0.8994
+  type: 'test'
+  ...
+# Subtest: enemy click after moving attacks in range and refuses an extra move
+ok 69 - enemy click after moving attacks in range and refuses an extra move
+  ---
+  duration_ms: 0.7018
+  type: 'test'
+  ...
+# Subtest: ranged enemy click attacks without moving when already in range
+ok 70 - ranged enemy click attacks without moving when already in range
+  ---
+  duration_ms: 0.3583
+  type: 'test'
+  ...
+# Subtest: preview does not move anything, matches confirmed travel cost, and retains per-step undo
+ok 71 - preview does not move anything, matches confirmed travel cost, and retains per-step undo
+  ---
+  duration_ms: 4.0605
+  type: 'test'
+  ...
+# Subtest: cargo previews share the real approach planner and never include the ability cost
+ok 72 - cargo previews share the real approach planner and never include the ability cost
+  ---
+  duration_ms: 5.4818
+  type: 'test'
+  ...
+# Subtest: preview warns at the exact homecoming limit, supports relaxed mode, and refuses blocked routes
+ok 73 - preview warns at the exact homecoming limit, supports relaxed mode, and refuses blocked routes
+  ---
+  duration_ms: 1.2901
+  type: 'test'
+  ...
+# Subtest: click-to-walk finds an empty route, never pushes cargo, and preserves individual undo turns
+ok 74 - click-to-walk finds an empty route, never pushes cargo, and preserves individual undo turns
+  ---
+  duration_ms: 1.2467
+  type: 'test'
+  ...
+# Subtest: clicking cargo approaches and faces it; Space ability moves it without standing on it
+ok 75 - clicking cargo approaches and faces it; Space ability moves it without standing on it
+  ---
+  duration_ms: 2.979
+  type: 'test'
+  ...
+# Subtest: pointer routing respects closed doors, occupied cells, and carried parcels
+ok 76 - pointer routing respects closed doors, occupied cells, and carried parcels
+  ---
+  duration_ms: 1.1491
+  type: 'test'
+  ...
+# Subtest: all twenty-four authored puzzles are solvable through legal commands, with three stars and matching par
+ok 77 - all twenty-four authored puzzles are solvable through legal commands, with three stars and matching par
+  ---
+  duration_ms: 14.8656
+  type: 'test'
+  ...
+# Subtest: possession and rotation are free; walls, other furniture and heavy cargo block without using a turn
+ok 78 - possession and rotation are free; walls, other furniture and heavy cargo block without using a turn
+  ---
+  duration_ms: 0.4596
+  type: 'test'
+  ...
+# Subtest: fan cannot push by walking, wind stops at walls or furniture, and empty abilities cost nothing
+ok 79 - fan cannot push by walking, wind stops at walls or furniture, and empty abilities cost nothing
+  ---
+  duration_ms: 0.5966
+  type: 'test'
+  ...
+# Subtest: freezing reaches under cargo, stops at barriers and heavy cargo slides all the way to the delivery tile
+ok 80 - freezing reaches under cargo, stops at barriers and heavy cargo slides all the way to the delivery tile
+  ---
+  duration_ms: 0.8749
+  type: 'test'
+  ...
+# Subtest: ice can overshoot; a cargo stops at the first uniced tile or at an obstacle and matches only its own goal kind
+ok 81 - ice can overshoot; a cargo stops at the first uniced tile or at an obstacle and matches only its own goal kind
+  ---
+  duration_ms: 0.6294
+  type: 'test'
+  ...
+# Subtest: undo restores delivered cargo, ice, possession, orientation and action count without mutating the source
+ok 82 - undo restores delivered cargo, ice, possession, orientation and action count without mutating the source
+  ---
+  duration_ms: 0.3838
+  type: 'test'
+  ...
+# Subtest: homecoming occurs only after a valid action, undo recovers, relaxed mode is unlimited and winning on the final turn wins
+ok 83 - homecoming occurs only after a valid action, undo recovers, relaxed mode is unlimited and winning on the final turn wins
+  ---
+  duration_ms: 0.2135
+  type: 'test'
+  ...
+# Subtest: hints cap three-star runs; best scores only improve; incomplete and malformed saves do not unlock rooms
+ok 84 - hints cap three-star runs; best scores only improve; incomplete and malformed saves do not unlock rooms
+  ---
+  duration_ms: 0.3467
+  type: 'test'
+  ...
+# Subtest: every level has bounded, nonoverlapping starting objects and exactly matching cargo goals
+ok 85 - every level has bounded, nonoverlapping starting objects and exactly matching cargo goals
+  ---
+  duration_ms: 0.7722
+  type: 'test'
+  ...
+# Subtest: vacuum pulls light cargo, cannot pull into its own cell and does not mutate the previous state
+ok 86 - vacuum pulls light cargo, cannot pull into its own cell and does not mutate the previous state
+  ---
+  duration_ms: 0.2076
+  type: 'test'
+  ...
+# Subtest: bed jumps a light parcel over a partition, but rejects heavy parcels and occupied landings
+ok 87 - bed jumps a light parcel over a partition, but rejects heavy parcels and occupied landings
+  ---
+  duration_ms: 0.1597
+  type: 'test'
+  ...
+# Subtest: lamp gates block wind and walking until opened, cannot close on actors and restore with undo
+ok 88 - lamp gates block wind and walking until opened, cannot close on actors and restore with undo
+  ---
+  duration_ms: 0.1643
+  type: 'test'
+  ...
+# Subtest: desk carries wardrobes through turns, refuses blocked unloading and undo restores both cargo and carrier
+ok 89 - desk carries wardrobes through turns, refuses blocked unloading and undo restores both cargo and carrier
+  ---
+  duration_ms: 0.1808
+  type: 'test'
+  ...
+# Subtest: completed eight-room saves continue into the new chapter, and large houses require longer multi-parcel runs
+ok 90 - completed eight-room saves continue into the new chapter, and large houses require longer multi-parcel runs
+  ---
+  duration_ms: 0.285
+  type: 'test'
+  ...
+# Subtest: hub separates playable and coming-soon games
+ok 91 - hub separates playable and coming-soon games
+  ---
+  duration_ms: 2.2362
+  type: 'test'
+  ...
+# Subtest: search covers title, description, genre and tags and combines with genre
+ok 92 - search covers title, description, genre and tags and combines with genre
+  ---
+  duration_ms: 0.6666
+  type: 'test'
+  ...
+# Subtest: recent games recover malformed data, remove duplicates and ignore unavailable ids
+ok 93 - recent games recover malformed data, remove duplicates and ignore unavailable ids
+  ---
+  duration_ms: 0.5416
+  type: 'test'
+  ...
+# Subtest: recording recent games keeps newest first and ignores unavailable games
+ok 94 - recording recent games keeps newest first and ignores unavailable games
+  ---
+  duration_ms: 0.7154
+  type: 'test'
+  ...
+# Subtest: cartridge text colour follows shell luminance
+ok 95 - cartridge text colour follows shell luminance
+  ---
+  duration_ms: 0.7176
+  type: 'test'
+  ...
+# Subtest: stars score once, passing scores only after fully clearing obstacle
+ok 96 - stars score once, passing scores only after fully clearing obstacle
+  ---
+  duration_ms: 2.9949
+  type: 'test'
+  ...
+# Subtest: shield protects on pickup frame, expires, and bounds bounce safely
+ok 97 - shield protects on pickup frame, expires, and bounds bounce safely
+  ---
+  duration_ms: 0.907
+  type: 'test'
+  ...
+# Subtest: magnet attracts nearby stars, leaves far stars, and stops after expiry
+ok 98 - magnet attracts nearby stars, leaves far stars, and stops after expiry
+  ---
+  duration_ms: 0.5806
+  type: 'test'
+  ...
+# Subtest: every run starts with shield, alternates items, and places stars in safe gaps
+ok 99 - every run starts with shield, alternates items, and places stars in safe gaps
+  ---
+  duration_ms: 0.6654
+  type: 'test'
+  ...
+# Subtest: pause freezes actual engine timers and restarting creates clean rewards
+ok 100 - pause freezes actual engine timers and restarting creates clean rewards
+  ---
+  duration_ms: 1.9531
+  type: 'test'
+  ...
+# Subtest: double points apply to stars and gates and expire; gem awards once
+ok 101 - double points apply to stars and gates and expire; gem awards once
+  ---
+  duration_ms: 0.49
+  type: 'test'
+  ...
+# Subtest: heart absorbs one collision, grants escape protection, never stacks
+ok 102 - heart absorbs one collision, grants escape protection, never stacks
+  ---
+  duration_ms: 0.3815
+  type: 'test'
+  ...
+# Subtest: moving and breathing gates stay bounded and stars follow openings
+ok 103 - moving and breathing gates stay bounded and stars follow openings
+  ---
+  duration_ms: 1.4541
+  type: 'test'
+  ...
+# Subtest: slow candy slows world and gate animation without slowing effect countdown
+ok 104 - slow candy slows world and gate animation without slowing effect countdown
+  ---
+  duration_ms: 1.1741
+  type: 'test'
+  ...
+# Subtest: six stages require twenty-four gates each, pause at checkpoints and finish after the finale
+ok 105 - six stages require twenty-four gates each, pause at checkpoints and finish after the finale
+  ---
+  duration_ms: 1.8959
+  type: 'test'
+  ...
+# Subtest: checkpoint freezes gameplay state and clears the board before the next stage
+ok 106 - checkpoint freezes gameplay state and clears the board before the next stage
+  ---
+  duration_ms: 0.4968
+  type: 'test'
+  ...
+# Subtest: stage pacing ramps gently and stays inside the planned bounds
+ok 107 - stage pacing ramps gently and stays inside the planned bounds
+  ---
+  duration_ms: 0.5942
+  type: 'test'
+  ...
+# Subtest: every themed model leaves its opening safe and collides with its visible body
+ok 108 - every themed model leaves its opening safe and collides with its visible body
+  ---
+  duration_ms: 0.9656
+  type: 'test'
+  ...
+# Subtest: a world keeps spawning after twelve gates and stops at twenty-four
+ok 109 - a world keeps spawning after twelve gates and stops at twenty-four
+  ---
+  duration_ms: 2.0848
+  type: 'test'
+  ...
+# Subtest: color match owns one loop through repeated pauses, resumes and starts; destroy releases it
+ok 110 - color match owns one loop through repeated pauses, resumes and starts; destroy releases it
+  ---
+  duration_ms: 2.469
+  type: 'test'
+  ...
+# Subtest: color match terminal frame never schedules again or reports game over twice
+ok 111 - color match terminal frame never schedules again or reports game over twice
+  ---
+  duration_ms: 0.8188
+  type: 'test'
+  ...
+# Subtest: memory pause freezes the exact remaining pattern delay and a visible card until resumed
+ok 112 - memory pause freezes the exact remaining pattern delay and a visible card until resumed
+  ---
+  duration_ms: 2.9591
+  type: 'test'
+  ...
+# Subtest: memory restart cancels old work and destruction never publishes or leaves callbacks behind
+ok 113 - memory restart cancels old work and destruction never publishes or leaves callbacks behind
+  ---
+  duration_ms: 0.9662
+  type: 'test'
+  ...
+# Subtest: memory wrong input locks the turn immediately; pause freezes game-over delay and restart recovers
+ok 114 - memory wrong input locks the turn immediately; pause freezes game-over delay and restart recovers
+  ---
+  duration_ms: 0.7299
+  type: 'test'
+  ...
+# Subtest: startup, recovery and one hit per attack prevent instant or repeated damage
+ok 115 - startup, recovery and one hit per attack prevent instant or repeated damage
+  ---
+  duration_ms: 3.9428
+  type: 'test'
+  ...
+# Subtest: standing guard blocks high attacks but low attacks require crouching guard
+ok 116 - standing guard blocks high attacks but low attacks require crouching guard
+  ---
+  duration_ms: 1.6067
+  type: 'test'
+  ...
+# Subtest: same-time attacks trade equally for both player indices, including a double knockout
+ok 117 - same-time attacks trade equally for both player indices, including a double knockout
+  ---
+  duration_ms: 2.0028
+  type: 'test'
+  ...
+# Subtest: an earlier attack cancels a slower one regardless of player index within the same frame
+ok 118 - an earlier attack cancels a slower one regardless of player index within the same frame
+  ---
+  duration_ms: 0.3595
+  type: 'test'
+  ...
+# Subtest: sidestep and crouch dodge attacks while golf has a longer reach
+ok 119 - sidestep and crouch dodge attacks while golf has a longer reach
+  ---
+  duration_ms: 0.7294
+  type: 'test'
+  ...
+# Subtest: launcher permits follow-up air hits and combo scaling
+ok 120 - launcher permits follow-up air hits and combo scaling
+  ---
+  duration_ms: 0.5146
+  type: 'test'
+  ...
+# Subtest: ultimate requires full gauge, spends it, and deals one strong hit
+ok 121 - ultimate requires full gauge, spends it, and deals one strong hit
+  ---
+  duration_ms: 0.5772
+  type: 'test'
+  ...
+# Subtest: two round wins finish the match and freeze attacks and time
+ok 122 - two round wins finish the match and freeze attacks and time
+  ---
+  duration_ms: 0.8227
+  type: 'test'
+  ...
+# Subtest: timeout ties replay the round without granting a win, and movement stays in bounds
+ok 123 - timeout ties replay the round without granting a win, and movement stays in bounds
+  ---
+  duration_ms: 3.5195
+  type: 'test'
+  ...
+# Subtest: CPU closes distance and attacks using the same combat rules
+ok 124 - CPU closes distance and attacks using the same combat rules
+  ---
+  duration_ms: 4.579
+  type: 'test'
+  ...
+# Subtest: solo arrows and Q/E move player one and work while attack keys are held
+ok 125 - solo arrows and Q/E move player one and work while attack keys are held
+  ---
+  duration_ms: 1.0489
+  type: 'test'
+  ...
+# Subtest: local arrows affect player two only, and alternate solo mappings cannot double movement speed
+ok 126 - local arrows affect player two only, and alternate solo mappings cannot double movement speed
+  ---
+  duration_ms: 0.3013
+  type: 'test'
+  ...
+# Subtest: portrait and landscape photos preserve their full aspect ratio
+ok 127 - portrait and landscape photos preserve their full aspect ratio
+  ---
+  duration_ms: 0.3027
+  type: 'test'
+  ...
+# Subtest: Shift/Space guard and S crouch work together without moving in depth
+ok 128 - Shift/Space guard and S crouch work together without moving in depth
+  ---
+  duration_ms: 0.5673
+  type: 'test'
+  ...
+# Subtest: double taps dash farther than walking; recovery buffers only late attacks
+ok 129 - double taps dash farther than walking; recovery buffers only late attacks
+  ---
+  duration_ms: 1.1236
+  type: 'test'
+  ...
+# Subtest: W jumps once per press and jumping avoids a grounded low attack
+ok 130 - W jumps once per press and jumping avoids a grounded low attack
+  ---
+  duration_ms: 0.5681
+  type: 'test'
+  ...
+# Subtest: weapon is attached to the hand and its contact pose matches combat range
+ok 131 - weapon is attached to the hand and its contact pose matches combat range
+  ---
+  duration_ms: 1.9421
+  type: 'test'
+  ...
+# Subtest: hitstop freezes both the attacker pose and the simulation clock
+ok 132 - hitstop freezes both the attacker pose and the simulation clock
+  ---
+  duration_ms: 0.4638
+  type: 'test'
+  ...
+# Subtest: footwork is driven by movement distance, and retreat provides standing guard
+ok 133 - footwork is driven by movement distance, and retreat provides standing guard
+  ---
+  duration_ms: 0.2653
+  type: 'test'
+  ...
+# Subtest: tapped sidestep bursts sideways faster than walking and dodges a straight attack
+ok 134 - tapped sidestep bursts sideways faster than walking and dodges a straight attack
+  ---
+  duration_ms: 0.8661
+  type: 'test'
+  ...
+# Subtest: knockback slides the target over several frames instead of teleporting
+ok 135 - knockback slides the target over several frames instead of teleporting
+  ---
+  duration_ms: 0.2678
+  type: 'test'
+  ...
+# Subtest: leaderboard discards malformed entries and sorts only valid local records
+ok 136 - leaderboard discards malformed entries and sorts only valid local records
+  ---
+  duration_ms: 2.3248
+  type: 'test'
+  ...
+# Subtest: scores outside top ten return null and equal scores identify the new record
+ok 137 - scores outside top ten return null and equal scores identify the new record
+  ---
+  duration_ms: 0.6672
+  type: 'test'
+  ...
+# Subtest: invalid submissions leave records intact and consecutive insertions use the latest list
+ok 138 - invalid submissions leave records intact and consecutive insertions use the latest list
+  ---
+  duration_ms: 0.3144
+  type: 'test'
+  ...
+# Subtest: ready countdown does not spend play time and prevents early hits
+ok 139 - ready countdown does not spend play time and prevents early hits
+  ---
+  duration_ms: 2.3982
+  type: 'test'
+  ...
+# Subtest: pause and repeated resume own exactly one animation loop
+ok 140 - pause and repeated resume own exactly one animation loop
+  ---
+  duration_ms: 0.7363
+  type: 'test'
+  ...
+# Subtest: one hit awards ten once, misses reset the streak, and paused input is ignored
+ok 141 - one hit awards ten once, misses reset the streak, and paused input is ignored
+  ---
+  duration_ms: 0.5853
+  type: 'test'
+  ...
+# Subtest: each difficulty respects its simultaneous target cap and sampled visible duration
+ok 142 - each difficulty respects its simultaneous target cap and sampled visible duration
+  ---
+  duration_ms: 4.5133
+  type: 'test'
+  ...
+# Subtest: end callback and storage submission trigger once, result cannot become paused
+ok 143 - end callback and storage submission trigger once, result cannot become paused
+  ---
+  duration_ms: 0.331
+  type: 'test'
+  ...
+# Subtest: restart clears statistics, hit effects and pause state
+ok 144 - restart clears statistics, hit effects and pause state
+  ---
+  duration_ms: 0.2646
+  type: 'test'
+  ...
+# Subtest: time choices partition available games without recommending coming-soon entries
+ok 145 - time choices partition available games without recommending coming-soon entries
+  ---
+  duration_ms: 1.8311
+  type: 'test'
+  ...
+# Subtest: next-game recommendations match shared genres, offer a different genre and never change shelf order
+ok 146 - next-game recommendations match shared genres, offer a different genre and never change shelf order
+  ---
+  duration_ms: 0.3742
+  type: 'test'
+  ...
+# Subtest: score feedback distinguishes first, improved, tied and missed records using the pre-round best
+ok 147 - score feedback distinguishes first, improved, tied and missed records using the pre-round best
+  ---
+  duration_ms: 14.9664
+  type: 'test'
+  ...
+# Subtest: resume detection rejects empty, corrupt and blocked storage
+ok 148 - resume detection rejects empty, corrupt and blocked storage
+  ---
+  duration_ms: 18.6727
+  type: 'test'
+  ...
+# Subtest: resume labels reflect validated puzzle progress and the saved battle chapter
+ok 149 - resume labels reflect validated puzzle progress and the saved battle chapter
+  ---
+  duration_ms: 11.0351
+  type: 'test'
+  ...
+# Subtest: all character bases differ and only matching weapons get mastery
+ok 150 - all character bases differ and only matching weapons get mastery
+  ---
+  duration_ms: 4.9632
+  type: 'test'
+  ...
+# Subtest: all three earned promotions retain normal upgrades, surplus XP and freeze combat
+ok 151 - all three earned promotions retain normal upgrades, surplus XP and freeze combat
+  ---
+  duration_ms: 5.5119
+  type: 'test'
+  ...
+# Subtest: early, foreign, repeated and out-of-order promotions cannot apply
+ok 152 - early, foreign, repeated and out-of-order promotions cannot apply
+  ---
+  duration_ms: 0.5754
+  type: 'test'
+  ...
+# Subtest: level 60 awards its final upgrade once and then stops accumulating XP
+ok 153 - level 60 awards its final upgrade once and then stops accumulating XP
+  ---
+  duration_ms: 1.3294
+  type: 'test'
+  ...
+# Subtest: later regions reward more experience and new curve reaches third promotion within expedition rewards
+ok 154 - later regions reward more experience and new curve reaches third promotion within expedition rewards
+  ---
+  duration_ms: 0.6988
+  type: 'test'
+  ...
+# Subtest: all career skills produce actual damage, healing, shields, slow or projectile removal
+ok 155 - all career skills produce actual damage, healing, shields, slow or projectile removal
+  ---
+  duration_ms: 1.7699
+  type: 'test'
+  ...
+# Subtest: shadow blades hit at most three nearby foes and grant temporary invulnerability
+ok 156 - shadow blades hit at most three nearby foes and grant temporary invulnerability
+  ---
+  duration_ms: 1.2169
+  type: 'test'
+  ...
+# Subtest: soul harvest heals by nearby hit count with a five-target recovery cap
+ok 157 - soul harvest heals by nearby hit count with a five-target recovery cap
+  ---
+  duration_ms: 0.3197
+  type: 'test'
+  ...
+# Subtest: chain lightning reaches four foes and draws connected segments without hitting a fifth
+ok 158 - chain lightning reaches four foes and draws connected segments without hitting a fifth
+  ---
+  duration_ms: 0.6759
+  type: 'test'
+  ...
+# Subtest: dragon lance pierces a line, misses flanking foes and creates a shield
+ok 159 - dragon lance pierces a line, misses flanking foes and creates a shield
+  ---
+  duration_ms: 0.6193
+  type: 'test'
+  ...
+# Subtest: base attack visuals retain hero identity on blades, beams and projectiles
+ok 160 - base attack visuals retain hero identity on blades, beams and projectiles
+  ---
+  duration_ms: 1.1192
+  type: 'test'
+  ...
+# Subtest: power and survival specializations persist through stages and restart resets careers
+ok 161 - power and survival specializations persist through stages and restart resets careers
+  ---
+  duration_ms: 1.3055
+  type: 'test'
+  ...
+# Subtest: shield absorbs real damage and slow expires without permanently changing base speed
+ok 162 - shield absorbs real damage and slow expires without permanently changing base speed
+  ---
+  duration_ms: 0.5546
+  type: 'test'
+  ...
+# Subtest: additive rune bonuses preserve career multipliers in either selection order
+ok 163 - additive rune bonuses preserve career multipliers in either selection order
+  ---
+  duration_ms: 0.3075
+  type: 'test'
+  ...
+# Subtest: auto fire kills a nearby enemy and its gem awards experience
+ok 164 - auto fire kills a nearby enemy and its gem awards experience
+  ---
+  duration_ms: 7.8291
+  type: 'test'
+  ...
+# Subtest: level up freezes combat and a selected upgrade applies only once
+ok 165 - level up freezes combat and a selected upgrade applies only once
+  ---
+  duration_ms: 0.6459
+  type: 'test'
+  ...
+# Subtest: all upgrades change effective combat stats and preserve surplus XP
+ok 166 - all upgrades change effective combat stats and preserve surplus XP
+  ---
+  duration_ms: 1.6565
+  type: 'test'
+  ...
+# Subtest: elite gates the boss and telegraphs a radial attack
+ok 167 - elite gates the boss and telegraphs a radial attack
+  ---
+  duration_ms: 0.8489
+  type: 'test'
+  ...
+# Subtest: stage clear preserves growth, heals, and final boss ends in victory
+ok 168 - stage clear preserves growth, heals, and final boss ends in victory
+  ---
+  duration_ms: 1.1772
+  type: 'test'
+  ...
+# Subtest: contact damage has invulnerability frames and death stops the world
+ok 169 - contact damage has invulnerability frames and death stops the world
+  ---
+  duration_ms: 0.6959
+  type: 'test'
+  ...
+# Subtest: paused and completed worlds cannot move or spawn
+ok 170 - paused and completed worlds cannot move or spawn
+  ---
+  duration_ms: 0.417
+  type: 'test'
+  ...
+# Subtest: simultaneous elite kill cannot revive a defeated player
+ok 171 - simultaneous elite kill cannot revive a defeated player
+  ---
+  duration_ms: 0.33
+  type: 'test'
+  ...
+# Subtest: sword hits a front arc but cannot hit distant or rear targets
+ok 172 - sword hits a front arc but cannot hit distant or rear targets
+  ---
+  duration_ms: 0.8524
+  type: 'test'
+  ...
+# Subtest: laser pierces aligned enemies and misses enemies outside its beam
+ok 173 - laser pierces aligned enemies and misses enemies outside its beam
+  ---
+  duration_ms: 1.0072
+  type: 'test'
+  ...
+# Subtest: robot shotgun emits seven distinct short range pellets and loadout survives stage changes
+ok 174 - robot shotgun emits seven distinct short range pellets and loadout survives stage changes
+  ---
+  duration_ms: 0.6424
+  type: 'test'
+  ...
+# Subtest: new enemy archetypes have distinct speed, durability and contact damage
+ok 175 - new enemy archetypes have distinct speed, durability and contact damage
+  ---
+  duration_ms: 0.282
+  type: 'test'
+  ...
+# Subtest: spawns stay separated from player even at arena corners
+ok 176 - spawns stay separated from player even at arena corners
+  ---
+  duration_ms: 1.1194
+  type: 'test'
+  ...
+# Subtest: higher difficulties increase actual spawn density, durability, speed, damage and boss fire
+ok 177 - higher difficulties increase actual spawn density, durability, speed, damage and boss fire
+  ---
+  duration_ms: 15.1551
+  type: 'test'
+  ...
+# Subtest: smaller bodies use smaller hitboxes and fast bullets cannot tunnel through enemies
+ok 178 - smaller bodies use smaller hitboxes and fast bullets cannot tunnel through enemies
+  ---
+  duration_ms: 0.4817
+  type: 'test'
+  ...
+# Subtest: damage runes grow additively, cap at eight and stop appearing in choices
+ok 179 - damage runes grow additively, cap at eight and stop appearing in choices
+  ---
+  duration_ms: 0.2755
+  type: 'test'
+  ...
+# Subtest: late region armored enemies survive a fully strengthened basic weapon attack
+ok 180 - late region armored enemies survive a fully strengthened basic weapon attack
+  ---
+  duration_ms: 1.0419
+  type: 'test'
+  ...
+# Subtest: XP carries across multiple levels and every earned upgrade is spent exactly once
+ok 181 - XP carries across multiple levels and every earned upgrade is spent exactly once
+  ---
+  duration_ms: 2.6822
+  type: 'test'
+  ...
+# Subtest: level cap stops XP growth and invalid XP cannot corrupt progression
+ok 182 - level cap stops XP growth and invalid XP cannot corrupt progression
+  ---
+  duration_ms: 0.3789
+  type: 'test'
+  ...
+# Subtest: agility changes actual movement and turn response; efficiency saves length but never drains XP
+ok 183 - agility changes actual movement and turn response; efficiency saves length but never drains XP
+  ---
+  duration_ms: 1.2564
+  type: 'test'
+  ...
+# Subtest: magnet collects a formerly out-of-reach star exactly once across competing snakes
+ok 184 - magnet collects a formerly out-of-reach star exactly once across competing snakes
+  ---
+  duration_ms: 0.7221
+  type: 'test'
+  ...
+# Subtest: unspent upgrades never stop movement, rival updates, or later XP collection
+ok 185 - unspent upgrades never stop movement, rival updates, or later XP collection
+  ---
+  duration_ms: 23.6496
+  type: 'test'
+  ...
+# Subtest: early levels need sustained collection and later levels become progressively slower
+ok 186 - early levels need sustained collection and later levels become progressively slower
+  ---
+  duration_ms: 0.3019
+  type: 'test'
+  ...
+# Subtest: growth stays gradual through early and late scores
+ok 187 - growth stays gradual through early and late scores
+  ---
+  duration_ms: 0.2132
+  type: 'test'
+  ...
+# Subtest: bots avoid a small rival body even when its head is far away
+ok 188 - bots avoid a small rival body even when its head is far away
+  ---
+  duration_ms: 0.7788
+  type: 'test'
+  ...
+# Subtest: bots turn inward before reaching a wall
+ok 189 - bots turn inward before reaching a wall
+  ---
+  duration_ms: 0.7294
+  type: 'test'
+  ...
+# Subtest: world begins populated and returns ten living leaders sorted by score
+ok 190 - world begins populated and returns ten living leaders sorted by score
+  ---
+  duration_ms: 7.4335
+  type: 'test'
+  ...
+# Subtest: lobby renders Korean instructions, playable entry points and accessible sound/map controls without browser APIs
+ok 191 - lobby renders Korean instructions, playable entry points and accessible sound/map controls without browser APIs
+  ---
+  duration_ms: 10.6239
+  type: 'test'
+  ...
+# Subtest: all room models, animated actors and fallback graphics have finite coordinates
+ok 192 - all room models, animated actors and fallback graphics have finite coordinates
+  ---
+  duration_ms: 107.942
+  type: 'test'
+  ...
+# Subtest: help explains the objective, replay and touch input; tutorial follows real player and ghost state
+ok 193 - help explains the objective, replay and touch input; tutorial follows real player and ghost state
+  ---
+  duration_ms: 1.1988
+  type: 'test'
+  ...
+# Subtest: movement obeys walls, closed gates, cooldown and pause without consuming time
+ok 194 - movement obeys walls, closed gates, cooldown and pause without consuming time
+  ---
+  duration_ms: 3.6728
+  type: 'test'
+  ...
+# Subtest: early rewind copies a complete ten-second trace and holds the final plate position
+ok 195 - early rewind copies a complete ten-second trace and holds the final plate position
+  ---
+  duration_ms: 0.8337
+  type: 'test'
+  ...
+# Subtest: automatic rewind happens at exactly ten seconds and four echoes pause safely
+ok 196 - automatic rewind happens at exactly ten seconds and four echoes pause safely
+  ---
+  duration_ms: 3.6148
+  type: 'test'
+  ...
+# Subtest: ghosts play at matching ticks independently of current-player movement; failed records are discarded
+ok 197 - ghosts play at matching ticks independently of current-player movement; failed records are discarded
+  ---
+  duration_ms: 0.7222
+  type: 'test'
+  ...
+# Subtest: laser deaths preserve echoes and crystals, only live actors collect, and exit requires every crystal
+ok 198 - laser deaths preserve echoes and crystals, only live actors collect, and exit requires every crystal
+  ---
+  duration_ms: 1.025
+  type: 'test'
+  ...
+# Subtest: delta clamping, malformed progress and best records remain bounded
+ok 199 - delta clamping, malformed progress and best records remain bounded
+  ---
+  duration_ms: 1.8295
+  type: 'test'
+  ...
+# Subtest: tap navigation reaches plates legally, stops at closed doors and yields to manual input
+ok 200 - tap navigation reaches plates legally, stops at closed doors and yields to manual input
+  ---
+  duration_ms: 1.636
+  type: 'test'
+  ...
+# Subtest: first-room practice waits indefinitely, records movement, and leaves its ghost on the plate
+ok 201 - first-room practice waits indefinitely, records movement, and leaves its ghost on the plate
+  ---
+  duration_ms: 2.4347
+  type: 'test'
+  ...
+# Subtest: tap routes wait at a temporarily closed gate and continue when the replay returns to its plate
+ok 202 - tap routes wait at a temporarily closed gate and continue when the replay returns to its plate
+  ---
+  duration_ms: 2.0107
+  type: 'test'
+  ...
+# Subtest: tap navigation can plan through a gate before a recorded ghost reaches its plate
+ok 203 - tap navigation can plan through a gate before a recorded ghost reaches its plate
+  ---
+  duration_ms: 2.1323
+  type: 'test'
+  ...
+# Subtest: all six designed rooms can be solved with legal moves, timed ghosts and no deaths
+ok 204 - all six designed rooms can be solved with legal moves, timed ghosts and no deaths
+  ---
+  duration_ms: 96.3982
+  type: 'test'
+  ...
+# Subtest: ghost-only pulse plates expire, rearm on a fresh arrival and obey exact time windows
+ok 205 - ghost-only pulse plates expire, rearm on a fresh arrival and obey exact time windows
+  ---
+  duration_ms: 0.7901
+  type: 'test'
+  ...
+# Subtest: interference blocks doors, unstable crystals reset, echo budgets and hint stars are enforced
+ok 206 - interference blocks doors, unstable crystals reset, echo budgets and hint stars are enforced
+  ---
+  duration_ms: 0.3959
+  type: 'test'
+  ...
+# Subtest: old completed saves unlock the new chapter and preserve previous best scores
+ok 207 - old completed saves unlock the new chapter and preserve previous best scores
+  ---
+  duration_ms: 0.1596
+  type: 'test'
+  ...
+# Subtest: all three advanced experiments have legal, zero-death solutions within their echo budgets
+ok 208 - all three advanced experiments have legal, zero-death solutions within their echo budgets
+  ---
+  duration_ms: 116.9019
+  type: 'test'
+  ...
+# Subtest: forge empty state guides crafting and inventory shows exact upgrade costs
+ok 209 - forge empty state guides crafting and inventory shows exact upgrade costs
+  ---
+  duration_ms: 43.8592
+  type: 'test'
+  ...
+# Subtest: officer detail renders protection and gear bonuses without changing allocated stats
+ok 210 - officer detail renders protection and gear bonuses without changing allocated stats
+  ---
+  duration_ms: 11.4897
+  type: 'test'
+  ...
+# Subtest: empty roster, formation, campaign and first-stage targets render without missing data or false NPC portraits
+ok 211 - empty roster, formation, campaign and first-stage targets render without missing data or false NPC portraits
+  ---
+  duration_ms: 50.3369
+  type: 'test'
+  ...
+# Subtest: returned dispatches expose claim actions while the assigned officer is unavailable to send again
+ok 212 - returned dispatches expose claim actions while the assigned officer is unavailable to send again
+  ---
+  duration_ms: 11.0409
+  type: 'test'
+  ...
+# Subtest: research progress and completed milestones render distinct usable states after reload
+ok 213 - research progress and completed milestones render distinct usable states after reload
+  ---
+  duration_ms: 6.6914
+  type: 'test'
+  ...
+# Subtest: header resource abbreviations bound large numbers while preserving normal small values
+ok 214 - header resource abbreviations bound large numbers while preserving normal small values
+  ---
+  duration_ms: 3.4705
+  type: 'test'
+  ...
+# Subtest: hero cards always reserve two ability rows at every grade, with locked abilities explained
+ok 215 - hero cards always reserve two ability rows at every grade, with locked abilities explained
+  ---
+  duration_ms: 36.1987
+  type: 'test'
+  ...
+# Subtest: detail layout anchors the portrait at the top and scrolls the description independently
+ok 216 - detail layout anchors the portrait at the top and scrolls the description independently
+  ---
+  duration_ms: 66.0872
+  type: 'test'
+  ...
+# Subtest: formation screen shows six units, eight diagrams, mastery conditions and named hero bonds
+ok 217 - formation screen shows six units, eight diagrams, mastery conditions and named hero bonds
+  ---
+  duration_ms: 15.407
+  type: 'test'
+  ...
+# Subtest: all challenge views render in an empty early save with no invalid opponent data
+ok 218 - all challenge views render in an empty early save with no invalid opponent data
+  ---
+  duration_ms: 13.9067
+  type: 'test'
+  ...
+# Subtest: presets identify missing officers before applying a stale saved formation
+ok 219 - presets identify missing officers before applying a stale saved formation
+  ---
+  duration_ms: 2.5955
+  type: 'test'
+  ...
+# Subtest: equipment crafting, upgrade and salvage pay exact costs without recycling profit
+ok 220 - equipment crafting, upgrade and salvage pay exact costs without recycling profit
+  ---
+  duration_ms: 8.8391
+  type: 'test'
+  ...
+# Subtest: gear slots replace safely, sets affect combat and removing command gear refunds troops
+ok 221 - gear slots replace safely, sets affect combat and removing command gear refunds troops
+  ---
+  duration_ms: 27.4802
+  type: 'test'
+  ...
+# Subtest: locked and favorite officers are protected and dismissed gear returns to inventory
+ok 222 - locked and favorite officers are protected and dismissed gear returns to inventory
+  ---
+  duration_ms: 2.7645
+  type: 'test'
+  ...
+# Subtest: legacy saves receive independent forge and officer protection defaults
+ok 223 - legacy saves receive independent forge and officer protection defaults
+  ---
+  duration_ms: 3.7374
+  type: 'test'
+  ...
+# Subtest: promotion protects favorite material and preserves its equipment on consumption
+ok 224 - promotion protects favorite material and preserves its equipment on consumption
+  ---
+  duration_ms: 2.5177
+  type: 'test'
+  ...
+# Subtest: tower iron is awarded once while daily victory and sweep remain renewable
+ok 225 - tower iron is awarded once while daily victory and sweep remain renewable
+  ---
+  duration_ms: 30.7445
+  type: 'test'
+  ...
+# Subtest: card layout retains body class rules inside the shadow root
+ok 226 - card layout retains body class rules inside the shadow root
+  ---
+  duration_ms: 69.3493
+  type: 'test'
+  ...
+# Subtest: all 88 heroes have distinct keys, valid portraits and serializable cards at every grade
+ok 227 - all 88 heroes have distinct keys, valid portraits and serializable cards at every grade
+  ---
+  duration_ms: 125.5216
+  type: 'test'
+  ...
+# Subtest: replacement and new officers use complete raster atlases with unique in-bounds crops
+ok 228 - replacement and new officers use complete raster atlases with unique in-bounds crops
+  ---
+  duration_ms: 7.8641
+  type: 'test'
+  ...
+# Subtest: each new officer can be recruited and restored in an existing formation
+ok 229 - each new officer can be recruited and restored in an existing formation
+  ---
+  duration_ms: 21.0276
+  type: 'test'
+  ...
+# Subtest: pre-expansion v2 saves retain owned officers and formation
+ok 230 - pre-expansion v2 saves retain owned officers and formation
+  ---
+  duration_ms: 0.8432
+  type: 'test'
+  ...
+# Subtest: special abilities are limited by grade: none at 1-2 stars, + at 3, ++ at 4, +++ at 5
+ok 231 - special abilities are limited by grade: none at 1-2 stars, + at 3, ++ at 4, +++ at 5
+  ---
+  duration_ms: 3.3094
+  type: 'test'
+  ...
+# Subtest: stat points: level-ups grant points, allocation is capped and reset refunds
+ok 232 - stat points: level-ups grant points, allocation is capped and reset refunds
+  ---
+  duration_ms: 3.1675
+  type: 'test'
+  ...
+# Subtest: saves without statPoints/spent load with defaults
+ok 233 - saves without statPoints/spent load with defaults
+  ---
+  duration_ms: 1.2485
+  type: 'test'
+  ...
+# Subtest: attack skill raises damage in battle
+ok 234 - attack skill raises damage in battle
+  ---
+  duration_ms: 1.1168
+  type: 'test'
+  ...
+# Subtest: new skills: ambush, counter and fire change battle results
+ok 235 - new skills: ambush, counter and fire change battle results
+  ---
+  duration_ms: 0.8182
+  type: 'test'
+  ...
+# Subtest: buildings go to level 30 with tiered costs and one-time milestone tickets
+ok 236 - buildings go to level 30 with tiered costs and one-time milestone tickets
+  ---
+  duration_ms: 1.9808
+  type: 'test'
+  ...
+# Subtest: clearing all targets opens the next stage with skilled, stronger enemies
+ok 237 - clearing all targets opens the next stage with skilled, stronger enemies
+  ---
+  duration_ms: 6.6399
+  type: 'test'
+  ...
+# Subtest: promote consumes a same-grade duplicate and keeps allocated stats; dismiss refunds gold
+ok 238 - promote consumes a same-grade duplicate and keeps allocated stats; dismiss refunds gold
+  ---
+  duration_ms: 1.5448
+  type: 'test'
+  ...
+# Subtest: single-troop saves migrate to three troops with ticket clock and daily quests
+ok 239 - single-troop saves migrate to three troops with ticket clock and daily quests
+  ---
+  duration_ms: 1.0584
+  type: 'test'
+  ...
+# Subtest: second and third troops unlock with the administration level; heroes serve in one troop only
+ok 240 - second and third troops unlock with the administration level; heroes serve in one troop only
+  ---
+  duration_ms: 2.6404
+  type: 'test'
+  ...
+# Subtest: tickets recharge every 30 minutes up to 10
+ok 241 - tickets recharge every 30 minutes up to 10
+  ---
+  duration_ms: 0.4582
+  type: 'test'
+  ...
+# Subtest: daily quests track progress, pay once and reset on a new day
+ok 242 - daily quests track progress, pay once and reset on a new day
+  ---
+  duration_ms: 0.6353
+  type: 'test'
+  ...
+# Subtest: enemy deputies appear from stage 3 and fight alongside the commander
+ok 243 - enemy deputies appear from stage 3 and fight alongside the commander
+  ---
+  duration_ms: 0.6495
+  type: 'test'
+  ...
+# Subtest: faction synergy: 2 same-faction officers give +, 3 give ++, and it strengthens the troop
+ok 244 - faction synergy: 2 same-faction officers give +, 3 give ++, and it strengthens the troop
+  ---
+  duration_ms: 0.3691
+  type: 'test'
+  ...
+# Subtest: recruitment pity guarantees a 5-star by the 80th draw and 3-star+ in every 5-pull
+ok 245 - recruitment pity guarantees a 5-star by the 80th draw and 3-star+ in every 5-pull
+  ---
+  duration_ms: 27.6915
+  type: 'test'
+  ...
+# Subtest: unit matchups: spear > cavalry > archer > spear, applied in battle
+ok 246 - unit matchups: spear > cavalry > archer > spear, applied in battle
+  ---
+  duration_ms: 0.5596
+  type: 'test'
+  ...
+# Subtest: formation and aptitude effects are added to the commander
+ok 247 - formation and aptitude effects are added to the commander
+  ---
+  duration_ms: 1.0407
+  type: 'test'
+  ...
+# Subtest: battleAll sends every ready troop in order until the target falls
+ok 248 - battleAll sends every ready troop in order until the target falls
+  ---
+  duration_ms: 1.0782
+  type: 'test'
+  ...
+# Subtest: sweep is limited per day and requires stage 2
+ok 249 - sweep is limited per day and requires stage 2
+  ---
+  duration_ms: 1.5166
+  type: 'test'
+  ...
+# Subtest: dismissMany refunds each grade and refuses assigned officers
+ok 250 - dismissMany refunds each grade and refuses assigned officers
+  ---
+  duration_ms: 0.8454
+  type: 'test'
+  ...
+# Subtest: collection rewards count officers ever met, including dismissed ones
+ok 251 - collection rewards count officers ever met, including dismissed ones
+  ---
+  duration_ms: 3.1855
+  type: 'test'
+  ...
+# Subtest: offline production is capped at 12 hours and summarised
+ok 252 - offline production is capped at 12 hours and summarised
+  ---
+  duration_ms: 0.4846
+  type: 'test'
+  ...
+# Subtest: replay snapshots preserve actual casualties without mutating combatants or consuming extra RNG
+ok 253 - replay snapshots preserve actual casualties without mutating combatants or consuming extra RNG
+  ---
+  duration_ms: 0.5023
+  type: 'test'
+  ...
+# Subtest: new battle replays survive save restoration and legacy reports remain readable
+ok 254 - new battle replays survive save restoration and legacy reports remain readable
+  ---
+  duration_ms: 1.4467
+  type: 'test'
+  ...
+# Subtest: pre-campaign saves migrate without losing owned heroes or formation
+ok 255 - pre-campaign saves migrate without losing owned heroes or formation
+  ---
+  duration_ms: 0.9228
+  type: 'test'
+  ...
+# Subtest: research pays once, waits across reloads, and changes production only when completed
+ok 256 - research pays once, waits across reloads, and changes production only when completed
+  ---
+  duration_ms: 2.6006
+  type: 'test'
+  ...
+# Subtest: logistics and training research apply to capacity and combat and round-trip safely
+ok 257 - logistics and training research apply to capacity and combat and round-trip safely
+  ---
+  duration_ms: 0.8905
+  type: 'test'
+  ...
+# Subtest: idle officers dispatch with persistent fixed rewards and cannot be consumed while away
+ok 258 - idle officers dispatch with persistent fixed rewards and cannot be consumed while away
+  ---
+  duration_ms: 11.3229
+  type: 'test'
+  ...
+# Subtest: dispatch respects two slots and prevents assigned heroes, invalid routes and promotion materials
+ok 259 - dispatch respects two slots and prevents assigned heroes, invalid routes and promotion materials
+  ---
+  duration_ms: 2.1385
+  type: 'test'
+  ...
+# Subtest: milestones recognise existing progress, pay once, and cannot be claimed early
+ok 260 - milestones recognise existing progress, pay once, and cannot be claimed early
+  ---
+  duration_ms: 1.6977
+  type: 'test'
+  ...
+# Subtest: maxed buildings still allow completion of daily territory activity via dispatch
+ok 261 - maxed buildings still allow completion of daily territory activity via dispatch
+  ---
+  duration_ms: 0.6646
+  type: 'test'
+  ...
+# Subtest: all research levels complete across many days without corrupting the save
+ok 262 - all research levels complete across many days without corrupting the save
+  ---
+  duration_ms: 30.2404
+  type: 'test'
+  ...
+# Subtest: all six units have two advantages, two weaknesses and symmetric matchup rules
+ok 263 - all six units have two advantages, two weaknesses and symmetric matchup rules
+  ---
+  duration_ms: 0.8206
+  type: 'test'
+  ...
+# Subtest: new unit traits and all eight formations participate in real troop calculation and save restoration
+ok 264 - new unit traits and all eight formations participate in real troop calculation and save restoration
+  ---
+  duration_ms: 14.3562
+  type: 'test'
+  ...
+# Subtest: formation mastery requires the actual party composition and commander intelligence
+ok 265 - formation mastery requires the actual party composition and commander intelligence
+  ---
+  duration_ms: 0.2096
+  type: 'test'
+  ...
+# Subtest: named hero bonds require distinct officers and their bonuses reach the battle engine
+ok 266 - named hero bonds require distinct officers and their bonuses reach the battle engine
+  ---
+  duration_ms: 0.3895
+  type: 'test'
+  ...
+# Subtest: practice battles use current troops without mutating resources, target HP, XP, rewards or records
+ok 267 - practice battles use current troops without mutating resources, target HP, XP, rewards or records
+  ---
+  duration_ms: 0.5373
+  type: 'test'
+  ...
+# Subtest: new officers have unique atlas crops and all five recruitable grades preserve old officers
+ok 268 - new officers have unique atlas crops and all five recruitable grades preserve old officers
+  ---
+  duration_ms: 25.4404
+  type: 'test'
+  ...
+# Subtest: tower gives first-clear rewards once without spending real troops, food or reserves
+ok 269 - tower gives first-clear rewards once without spending real troops, food or reserves
+  ---
+  duration_ms: 2.1517
+  type: 'test'
+  ...
+# Subtest: tower prevents skipped, fractional, negative and out-of-range floors atomically
+ok 270 - tower prevents skipped, fractional, negative and out-of-range floors atomically
+  ---
+  duration_ms: 1.3712
+  type: 'test'
+  ...
+# Subtest: challenge results are deterministic for identical builds and survive resource normalisation
+ok 271 - challenge results are deterministic for identical builds and survive resource normalisation
+  ---
+  duration_ms: 1.2067
+  type: 'test'
+  ...
+# Subtest: daily battles consume three attempts on wins or losses and reset without deleting medals
+ok 272 - daily battles consume three attempts on wins or losses and reset without deleting medals
+  ---
+  duration_ms: 2.2135
+  type: 'test'
+  ...
+# Subtest: shop exchanges are atomic, stock-limited, and offer a chosen 3-star officer
+ok 273 - shop exchanges are atomic, stock-limited, and offer a chosen 3-star officer
+  ---
+  duration_ms: 1.9317
+  type: 'test'
+  ...
+# Subtest: presets restore full tactics, return excess troops and refuse unavailable heroes without mutation
+ok 274 - presets restore full tactics, return excess troops and refuse unavailable heroes without mutation
+  ---
+  duration_ms: 2.7594
+  type: 'test'
+  ...
+# Subtest: old saves migrate into empty war room and presets without touching campaign progress
+ok 275 - old saves migrate into empty war room and presets without touching campaign progress
+  ---
+  duration_ms: 0.8157
+  type: 'test'
+  ...
+# Subtest: all 30 tower floors remain beatable with a fully developed party and finish cleanly
+ok 276 - all 30 tower floors remain beatable with a fully developed party and finish cleanly
+  ---
+  duration_ms: 21.8084
+  type: 'test'
+  ...
+# Subtest: editor caps typed and pasted stats and rejects invalid saved stats atomically
+ok 277 - editor caps typed and pasted stats and rejects invalid saved stats atomically
+  ---
+  duration_ms: 28.4228
+  type: 'test'
+  ...
+# Subtest: all 120 historical officers have distinct illustrated portraits backed by real assets
+ok 278 - all 120 historical officers have distinct illustrated portraits backed by real assets
+  ---
+  duration_ms: 15.4907
+  type: 'test'
+  ...
+# Subtest: renamed and custom officers keep a stable face across thumbnail and detail sizes
+ok 279 - renamed and custom officers keep a stable face across thumbnail and detail sizes
+  ---
+  duration_ms: 2.0484
+  type: 'test'
+  ...
+# Subtest: officer editor and details render portrait art without 3D preview or appearance controls
+ok 280 - officer editor and details render portrait art without 3D preview or appearance controls
+  ---
+  duration_ms: 38.1473
+  type: 'test'
+  ...
+# Subtest: main menu shows actual faction resources and requires an explicit campaign start
+ok 281 - main menu shows actual faction resources and requires an explicit campaign start
+  ---
+  duration_ms: 27.5894
+  type: 'test'
+  ...
+# Subtest: city navigation never moves an army, queues construction, or resolves an attack
+ok 282 - city navigation never moves an army, queues construction, or resolves an attack
+  ---
+  duration_ms: 4.0309
+  type: 'test'
+  ...
+# Subtest: engine publishes save failure and clears it after retry, preserving the last success time
+ok 283 - engine publishes save failure and clears it after retry, preserving the last success time
+  ---
+  duration_ms: 3.2141
+  type: 'test'
+  ...
+# Subtest: odd-r offset and axial round-trip for every tile on the real map
+ok 284 - odd-r offset and axial round-trip for every tile on the real map
+  ---
+  duration_ms: 4.966
+  type: 'test'
+  ...
+# Subtest: pixel round-trips back to the same hex at every zoom the camera allows
+ok 285 - pixel round-trips back to the same hex at every zoom the camera allows
+  ---
+  duration_ms: 13.0735
+  type: 'test'
+  ...
+# Subtest: distance is symmetric, zero on self, and one for every neighbour
+ok 286 - distance is symmetric, zero on self, and one for every neighbour
+  ---
+  duration_ms: 0.4535
+  type: 'test'
+  ...
+# Subtest: hexesInRange returns the closed-form hex count and nothing outside the radius
+ok 287 - hexesInRange returns the closed-form hex count and nothing outside the radius
+  ---
+  duration_ms: 0.4509
+  type: 'test'
+  ...
+# Subtest: hexRound keeps the cube constraint and lands on a real hex
+ok 288 - hexRound keeps the cube constraint and lands on a real hex
+  ---
+  duration_ms: 0.3163
+  type: 'test'
+  ...
+# Subtest: hexLine connects the endpoints with one step per hex of distance
+ok 289 - hexLine connects the endpoints with one step per hex of distance
+  ---
+  duration_ms: 0.2888
+  type: 'test'
+  ...
+# Subtest: hexCorners traces a closed pointy-top hexagon of the requested size
+ok 290 - hexCorners traces a closed pointy-top hexagon of the requested size
+  ---
+  duration_ms: 0.3244
+  type: 'test'
+  ...
+# Subtest: every city sits on passable land and owns its own hex
+ok 291 - every city sits on passable land and owns its own hex
+  ---
+  duration_ms: 7.1126
+  type: 'test'
+  ...
+# Subtest: the Yellow River still splits the board yet leaves no city stranded
+ok 292 - the Yellow River still splits the board yet leaves no city stranded
+  ---
+  duration_ms: 4.8346
+  type: 'test'
+  ...
+# Subtest: every city gets a domain big enough to actually develop
+ok 293 - every city gets a domain big enough to actually develop
+  ---
+  duration_ms: 1.9749
+  type: 'test'
+  ...
+# Subtest: no two cities are crammed on top of each other
+ok 294 - no two cities are crammed on top of each other
+  ---
+  duration_ms: 0.2737
+  type: 'test'
+  ...
+# Subtest: the city adjacency graph is symmetric and connects every city
+ok 295 - the city adjacency graph is symmetric and connects every city
+  ---
+  duration_ms: 0.7393
+  type: 'test'
+  ...
+# Subtest: the scenario rosters, garrisons and ownership all line up
+ok 296 - the scenario rosters, garrisons and ownership all line up
+  ---
+  duration_ms: 2.2627
+  type: 'test'
+  ...
+# Subtest: any faction can be chosen and the roster derives sane tactics
+ok 297 - any faction can be chosen and the roster derives sane tactics
+  ---
+  duration_ms: 9.2312
+  type: 'test'
+  ...
+# Subtest: the unit counter table is a proper rock-paper-scissors triangle
+ok 298 - the unit counter table is a proper rock-paper-scissors triangle
+  ---
+  duration_ms: 0.3013
+  type: 'test'
+  ...
+# Subtest: the seeded rng replays exactly and stays in range
+ok 299 - the seeded rng replays exactly and stays in range
+  ---
+  duration_ms: 1.138
+  type: 'test'
+  ...
+# Subtest: development is capped by city scale until facilities raise the ceiling
+ok 300 - development is capped by city scale until facilities raise the ceiling
+  ---
+  duration_ms: 1.9551
+  type: 'test'
+  ...
+# Subtest: a deputy helps at 60 percent and two officers beat one
+ok 301 - a deputy helps at 60 percent and two officers beat one
+  ---
+  duration_ms: 1.2114
+  type: 'test'
+  ...
+# Subtest: an order books its officers for the month and cannot double-book them
+ok 302 - an order books its officers for the month and cannot double-book them
+  ---
+  duration_ms: 1.2701
+  type: 'test'
+  ...
+# Subtest: cancelling refunds exactly what was taken and frees the officer
+ok 303 - cancelling refunds exactly what was taken and frees the officer
+  ---
+  duration_ms: 1.2702
+  type: 'test'
+  ...
+# Subtest: conscription is bounded by gold, grain and the barracks cap at the same time
+ok 304 - conscription is bounded by gold, grain and the barracks cap at the same time
+  ---
+  duration_ms: 1.2718
+  type: 'test'
+  ...
+# Subtest: resolving delivers exactly what the preview promised
+ok 305 - resolving delivers exactly what the preview promised
+  ---
+  duration_ms: 2.4986
+  type: 'test'
+  ...
+# Subtest: a facility raises the ceiling only once it is finished
+ok 306 - a facility raises the ceiling only once it is finished
+  ---
+  duration_ms: 17.0255
+  type: 'test'
+  ...
+# Subtest: grain arrives only at the autumn harvest, gold arrives every month
+ok 307 - grain arrives only at the autumn harvest, gold arrives every month
+  ---
+  duration_ms: 2.7264
+  type: 'test'
+  ...
+# Subtest: an empty granary disbands troops instead of going negative
+ok 308 - an empty granary disbands troops instead of going negative
+  ---
+  duration_ms: 1.3382
+  type: 'test'
+  ...
+# Subtest: ending the turn rolls the calendar and always lands back on the player
+ok 309 - ending the turn rolls the calendar and always lands back on the player
+  ---
+  duration_ms: 106.767
+  type: 'test'
+  ...
+# Subtest: the turn runner terminates, and draining it matches stepping it
+ok 310 - the turn runner terminates, and draining it matches stepping it
+  ---
+  duration_ms: 8.6603
+  type: 'test'
+  ...
+# Subtest: a turn cannot be started while one is already running
+ok 311 - a turn cannot be started while one is already running
+  ---
+  duration_ms: 0.6701
+  type: 'test'
+  ...
+# Subtest: the same seed replays identically through ten turns of administration
+ok 312 - the same seed replays identically through ten turns of administration
+  ---
+  duration_ms: 295.0312
+  type: 'test'
+  ...
+# Subtest: ten turns of steady administration break no invariant
+ok 313 - ten turns of steady administration break no invariant
+  ---
+  duration_ms: 142.0866
+  type: 'test'
+  ...
+# Subtest: dispatch takes the bill out of the city and marches at half speed
+ok 314 - dispatch takes the bill out of the city and marches at half speed
+  ---
+  duration_ms: 0.5553
+  type: 'test'
+  ...
+# Subtest: reachability respects terrain cost, water and occupancy
+ok 315 - reachability respects terrain cost, water and occupancy
+  ---
+  duration_ms: 1.429
+  type: 'test'
+  ...
+# Subtest: an enemy hex is impassable and leaving its zone of control costs extra
+ok 316 - an enemy hex is impassable and leaving its zone of control costs extra
+  ---
+  duration_ms: 1.2289
+  type: 'test'
+  ...
+# Subtest: PK thrust moves the defender and updates both occupancy indexes
+ok 317 - PK thrust moves the defender and updates both occupancy indexes
+  ---
+  duration_ms: 1.6386
+  type: 'test'
+  ...
+# Subtest: PK blocked thrust causes collision without overwriting another unit
+ok 318 - PK blocked thrust causes collision without overwriting another unit
+  ---
+  duration_ms: 0.9311
+  type: 'test'
+  ...
+# Subtest: PK invalid and repeated attacks cannot spend resources or damage armies
+ok 319 - PK invalid and repeated attacks cannot spend resources or damage armies
+  ---
+  duration_ms: 4.1374
+  type: 'test'
+  ...
+# Subtest: battle replay snapshots match the real resolution and remain detached from live officers
+ok 320 - battle replay snapshots match the real resolution and remain detached from live officers
+  ---
+  duration_ms: 1.204
+  type: 'test'
+  ...
+# Subtest: replay reports preserve destroyed defenders
+ok 321 - replay reports preserve destroyed defenders
+  ---
+  duration_ms: 1.1923
+  type: 'test'
+  ...
+# Subtest: roster v1 saves migrate to 120 without overwriting edited officers
+ok 322 - roster v1 saves migrate to 120 without overwriting edited officers
+  ---
+  duration_ms: 20.48
+  type: 'test'
+  ...
+# Subtest: the counter triangle actually changes casualties
+ok 323 - the counter triangle actually changes casualties
+  ---
+  duration_ms: 0.8947
+  type: 'test'
+  ...
+# Subtest: casualties scale with troops, morale and energy, and never exceed the target
+ok 324 - casualties scale with troops, morale and energy, and never exceed the target
+  ---
+  duration_ms: 0.4504
+  type: 'test'
+  ...
+# Subtest: a ranged archer takes no counterblow, a melee attacker does
+ok 325 - a ranged archer takes no counterblow, a melee attacker does
+  ---
+  duration_ms: 0.796
+  type: 'test'
+  ...
+# Subtest: an attack spends energy and the month, and a tactic spends more
+ok 326 - an attack spends energy and the month, and a tactic spends more
+  ---
+  duration_ms: 0.6024
+  type: 'test'
+  ...
+# Subtest: morale reaching zero routs the army off the board
+ok 327 - morale reaching zero routs the army off the board
+  ---
+  duration_ms: 4.0851
+  type: 'test'
+  ...
+# Subtest: a siege breaks the wall, bleeds the garrison, and only then opens the gate
+ok 328 - a siege breaks the wall, bleeds the garrison, and only then opens the gate
+  ---
+  duration_ms: 0.9805
+  type: 'test'
+  ...
+# Subtest: cavalry are poor at sieges and spearmen are not
+ok 329 - cavalry are poor at sieges and spearmen are not
+  ---
+  duration_ms: 1.2939
+  type: 'test'
+  ...
+# Subtest: capturing flips the city, sacks it, garrisons it and razes the old works
+ok 330 - capturing flips the city, sacks it, garrisons it and razes the old works
+  ---
+  duration_ms: 1.0588
+  type: 'test'
+  ...
+# Subtest: supply follows friendly ground and an enemy on the road cuts it
+ok 331 - supply follows friendly ground and an enemy on the road cuts it
+  ---
+  duration_ms: 1.1131
+  type: 'test'
+  ...
+# Subtest: supply refills a fed army and never overfills it
+ok 332 - supply refills a fed army and never overfills it
+  ---
+  duration_ms: 0.4429
+  type: 'test'
+  ...
+# Subtest: victory needs every city, defeat needs no city and no army
+ok 333 - victory needs every city, defeat needs no city and no army
+  ---
+  duration_ms: 3.4105
+  type: 'test'
+  ...
+# Subtest: PK editor validates atomically, transfers rosters and preserves assignments
+ok 334 - PK editor validates atomically, transfers rosters and preserves assignments
+  ---
+  duration_ms: 2.8339
+  type: 'test'
+  ...
+# Subtest: PK custom officers are usable in dispatch without appearance editing
+ok 335 - PK custom officers are usable in dispatch without appearance editing
+  ---
+  duration_ms: 3.0817
+  type: 'test'
+  ...
+# Subtest: PK officer editing ignores appearance changes and preserves legacy save metadata
+ok 336 - PK officer editing ignores appearance changes and preserves legacy save metadata
+  ---
+  duration_ms: 1.1944
+  type: 'test'
+  ...
+# Subtest: PK appearance profiles are deterministic and distinguish every historical officer
+ok 337 - PK appearance profiles are deterministic and distinguish every historical officer
+  ---
+  duration_ms: 2.6291
+  type: 'test'
+  ...
+# Subtest: PK calendar advances three periods per month and collects income only at month end
+ok 338 - PK calendar advances three periods per month and collects income only at month end
+  ---
+  duration_ms: 1.2282
+  type: 'test'
+  ...
+# Subtest: PK save migration adds missing officers once and preserves edits and custom units
+ok 339 - PK save migration adds missing officers once and preserves edits and custom units
+  ---
+  duration_ms: 14.448
+  type: 'test'
+  ...
+# Subtest: save validation rejects missing data and broken references without changing the original
+ok 340 - save validation rejects missing data and broken references without changing the original
+  ---
+  duration_ms: 76.9053
+  type: 'test'
+  ...
+# Subtest: save reports failures and retries without overwriting the last successful envelope
+ok 341 - save reports failures and retries without overwriting the last successful envelope
+  ---
+  duration_ms: 6.4569
+  type: 'test'
+  ...
+# Subtest: campaign saves remain loadable after AI dispatch, combat and turn resolution
+ok 342 - campaign saves remain loadable after AI dispatch, combat and turn resolution
+  ---
+  duration_ms: 667.4486
+  type: 'test'
+  ...
+# Subtest: the AI never issues a command the rules would reject
+ok 343 - the AI never issues a command the rules would reject
+  ---
+  duration_ms: 409.9325
+  type: 'test'
+  ...
+# Subtest: the AI keeps a gold reserve and never over-commits its granary
+ok 344 - the AI keeps a gold reserve and never over-commits its granary
+  ---
+  duration_ms: 234.5814
+  type: 'test'
+  ...
+# Subtest: a sixty-turn all-AI campaign runs clean and actually redraws the map
+ok 345 - a sixty-turn all-AI campaign runs clean and actually redraws the map
+  ---
+  duration_ms: 305.6439
+  type: 'test'
+  ...
+# Subtest: the whole campaign is deterministic under a fixed seed
+ok 346 - the whole campaign is deterministic under a fixed seed
+  ---
+  duration_ms: 580.5066
+  type: 'test'
+  ...
+# Subtest: explainMilitary reports the numbers a balance pass needs
+ok 347 - explainMilitary reports the numbers a balance pass needs
+  ---
+  duration_ms: 0.969
+  type: 'test'
+  ...
+1..347
+# tests 347
+# suites 0
+# pass 347
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4026.3238
