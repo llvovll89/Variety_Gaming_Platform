@@ -1,4 +1,10 @@
 /* Black command room: neutral surfaces, silver controls, color reserved for game state. */
+.game-progress-fields { border: 0; padding: 0; margin: 0; min-width: 0; }
+.game-progress-fields:disabled { opacity: .55; }
+.save-status-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 16px; margin-bottom: 20px; border: 1px solid var(--line-strong); background: var(--panel); font-size: 13px; }
+.save-status-panel p { margin: 0; line-height: 1.6; overflow-wrap: anywhere; }
+.save-status-panel button { min-height: 44px; white-space: normal; }
+.onboard-content > .save-status-panel { margin-top: 20px; }
 :host {
   --indigo-deep: #080808;
   --indigo: #101010;
