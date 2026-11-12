@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { actDemo, assignedIds, OFFLINE_CAP_SECONDS, offlineSummary, createCollectedHero, createDemo, demoSchema, production, STORAGE_KEY, syncDemo, type DemoAction, type DemoHero, type DemoState } from "../lib/demoGame";
 import { HERO_CATALOG } from "../lib/heroCatalog";
+import { BACKUP_KEY, browserSave, type LocalSave } from "../lib/localSave";
 import HeroDetails from "./HeroDetails";
 import CommandOverview from "./CommandOverview";
 import HeroRoster from "./HeroRoster";
@@ -24,18 +25,19 @@ function Onboarding({ onStart, error, children }: { onStart: (lord: string, cast
   return <main className="onboarding"><div className="onboard-art" /><div className="onboard-content"><a className="brand-lockup" href="#start"><span className="brand-seal">三</span><span>삼국 영지<small>장수를 모아 영지를 경영하다</small></span></a><div className="onboard-intro"><p className="eyebrow">군주 등록</p><h1>삼국 영지</h1><p>장수를 모집하고, 병력을 길러 영지 밖으로 출정하십시오.<br />군주와 본성의 이름을 정하면 시작합니다.</p></div><form id="start" className="onboard-form" onSubmit={submit}><div><label htmlFor="lord-name">군주 이름</label><input autoComplete="off" id="lord-name" placeholder="군주 이름 입력" value={lord} onChange={e => setLord(e.target.value)} required maxLength={12} /></div><div><label htmlFor="castle-name">영지 이름</label><input autoComplete="off" id="castle-name" placeholder="본성 이름 입력" value={castle} onChange={e => setCastle(e.target.value)} required maxLength={12} /></div><p className="starter-note"><span>장수 0명</span><span>빈 부대</span><span>첫 모집 초빙장 3장</span></p>{error && <p role="alert" className="error-text">{error}</p>}<button className="seal-button" type="submit">영지 개척</button></form>{children}<p className="onboard-save">가입 없이 플레이 · 이 브라우저에 자동 저장</p></div></main>;
 }
 
-function SaveControls({ onBackup, onRestore, onReset }: {
+function SaveControls({ onBackup, onRestore, onReset, blocked = false }: {
   onBackup?: () => void;
   onRestore: (file?: File) => Promise<void>;
   onReset?: () => void;
+  blocked?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return <div className="save-controls">
     <div className="backup-actions">
       {onBackup && <button onClick={onBackup}>백업</button>}
-      <button onClick={() => input.current?.click()}>불러오기</button>
+      <button disabled={blocked} onClick={() => input.current?.click()}>불러오기</button>
     </div>
-    {onReset && <button className="new-game" onClick={onReset}>새로운 이야기</button>}
+    {onReset && <button className="new-game" disabled={blocked} onClick={onReset}>새로운 이야기</button>}
     <input ref={input} type="file" accept="application/json,.json" aria-label="게임 백업 파일" hidden onChange={e => {
       const file = e.target.files?.[0]; e.target.value = ""; void onRestore(file);
     }} />
@@ -50,11 +52,20 @@ function awayMessage(away: ReturnType<typeof offlineSummary>) {
   return `돌아오셨군요! ${hours ? `${hours}시간 ` : ""}${minutes}분 동안 ${gains.length ? gains.join(", ") : "변화 없음"}${capped}`;
 }
 
-export default function GameDemo() {
+export default function GameDemo({ onExit }: { onExit?: () => void }) {
   const [civicMode, setCivicMode] = useState(false);
   const [state, setState] = useState<DemoState | null>(null);
   const current = useRef<DemoState | null>(null);
   const saveBlocked = useRef(false);
+  const session = useRef<LocalSave | null>(null);
+  const conflictRef = useRef(false);
+  const dirty = useRef(false);
+  const mounted = useRef(true);
+  const [conflict, setConflict] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [previousAvailable, setPreviousAvailable] = useState(false);
+  const statusRef = useRef<HTMLElement>(null);
   const [recoverySave, setRecoverySave] = useState<string | null>(null);
   const summonLock = useRef(false);
   const [tab, setTab] = useState<Tab>("영지");
@@ -75,21 +86,75 @@ export default function GameDemo() {
 
   const contentRef = useRef<HTMLDivElement>(null);
   useEffect(() => { contentRef.current?.closest('.tkw-root')?.scrollTo(0, 0); }, [tab]);
+  useEffect(() => {
+    if (conflict || storageWarning) {
+      statusRef.current?.scrollIntoView({ block: "center" });
+      statusRef.current?.focus({ preventScroll: true });
+    }
+  }, [conflict, storageWarning]);
 
-  function persist(next: DemoState, write = true) {
-    current.current = next; setState(next);
-    if (saveBlocked.current || !write) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); }
+  function markConflict() {
+    conflictRef.current = true; setConflict(true);
+  }
+  function canChange() {
+    if (conflictRef.current) return false;
+    try { if (session.current?.check()) { markConflict(); return false; } }
     catch { setStorageWarning(true); }
+    return true;
+  }
+  async function write(next: DemoState) {
+    if (saveBlocked.current || conflictRef.current) return false;
+    if (!session.current) {
+      try { session.current = browserSave(null); }
+      catch { setStorageWarning(true); return false; }
+    }
+    const writer = session.current;
+    setSaving(true);
+    const result = await writer.write(next);
+    if (!mounted.current || writer !== session.current) return false;
+    setSaving(false);
+    if (result.status === "conflict") { markConflict(); return false; }
+    if (result.status === "failed") { setStorageWarning(true); return false; }
+    if (current.current === next) dirty.current = false;
+    setSavedAt(result.at); setStorageWarning(false);
+    try { setPreviousAvailable(!!localStorage.getItem(BACKUP_KEY)); } catch { /* save succeeded */ }
+    return true;
+  }
+  function persist(next: DemoState, shouldWrite = true) {
+    current.current = next; setState(next); dirty.current = true;
+    if (shouldWrite) void write(next);
+  }
+  async function exit() {
+    if (!current.current) { onExit?.(); return; }
+    if (await write(current.current)) { onExit?.(); return; }
+    if (window.confirm("현재 진행을 저장하지 못했습니다. 필요한 기록을 먼저 백업하세요. 저장하지 않고 허브로 돌아갈까요?")) onExit?.();
+  }
+  function loadLatest() {
+    if (!window.confirm("현재 화면의 미저장 진행을 버리고 최신 저장 기록을 불러올까요? 필요하면 먼저 백업하세요.")) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const next = raw ? demoSchema.parse(JSON.parse(raw)) : createDemo(Date.now());
+      session.current = browserSave(raw);
+      conflictRef.current = false; setConflict(false); saveBlocked.current = false; setRecoverySave(null);
+      setStorageWarning(false); setSaving(false); setSavedAt(null);
+      setInspect(null); closeReveal(); setTab("영지"); setBattleMode("토벌");
+      persist(syncDemo(next, Date.now()));
+      setMessage("최신 저장 기록을 불러왔습니다."); setError(false);
+    } catch { setMessage("최신 기록을 읽을 수 없습니다. 현재 진행을 백업한 뒤 다시 시도하세요."); setError(true); }
   }
   useEffect(() => {
+    mounted.current = true;
     let initial = createDemo(Date.now());
     let saved: string | null = null;
     try {
       saved = localStorage.getItem(STORAGE_KEY);
+      session.current = browserSave(saved);
+      setPreviousAvailable(!!localStorage.getItem(BACKUP_KEY));
       if (saved) {
         const parsed = demoSchema.safeParse(JSON.parse(saved));
         if (parsed.success) {
+          const timestamp = JSON.parse(saved).savedAt;
+          if (typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp >= 0 && timestamp <= 8.64e15) setSavedAt(timestamp);
           initial = syncDemo(parsed.data, Date.now());
           const away = offlineSummary(parsed.data, initial);
           if (parsed.data.lordName && away.seconds >= 300) setMessage(awayMessage(away));
@@ -97,18 +162,23 @@ export default function GameDemo() {
         else { saveBlocked.current = true; setRecoverySave(saved); setMessage("기존 저장 기록을 읽지 못했습니다. 원본을 내려받거나 다른 백업을 불러오세요."); }
       }
     } catch { if (saved) { saveBlocked.current = true; setRecoverySave(saved); } else setStorageWarning(true); }
-    persist(initial);
+    // Do not write on mount: StrictMode replays effects, and opening a second tab must not steal ownership.
+    persist(initial, false);
     let ticks = 0;
-    const timer = setInterval(() => { if (current.current) persist(syncDemo(current.current, Date.now()), ++ticks % 15 === 0); }, 1000);
-    const flush = () => { if (current.current) persist(syncDemo(current.current, Date.now())); };
+    const timer = setInterval(() => { if (!conflictRef.current && current.current) persist(syncDemo(current.current, Date.now()), ++ticks % 15 === 0); }, 1000);
+    const flush = () => { if (!conflictRef.current && current.current) persist(syncDemo(current.current, Date.now())); };
     const onVisibility = () => { if (document.visibilityState === "hidden") flush(); };
+    const storageChanged = (event: StorageEvent) => { if (event.key === STORAGE_KEY || event.key === null) canChange(); };
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (dirty.current && current.current?.lordName) { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("storage", storageChanged);
+    window.addEventListener("beforeunload", beforeUnload);
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", onVisibility);
-    return () => { clearInterval(timer); window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVisibility); };
+    return () => { mounted.current = false; clearInterval(timer); window.removeEventListener("storage", storageChanged); window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);
 
   function act(action: DemoAction) {
-    if (!current.current || summonLock.current) return;
+    if (!current.current || summonLock.current || !canChange()) return;
     try {
       const result = actDemo(current.current, action, Date.now(), Math.random, crypto.randomUUID());
       persist(result.state); setMessage(result.message); setError(false);
@@ -121,6 +191,7 @@ export default function GameDemo() {
   }
   function closeReveal() { summonLock.current = false; setReveal(null); }
   function reset() {
+    if (!canChange()) return;
     if (!window.confirm("현재 군주와 모든 진행 기록을 지우고 새로 시작할까요? 필요한 기록은 먼저 백업하세요.")) return;
     persist(createDemo(Date.now())); setBattleMode("토벌"); setTab("모집관"); setMessage(""); setOnboardError(""); setInspect(null); closeReveal();
   }
@@ -131,24 +202,44 @@ export default function GameDemo() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   async function restore(file?: File) {
-    if (!file) return;
+    if (!file || !canChange()) return;
     try {
       setOnboardError("");
       if (file.size > 2_000_000) throw new Error("백업 파일이 너무 큽니다.");
       const parsed = demoSchema.safeParse(JSON.parse(await file.text()));
       if (!parsed.success) throw new Error("이 버전의 게임 백업 파일이 아닙니다.");
       if (!window.confirm("현재 진행 상황을 이 백업 기록으로 바꿀까요?")) return;
+      if (!canChange()) return;
       saveBlocked.current = false; setRecoverySave(null);
-      persist(syncDemo(parsed.data, Date.now())); setBattleMode("토벌"); setTab("영지"); setMessage("백업 기록을 불러왔습니다."); setError(false);
+      const next = syncDemo(parsed.data, Date.now());
+      current.current = next; setState(next); dirty.current = true;
+      const saved = await write(next);
+      setBattleMode("토벌"); setTab("영지"); setMessage(saved ? "백업 기록을 불러와 저장했습니다." : "백업을 화면에 불러왔지만 저장하지 못했습니다. 재시도하거나 파일로 백업하세요."); setError(false);
     } catch (e) { const message = e instanceof Error ? e.message : "백업을 읽을 수 없습니다."; setMessage(message); setOnboardError(message); setError(true); }
   }
 
+  async function restorePrevious() {
+    try {
+      const raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) throw new Error("직전 저장본이 없습니다.");
+      await restore(new File([raw], "previous.json", { type: "application/json" }));
+    } catch { setStorageWarning(true); }
+  }
+  const savePanel = <section ref={statusRef} tabIndex={-1} className="save-status-panel" aria-label="저장 상태">
+    <p role="status">{conflict ? "다른 탭에서 저장 기록이 변경되어 진행을 멈췄습니다." : storageWarning ? "저장 실패 · 현재 진행은 이 화면에만 있습니다." : saving ? "저장 중…" : savedAt ? `저장 완료 · ${new Date(savedAt).toLocaleTimeString("ko-KR")}` : "아직 저장하지 않았습니다."}</p>
+    {conflict ? <><p>현재 진행이 필요하면 먼저 백업하세요. 최신 기록은 덮어쓰지 않습니다.</p><button className="outline-button" onClick={loadLatest}>최신 기록 불러오기</button></> : storageWarning && <button className="outline-button" onClick={() => { if (current.current) void write(current.current); }}>저장 재시도</button>}
+    {(conflict || storageWarning) && <button className="outline-button" onClick={backup}>현재 진행 백업</button>}
+    {previousAvailable && !conflict && <button className="outline-button" onClick={() => void restorePrevious()}>직전 저장본 복구</button>}
+  </section>;
+  const exitButton = onExit && <button className="hub-exit-button" type="button" onClick={() => void exit()} aria-label="게임 허브로 돌아가기">← 게임 허브</button>;
+
   if (!state) return <main className="game-loading"><span className="brand-seal">三</span><h1>천하의 기록을 펼치는 중…</h1></main>;
-  if (!state.lordName) return <Onboarding error={onboardError} onStart={(lordName, castleName) => {
+  if (!state.lordName) return <>{exitButton}<Onboarding error={onboardError} onStart={(lordName, castleName) => {
+    if (!canChange()) return;
     if (recoverySave && !window.confirm("읽을 수 없는 기존 기록이 있습니다. 원본 백업을 보관했나요? 새 영지를 개척하면 현재 저장 기록을 교체합니다.")) return;
     try { const result = actDemo(state, { type: "start", lordName, castleName }, Date.now(), Math.random, "start"); saveBlocked.current = false; setRecoverySave(null); persist(result.state); setMessage(result.message); setOnboardError(""); }
     catch (e) { setOnboardError(e instanceof Error ? e.message : "이름을 확인하세요."); }
-  }}>{recoverySave && <div className="save-recovery" role="alert"><p>기존 저장 기록은 덮어쓰지 않고 보존 중입니다.</p><button className="outline-button" onClick={() => { const url = URL.createObjectURL(new Blob([recoverySave], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "three-kingdoms-recovery.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>기존 기록 원본 내려받기</button></div>}<SaveControls onRestore={restore} /><p role="status">{!onboardError && message}</p>{storageWarning && <p role="alert" className="error-text">자동 저장을 사용할 수 없습니다. 게임 시작 후 백업으로 기록을 보관하세요.</p>}</Onboarding>;
+  }}>{savePanel}{recoverySave && <div className="save-recovery" role="alert"><p>기존 저장 기록은 덮어쓰지 않고 보존 중입니다.</p><button className="outline-button" onClick={() => { const url = URL.createObjectURL(new Blob([recoverySave], { type: "application/json" })); const link = document.createElement("a"); link.href = url; link.download = "three-kingdoms-recovery.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }}>기존 기록 원본 내려받기</button></div>}<SaveControls blocked={conflict} onRestore={restore} /><p role="status">{!onboardError && message}</p>{storageWarning && <p role="alert" className="error-text">자동 저장을 사용할 수 없습니다. 게임 시작 후 백업으로 기록을 보관하세요.</p>}</Onboarding></>;
 
   const rates = production(state);
   const busyIds = busyHeroIds(state);
@@ -157,9 +248,9 @@ export default function GameDemo() {
     + MILESTONES.filter(m => !state.campaign.claimedMilestones.includes(m.id) && milestoneProgress(state, m.metric) >= m.goal).length;
   const preview = (key: typeof HERO_CATALOG[number]["key"]) => setInspect({ hero: createCollectedHero(key, 5, `preview-${key}`), owned: false });
 
-  return <div className="game-shell" ref={contentRef}><aside className="side-rail"><a className="brand-lockup" href="#main"><span className="brand-seal">三</span><span>삼국 영지<small>장수 · 군략 · 영지</small></span></a><div className="lord-profile"><span>{state.lordName.slice(0, 1)}</span><div><strong>{state.lordName}</strong><small>{state.castleName}의 군주</small></div></div><nav aria-label="게임 메뉴">{menus.map(menu => <button key={menu.name} aria-current={tab === menu.name ? "page" : undefined} onClick={() => { setTab(menu.name); setMessage(""); }}><span className="nav-symbol" aria-hidden="true">{menu.symbol}</span><span>{menu.name}{menu.name === "군정" && campaignReady > 0 && <b className="nav-count" aria-label={`수령 가능한 보상 ${campaignReady}건`}>{campaignReady}</b>}<small>{menu.caption}</small></span></button>)}</nav><div className="rail-bottom"><div className="local-indicator"><i />로컬 자동 저장</div><SaveControls onBackup={backup} onRestore={restore} onReset={reset} /></div></aside>
+  return <>{exitButton}<div className="game-shell" ref={contentRef}><aside className="side-rail"><a className="brand-lockup" href="#main"><span className="brand-seal">三</span><span>삼국 영지<small>장수 · 군략 · 영지</small></span></a><div className="lord-profile"><span>{state.lordName.slice(0, 1)}</span><div><strong>{state.lordName}</strong><small>{state.castleName}의 군주</small></div></div><nav aria-label="게임 메뉴">{menus.map(menu => <button key={menu.name} aria-current={tab === menu.name ? "page" : undefined} onClick={() => { setTab(menu.name); setMessage(""); }}><span className="nav-symbol" aria-hidden="true">{menu.symbol}</span><span>{menu.name}{menu.name === "군정" && campaignReady > 0 && <b className="nav-count" aria-label={`수령 가능한 보상 ${campaignReady}건`}>{campaignReady}</b>}<small>{menu.caption}</small></span></button>)}</nav><div className="rail-bottom"><div className="local-indicator"><i />로컬 자동 저장</div><SaveControls blocked={conflict} onBackup={backup} onRestore={restore} onReset={reset} /></div></aside>
     <div className="game-body"><header className="resource-header"><div className="current-location"><span>{state.castleName}</span><small>나의 영지</small></div><div className="resource-items">{(["gold", "food", "reserves"] as const).map((key, i) => <div className="resource" key={key}><span className={`resource-symbol symbol-${key}`} aria-hidden="true">{["金", "糧", "兵"][i]}</span><div><small>{["금", "식량", "예비군"][i]}</small><strong title={number(state.castle[key])} aria-label={number(state.castle[key])}>{resourceNumber(state.castle[key])}</strong></div><span className="resource-rate">+{rates[key].toFixed(1)}/분</span></div>)}</div><div className="ticket-count"><span aria-hidden="true">令</span><small>초빙장</small><strong>{state.recruitmentTickets}</strong></div></header>
-    <main id="main" className="game-main">{message && <div className={`toast ${error ? "toast-error" : ""}`} role={error ? "alert" : "status"}>{message}<button aria-label="알림 닫기" onClick={() => setMessage("")}>×</button></div>}{storageWarning && <p className="error-text" role="alert">저장소를 사용할 수 없습니다. 종료 전에 백업 파일을 내려받으세요.</p>}
+    <main id="main" className="game-main">{savePanel}<fieldset className="game-progress-fields" disabled={conflict}>{message && <div className={`toast ${error ? "toast-error" : ""}`} role={error ? "alert" : "status"}>{message}<button aria-label="알림 닫기" onClick={() => setMessage("")}>×</button></div>}{storageWarning && <p className="error-text" role="alert">저장소를 사용할 수 없습니다. 종료 전에 백업 파일을 내려받으세요.</p>}
 
     {tab === "모집관" && <RecruitTab state={state} act={act} onShowCatalog={() => { setShowCatalog(true); setTab("장수 명부"); }} onPreview={preview} />}
 
@@ -171,8 +262,8 @@ export default function GameDemo() {
 
     {tab === "출정" && <><div className="battle-hub-tabs" role="group" aria-label="전장 선택">{(["토벌", "연무탑", "요일 전장", "교환소"] as const).map(mode => <button key={mode} aria-pressed={battleMode === mode} onClick={() => setBattleMode(mode)}>{mode}</button>)}</div>{battleMode === "토벌" ? <SortieTab state={state} act={act} onNavigate={setTab} selectedBattle={selectedBattle} onSelectBattle={setSelectedBattle} /> : <ChallengesTab state={state} act={act} onNavigate={setTab} mode={battleMode} />}</>}
     {tab === "군정" && <><div className="battle-hub-tabs"><button aria-pressed={!civicMode} onClick={() => setCivicMode(false)}>군정</button><button aria-pressed={civicMode} onClick={() => setCivicMode(true)}>대장간</button></div>{civicMode ? <ForgeTab state={state} act={act} /> : <CampaignTab state={state} act={act} />}</>}
-    </main><footer className="game-footer"><div className="mobile-save-controls"><SaveControls onBackup={backup} onRestore={restore} onReset={reset} /></div><span>삼국 영지 · 로컬 플레이</span><span>기록은 현재 브라우저에 저장됩니다. 백업 파일로 진행 상황을 보관할 수 있습니다.</span></footer></div>
+    </fieldset></main><footer className="game-footer"><div className="mobile-save-controls"><SaveControls blocked={conflict} onBackup={backup} onRestore={restore} onReset={reset} /></div><span>삼국 영지 · 로컬 플레이</span><span>기록은 현재 브라우저에 저장됩니다. 백업 파일로 진행 상황을 보관할 수 있습니다.</span></footer></div>
     {reveal && <SummonReveal heroes={reveal} onClose={closeReveal} onRoster={() => { closeReveal(); setShowCatalog(false); setTab("장수 명부"); }} />}
     {inspect && <HeroDetails key={inspect.hero.id} hero={inspect.owned ? state.heroes.find(h => h.id === inspect.hero.id) ?? inspect.hero : inspect.hero} equipment={state.forge.items} onEquipment={() => { setInspect(null); setCivicMode(true); setTab("군정"); }} owned={inspect.owned} gold={state.castle.gold} heroes={state.heroes} troopIds={[...assignedIds(state), ...busyIds]} onAct={action => { const next = act(action); if (next && (action.type === "dismiss" || !next.heroes.some(h => h.id === inspect.hero.id))) setInspect(null); }} onClose={() => setInspect(null)} onFormation={() => { setInspect(null); setTab("부대 편성"); }} />}
-  </div>;
+  </div></>;
 }

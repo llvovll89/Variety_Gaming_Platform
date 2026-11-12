@@ -1,0 +1,65 @@
+﻿async (page) => {
+  await page.clock.install(); await page.clock.pauseAt(new Date());
+  const key='three-kingdoms-local-v2';
+  const panel=()=>page.getByRole('region',{name:'저장 상태'});
+  const saved=()=>panel().filter({hasText:'저장 완료'}).waitFor();
+  await page.getByRole('button',{name:'삼국 영지 시작하기',exact:true}).click();
+  await page.getByRole('textbox',{name:'군주 이름',exact:true}).fill('검증군주');
+  await page.getByRole('textbox',{name:'영지 이름',exact:true}).fill('검증영지');
+  await page.getByRole('button',{name:'영지 개척',exact:true}).click(); await saved();
+  await page.screenshot({path:'output/playwright/card-save-status/saved-desktop.png'});
+  const before=await page.evaluate(k=>localStorage.getItem(k),key);
+  await page.evaluate(()=>{
+    window.qaSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(k,v){if(k.startsWith('three-kingdoms-local-v2'))throw new DOMException('QA quota','QuotaExceededError'); return window.qaSetItem.call(this,k,v);};
+    window.qaConfirmCount=0; window.confirm=()=>{window.qaConfirmCount++;return false;};
+  });
+  await page.getByRole('button',{name:'정방 강화',exact:true}).click();
+  await page.getByRole('button',{name:'저장 재시도',exact:true}).waitFor();
+  if(await page.evaluate(k=>localStorage.getItem(k),key)!==before)throw Error('Failed save changed primary');
+  await page.setViewportSize({width:390,height:844}); await panel().scrollIntoViewIfNeeded();
+  await page.screenshot({path:'output/playwright/card-save-status/failed-mobile.png'});
+  const download=page.waitForEvent('download'); await page.getByRole('button',{name:'현재 진행 백업',exact:true}).click();
+  await (await download).saveAs('output/playwright/card-save-status/downloaded-backup.json');
+  await page.getByRole('button',{name:'게임 허브로 돌아가기',exact:true}).click();
+  await page.waitForFunction(()=>window.qaConfirmCount>0);
+  await page.getByRole('button',{name:'저장 재시도',exact:true}).waitFor();
+  await page.evaluate(()=>{Storage.prototype.setItem=window.qaSetItem;});
+  await page.getByRole('button',{name:'저장 재시도',exact:true}).click(); await saved();
+  if(await page.getByRole('button',{name:'저장 재시도',exact:true}).count())throw Error('Retry failed');
+  await page.getByRole('button',{name:'게임 허브로 돌아가기',exact:true}).click();
+  await page.getByRole('button',{name:'삼국 영지 시작하기',exact:true}).click();
+  await page.getByRole('img',{name:'정방 2레벨, 최대 30레벨',exact:true}).waitFor();
+  await page.clock.resume();
+  const other=await page.context().newPage(); await other.goto(page.url());
+  await other.getByRole('button',{name:'삼국 영지 시작하기',exact:true}).click();
+  await other.getByRole('button',{name:'농장 강화',exact:true}).click();
+  await other.getByRole('region',{name:'저장 상태'}).filter({hasText:'저장 완료'}).waitFor();
+  await page.getByRole('button',{name:'최신 기록 불러오기',exact:true}).waitFor();
+  if(!await page.getByRole('button',{name:'정방 강화',exact:true}).isDisabled())throw Error('Stale action enabled');
+  const primary=await page.evaluate(k=>localStorage.getItem(k),key);
+  await panel().scrollIntoViewIfNeeded(); await page.screenshot({path:'output/playwright/card-save-status/conflict-mobile.png'});
+  const conflictDownload=page.waitForEvent('download'); await page.getByRole('button',{name:'현재 진행 백업',exact:true}).click();
+  await (await conflictDownload).saveAs('output/playwright/card-save-status/conflict-backup.json');
+  if(await page.evaluate(k=>localStorage.getItem(k),key)!==primary)throw Error('Stale overwrite');
+  await page.evaluate(()=>{window.confirm=()=>true;});
+  await page.getByRole('button',{name:'최신 기록 불러오기',exact:true}).click(); await saved();
+  await other.getByRole('button',{name:'최신 기록 불러오기',exact:true}).waitFor(); await other.close();
+  if(await page.getByRole('button',{name:'최신 기록 불러오기',exact:true}).count())throw Error('Conflict stayed');
+  await page.getByRole('img',{name:'농장 2레벨, 최대 30레벨',exact:true}).waitFor();
+  await page.getByRole('button',{name:'병영 강화',exact:true}).click(); await saved();
+  const previous=await page.evaluate(k=>JSON.parse(localStorage.getItem(k+'-previous')),key);
+  await page.getByRole('button',{name:'직전 저장본 복구',exact:true}).click();
+  await page.locator('.toast').filter({hasText:'백업 기록을 불러와 저장했습니다.'}).waitFor();
+  const restored=await page.evaluate(k=>JSON.parse(localStorage.getItem(k)),key);
+  if(JSON.stringify(previous.buildings)!==JSON.stringify(restored.buildings))throw Error('Wrong checkpoint');
+  await page.getByLabel('게임 백업 파일',{exact:true}).first().setInputFiles('output/playwright/card-save-status/downloaded-backup.json');
+  await page.getByRole('img',{name:'농장 1레벨, 최대 30레벨',exact:true}).waitFor(); await saved();
+  for(const [width,height] of [[320,568],[390,844],[740,390],[1440,900]]){
+    await page.setViewportSize({width,height}); await panel().scrollIntoViewIfNeeded();
+    if(await page.locator('.tkw-root').evaluate(e=>e.scrollWidth>e.clientWidth))throw Error('Overflow '+width);
+    await page.screenshot({path:'output/playwright/card-save-status/final-'+width+'.png'});
+  }
+  await page.evaluate(()=>{window.qaPassed=true;});
+  return 'PASS: save/failure/retry/exit/resume/two-tabs/checkpoint/file import/four viewports';
+}

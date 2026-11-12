@@ -21,10 +21,7 @@ export default function ThreeKingdomsCardApp({ onExit }: GameProps) {
         <>
           <style>{styles}</style>
           <div className="tkw-root">
-            <button className="hub-exit-button" type="button" onClick={onExit} aria-label="게임 허브로 돌아가기">
-              ← 게임 허브
-            </button>
-            <GameDemo />
+            <GameDemo onExit={onExit} />
           </div>
         </>,
         shadowRoot,
