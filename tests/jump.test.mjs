@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
-const compiled = await build({ stdin: { contents: `export * from './src/games/hachuping-jump/game/rewards'; export * from './src/games/hachuping-jump/game/obstacles'; export * from './src/games/hachuping-jump/game/engine'; export * from './src/games/hachuping-jump/game/stages'; export * from './src/games/hachuping-jump/game/collision';`, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node', define: { 'import.meta.env.DEV': 'false' } });
-const { createRewards, advanceRewards, resolveRewards, createObstacle, advanceObstacles, JumpEngine, createJourney, finishStage, advanceJourneyPhase, stageProgress, STAGES, GATES_PER_STAGE, hitsObstacle } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const compiled = await build({ stdin: { contents: `export * from './src/games/hachuping-jump/game/practice'; export * from './src/games/hachuping-jump/game/rewards'; export * from './src/games/hachuping-jump/game/obstacles'; export * from './src/games/hachuping-jump/game/engine'; export * from './src/games/hachuping-jump/game/stages'; export * from './src/games/hachuping-jump/game/collision';`, resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node', define: { 'import.meta.env.DEV': 'false' } });
+const { FlightPractice, PRACTICE_INTERVAL, createRewards, advanceRewards, resolveRewards, createObstacle, advanceObstacles, JumpEngine, createJourney, finishStage, advanceJourneyPhase, stageProgress, STAGES, GATES_PER_STAGE, hitsObstacle } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 const player = (y = 300) => ({ y, vy: 0, rotation: 0, alive: true });
 const obstacle = (x = 85) => ({ id: 1, x, kind: 'candy', age: 0, baseCenterY: 300, baseGapHeight: 210, gapCenterY: 300, gapHeight: 210, passed: false, star: { y: 300, collected: false }, item: null, hue: 30 });
 test('stars score once, passing scores only after fully clearing obstacle', () => {
@@ -129,4 +129,25 @@ test('a world keeps spawning after twelve gates and stops at twenty-four', () =>
   const sequence=e.spawnSequence;
   for(let i=0;i<500;i++)e.stepWorld(.1);
   assert.equal(e.spawnSequence,sequence);
+});
+
+test('practice distinguishes early/late taps and completes only after three good intervals',()=>{
+ const p=new FlightPractice();p.update(30,false);assert.equal(p.started,false);p.update(0,true);
+ p.update(.1,true);assert.equal(p.feedback,'quick');assert.equal(p.streak,0);
+ p.update(1,true);assert.equal(p.feedback,'late');assert.equal(p.streak,0);
+ for(let i=0;i<3;i++)p.update(PRACTICE_INTERVAL,true);
+ assert.equal(p.feedback,'complete');assert.equal(p.streak,3);
+ p.resetFlight();assert.equal(p.feedback,'complete');assert.equal(p.started,false);
+});
+
+test('practice waits for first flap, uses real physics, safely resets and never scores or ends',()=>{
+ globalThis.window={addEventListener(){},removeEventListener(){}};globalThis.Image=class{};
+ let deaths=0;const e=new JumpEngine({getContext:()=>({}),addEventListener(){},removeEventListener(){}},'',99,()=>deaths++,true);e.draw=()=>{};
+ const step=()=>{time+=1000/60;e.tick(time);};let time=0;e.tick(time);
+ for(let i=0;i<600;i++)step();assert.equal(e.player.y,350);
+ e.flap();step();assert.ok(e.player.vy<0);assert.ok(e.player.y<350);
+ for(let i=0;i<600;i++)step();assert.equal(e.player.alive,true);assert.equal(e.player.y,350);
+ assert.equal(e.buildSnapshot().practice.feedback,'ready');assert.equal(e.rewards.score,0);assert.equal(e.journey.spawned,0);assert.equal(deaths,0);
+ e.flap();e.pause();for(let i=0;i<60;i++)step();assert.equal(e.player.y,350);e.resume();step();assert.equal(e.player.y,350);
+ const real=engineForTest();assert.equal(real.buildSnapshot().practice,null);assert.equal(real.rewards.score,0);assert.equal(real.journey.stage,0);
 });

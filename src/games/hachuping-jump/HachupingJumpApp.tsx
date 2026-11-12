@@ -2,6 +2,8 @@ import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
 import { useCallback, useState } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import Victory from "./components/Victory";
+import FlightPractice from './components/FlightPractice';
+import { gameStorageKey, safeGetItem, safeSetItem } from '../../shared/storage';
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
@@ -14,9 +16,10 @@ import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
 import type { JumpEngine } from "./game/engine";
 
-type Screen = "menu" | "playing" | "dead" | "won";
+type Screen = "menu" | "practice" | "playing" | "dead" | "won";
 
 const GAME_ID = "hachuping-jump";
+const PRACTICE_KEY = gameStorageKey(GAME_ID, 'flight-guide-v1');
 const FALLBACK_SNAPSHOT = emptySnapshot();
 
 export default function HachupingJumpApp({ onExit, profile }: GameProps) {
@@ -29,9 +32,18 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
   const handleStart = useCallback(() => {
+    setEngine(null);
     setFinalScore(null);
-    setScreen("playing");
+    setScreen(safeGetItem(PRACTICE_KEY)==='done' ? 'playing' : 'practice');
     setPlayKey((k) => k + 1);
+  }, []);
+
+  const startPractice = useCallback(() => {
+    setEngine(null); setFinalScore(null); setScreen('practice'); setPlayKey(k=>k+1);
+  }, []);
+  const finishPractice = useCallback(() => {
+    safeSetItem(PRACTICE_KEY, 'done');
+    setEngine(null); setFinalScore(null); setScreen('playing'); setPlayKey(k=>k+1);
   }, []);
 
   const handleDeath = useCallback(
@@ -44,6 +56,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
   );
 
   const handleRestart = useCallback(() => {
+    setEngine(null);
     setFinalScore(null);
     setScreen("playing");
     setPlayKey((k) => k + 1);
@@ -58,7 +71,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
     engine?.togglePause();
   }, [engine]);
 
-  const gameActive = screen === "playing" || screen === "dead" || screen === "won";
+  const gameActive = screen === "practice" || screen === "playing" || screen === "dead" || screen === "won";
   const isPaused = snapshot.status === "paused";
 
   return (
@@ -70,16 +83,18 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
           bestScore={highScore}
           onDeath={handleDeath}
           onReady={setEngine}
+          practice={screen==='practice'}
         />
       )}
       {gameActive && engine && (
         <>
-          <HUD snapshot={snapshot} />
+          {screen!=='practice' && <HUD snapshot={snapshot} />}
           {snapshot.status === "playing" && (
             <button className="jump-pause" aria-label="일시정지" onClick={handleTogglePause}><PauseIcon size={22} weight="fill"/></button>
           )}
         </>
       )}
+      {screen==='practice' && snapshot.practice && !isPaused && <FlightPractice practice={snapshot.practice} onFlap={()=>engine?.flap()} onStart={finishPractice} onMenu={handleMainMenu}/>}
       {screen === "menu" && (
         <>
           <button
@@ -89,7 +104,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
           </button>
-          <StartMenu profile={profile} bestScore={highScore} onStart={handleStart} />
+          <StartMenu profile={profile} bestScore={highScore} onStart={handleStart} onPractice={startPractice} />
         </>
       )}
       {isPaused && (
@@ -97,7 +112,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
       )}
       {screen === "won" && <Victory previousBest={previousBest} score={finalScore ?? 0} onRestart={handleRestart} onMenu={handleMainMenu} />}
       {screen === "dead" && finalScore !== null && (
-        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {highScore.toLocaleString()}점</p><ScoreFeedback score={finalScore} previousBest={previousBest}/><button autoFocus className="jump-button jump-button-primary" onClick={handleRestart}>다시 시작</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button></div></div>
+        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {highScore.toLocaleString()}점</p><ScoreFeedback score={finalScore} previousBest={previousBest}/><button autoFocus className="jump-button jump-button-primary" onClick={handleRestart}>다시 시작</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
       )}
     </div>
   );

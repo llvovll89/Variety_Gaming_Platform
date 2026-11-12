@@ -28,6 +28,7 @@ export interface PlayerState {
 }
 
 export interface UISnapshot {
+  practice: ReturnType<import('./practice').FlightPractice['snapshot']> | null;
   status: "playing" | "paused" | "dead" | "won";
   score: number;
   bestScore: number;
