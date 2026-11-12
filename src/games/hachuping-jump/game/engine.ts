@@ -19,6 +19,8 @@ import { FlapInputController } from "./input";
 import { advanceObstacles, createObstacle } from "./obstacles";
 import { computeLetterboxTransform, renderJump, type LetterboxTransform } from "./renderer";
 import { UIStore } from "./uiStore";
+import { FlightPractice } from './practice';
+import { GROUND_Y, PLAYER_RADIUS } from './constants';
 import type { Obstacle, PlayerState, UISnapshot } from "./types";
 import { clamp, lerp } from "../../../utils/math";
 
@@ -52,6 +54,7 @@ export class JumpEngine {
   private uiTimer = 0;
   private wasAlive = true;
   private paused = false;
+  private practice: FlightPractice | null;
   private bestScoreAtStart: number;
   private onDeath: (finalScore: number, cleared?: boolean) => void;
 
@@ -60,6 +63,7 @@ export class JumpEngine {
     characterImageUrl: string,
     bestScore: number,
     onDeath: (finalScore: number, cleared?: boolean) => void,
+    practice = false,
   ) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
@@ -67,6 +71,7 @@ export class JumpEngine {
     this.ctx = ctx;
 
     this.input = new FlapInputController(canvas);
+    this.practice = practice ? new FlightPractice() : null;
     this.bestScoreAtStart = bestScore;
     this.onDeath = onDeath;
 
@@ -107,6 +112,9 @@ export class JumpEngine {
     if (this.rafId !== null) cancelAnimationFrame(this.rafId);
     this.rafId = null;
     this.input.destroy();
+    if (import.meta.env.DEV && (window as unknown as { __jumpEngine?: JumpEngine }).__jumpEngine === this) {
+      delete (window as unknown as { __jumpEngine?: JumpEngine }).__jumpEngine;
+    }
   }
 
   pause(): void {
@@ -129,6 +137,8 @@ export class JumpEngine {
     else this.pause();
   }
 
+  flap(): void { if (!this.paused) this.input.requestFlap(); }
+
   private tick(now: number): void {
     if (this.lastTime === null) this.lastTime = now;
     let dt = (now - this.lastTime) / 1000;
@@ -136,6 +146,26 @@ export class JumpEngine {
     dt = Math.min(dt, MAX_DT);
 
     if (this.paused) return;
+
+    if (this.practice) {
+      const flap = this.input.consumeFlap();
+      this.practice.update(dt, flap);
+      if (this.practice.started) this.stepPhysics(dt, flap);
+      if (this.player.y < PLAYER_RADIUS || this.player.y > GROUND_Y - PLAYER_RADIUS) {
+        this.player.y = LOGICAL_HEIGHT / 2;
+        this.player.vy = 0;
+        this.player.rotation = 0;
+        this.practice.resetFlight();
+      }
+      this.flapFx = Math.max(0, this.flapFx - dt * FLAP_FX_DECAY_PER_SEC);
+      this.draw();
+      this.uiTimer -= dt;
+      if (flap || this.uiTimer <= 0) {
+        this.uiTimer = UI_PUBLISH_INTERVAL;
+        this.uiStore.publish(this.buildSnapshot());
+      }
+      return;
+    }
 
     if (this.player.alive && !this.journey.completed) {
       if (this.journey.phase === 'playing') {
@@ -182,8 +212,7 @@ export class JumpEngine {
     );
   }
 
-  private stepPhysics(dt: number): void {
-    const flapped = this.input.consumeFlap();
+  private stepPhysics(dt: number, flapped = this.input.consumeFlap()): void {
     if (flapped) {
       this.player.vy = FLAP_IMPULSE;
       this.player.rotation = ROTATION_MIN;
@@ -251,6 +280,7 @@ export class JumpEngine {
 
   private buildSnapshot(): UISnapshot {
     return {
+      practice: this.practice?.snapshot() ?? null,
       status: this.journey.completed ? "won" : !this.player.alive ? "dead" : this.paused ? "paused" : "playing",
       score: this.rewards.score,
       stars: this.rewards.stars,

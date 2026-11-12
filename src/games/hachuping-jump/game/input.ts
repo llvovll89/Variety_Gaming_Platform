@@ -31,6 +31,8 @@ export class FlapInputController {
     return true;
   }
 
+  requestFlap(): void { this.pending = true; }
+
   /** Drops any pending flap without applying it — used when pausing so a queued tap doesn't fire on resume. */
   reset(): void {
     this.pending = false;

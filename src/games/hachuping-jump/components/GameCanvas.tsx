@@ -5,13 +5,14 @@ import type { JumpEngine } from "../game/engine";
 interface GameCanvasProps {
   characterImageUrl: string;
   bestScore: number;
+  practice?: boolean;
   onDeath: (finalScore: number, cleared?: boolean) => void;
   onReady: (engine: JumpEngine) => void;
 }
 
-export default function GameCanvas({ characterImageUrl, bestScore, onDeath, onReady }: GameCanvasProps) {
+export default function GameCanvas({ characterImageUrl, bestScore, onDeath, onReady, practice = false }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  useJumpEngine(canvasRef, characterImageUrl, bestScore, onDeath, onReady);
+  useJumpEngine(canvasRef, characterImageUrl, bestScore, onDeath, onReady, practice);
 
   return (
     <div className="absolute inset-0 overflow-hidden">

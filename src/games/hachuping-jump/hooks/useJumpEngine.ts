@@ -7,12 +7,13 @@ export function useJumpEngine(
   bestScore: number,
   onDeath: (finalScore: number, cleared?: boolean) => void,
   onReady: (engine: JumpEngine) => void,
+  practice = false,
 ): void {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const engine = new JumpEngine(canvas, characterImageUrl, bestScore, onDeath);
+    const engine = new JumpEngine(canvas, characterImageUrl, bestScore, onDeath, practice);
     onReady(engine);
 
     const resize = (): void => {

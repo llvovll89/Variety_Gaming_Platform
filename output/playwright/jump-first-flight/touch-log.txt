@@ -1,0 +1,17 @@
+### Result
+"PASS: mobile touchscreen canvas flap, skip, pause, menu"
+### Ran Playwright code
+```js
+await (﻿async(page)=>{
+ const context=await page.context().browser().newContext({hasTouch:true,isMobile:true,viewport:{width:390,height:844}});
+ const mobile=await context.newPage();await mobile.goto('http://127.0.0.1:5183');
+ await mobile.getByRole('button',{name:'점프 시작하기',exact:true}).click();await mobile.clock.install();
+ await mobile.getByRole('button',{name:'시작하기',exact:true}).click();await mobile.getByRole('region',{name:'첫 비행 연습'}).waitFor();
+ await mobile.touchscreen.tap(195,400);await mobile.clock.runFor(50);
+ if(!await mobile.getByRole('region',{name:'첫 비행 연습'}).textContent().then(s=>s.includes('조금 기다려')))throw Error('Touch input');
+ await mobile.getByRole('button',{name:'연습 건너뛰고 시작',exact:true}).tap();
+ await mobile.getByRole('button',{name:'일시정지',exact:true}).tap();await mobile.getByRole('button',{name:'메인 메뉴',exact:true}).tap();
+ await context.close();return 'PASS: mobile touchscreen canvas flap, skip, pause, menu';
+}
+)(page);
+```
