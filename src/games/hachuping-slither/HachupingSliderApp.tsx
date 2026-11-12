@@ -3,6 +3,7 @@ import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useCallback, useState } from "react";
 import './slither.css';
 import UpgradeDialog from './components/UpgradeDialog';
+import DeathReport from './components/DeathReport';
 import BoostButton from "./components/BoostButton";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
@@ -34,6 +35,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
   const handleStart = useCallback(() => {
+    setEngine(null);
     setFinalScore(null);
     setScreen("playing");
     setPlayKey((k) => k + 1);
@@ -46,6 +48,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   }, [submitScore]);
 
   const handleRestart = useCallback(() => {
+    setEngine(null);
     setFinalScore(null);
     setScreen("playing");
     setPlayKey((k) => k + 1);
@@ -112,6 +115,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {screen === "dead" && finalScore !== null && (
         <SessionDialog>
           <span className="slither-kicker">JOURNEY ENDED</span><h2 id="slither-result-title">조금 더 자란 오늘.</h2><p>다음 정원에서는 더 멀리 가볼까요?</p>
+          {snapshot.death && <DeathReport death={snapshot.death}/>}
           <div><span><strong>{finalScore}</strong>최종 길이</span><span><strong>LV {snapshot.level}</strong>도달 레벨</span></div>
           <p>내 최고 길이 {highScore.toLocaleString()}</p><ScoreFeedback score={finalScore} previousBest={previousBest} unit=""/><button autoFocus className="slither-primary" onClick={handleRestart}>다시 출발</button><button onClick={handleMainMenu}>게임 메뉴</button><NextGameActions/>
         </SessionDialog>

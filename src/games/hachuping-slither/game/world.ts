@@ -32,7 +32,7 @@ import { dropCountForScore } from "./growth";
 import { SpatialHashGrid } from "./spatialGrid";
 import { createSnake, stepSnake } from "./snake";
 import { createRandomStar, createStar } from "./star";
-import type { Snake, Star } from "./types";
+import type { Snake, Star, DeathSummary } from "./types";
 import { distance, randInt, randRange } from "../../../utils/math";
 import { awardExperience, createProgression, pendingUpgrades } from "./progression";
 
@@ -56,6 +56,7 @@ export class World {
   private botGrowthTimer = randRange(BOT_GROWTH_INTERVAL_MIN, BOT_GROWTH_INTERVAL_MAX);
 
   lastDeaths: DeathInfo[] = [];
+  playerDeath: DeathSummary | null = null;
   time = 0;
 
   constructor(playerName: string, playerBodyPalette: string[] = []) {
@@ -79,6 +80,8 @@ export class World {
   }
 
   respawnPlayer(name: string): void {
+    this.playerDeath = null;
+    this.lastDeaths = [];
     const spot = this.randomSpawnSpot();
     this.player.alive = true;
     this.player.name = name || this.player.name;
@@ -153,7 +156,7 @@ export class World {
       if (!snake.alive) continue;
       const limit = WORLD_HALF - WALL_KILL_MARGIN;
       if (Math.abs(snake.head.x) > limit || Math.abs(snake.head.y) > limit) {
-        events.push({ victimId: snake.id, killerId: null });
+        events.push({ victimId: snake.id, killerId: null, reason: 'wall' });
       }
     }
     return events;
@@ -211,6 +214,14 @@ export class World {
       const victim = byId.get(death.victimId);
       if (!victim || !victim.alive) continue;
       victim.alive = false;
+      if (victim.isPlayer) {
+        this.playerDeath = {
+          reason: death.reason,
+          opponentName: death.opponentId === undefined ? null : byId.get(death.opponentId)?.name ?? null,
+          mutual: death.mutual ?? false,
+          position: { ...victim.head },
+        };
+      }
       const killer = death.killerId !== null ? byId.get(death.killerId) ?? null : null;
       this.lastDeaths.push({ snake: victim, killerName: killer?.name ?? null });
       this.scatterDeathStars(victim);

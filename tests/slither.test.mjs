@@ -109,3 +109,44 @@ test('world begins populated and returns ten living leaders sorted by score', ()
   assert.equal(leaders.length, 10);
   assert.ok(leaders.every((s, i) => s.alive && (!i || leaders[i - 1].score >= s.score)));
 });
+
+test('wall death preserves exact impact position and clears on respawn', () => {
+  const w = new World('player'); w.snakes = [w.player];
+  w.player.head = {x:4498,y:-123}; w.player.pathHistory = [{...w.player.head}];
+  w.update(0,{angle:0,boosting:false});
+  assert.equal(w.player.alive,false);
+  assert.deepEqual(w.playerDeath,{reason:'wall',opponentName:null,mutual:false,position:{x:4498,y:-123}});
+  w.player.head.x=0; assert.equal(w.playerDeath.position.x,4498);
+  w.update(1,{angle:0,boosting:false}); assert.equal(w.playerDeath.position.x,4498);
+  w.respawnPlayer('again'); assert.equal(w.playerDeath,null); assert.deepEqual(w.lastDeaths,[]);
+});
+
+test('body death captures opponent name before dead rivals are removed', () => {
+  const w = new World('player'), p=w.player;
+  p.head={x:4498,y:0};p.pathHistory=[{...p.head}];
+  const rival=createSnake(false,'rival',4000,1000,80,1000);
+  rival.pathHistory=[{x:4498,y:0},{x:4400,y:0},{x:4300,y:0}];
+  w.snakes=[p,rival];w.update(0,{angle:0,boosting:false});
+  // Existing wall-before-body precedence is retained.
+  assert.equal(w.playerDeath.reason,'wall');
+  const bodyWorld=new World('player'), player=bodyWorld.player;
+  player.head={x:0,y:0};player.pathHistory=[{...player.head}];
+  rival.head={x:4498,y:0};rival.pathHistory=[{x:0,y:0},{x:100,y:0},{x:200,y:0}];rival.alive=true;
+  bodyWorld.snakes=[player,rival];bodyWorld.update(0,{angle:0,boosting:false});
+  assert.equal(bodyWorld.playerDeath.reason,'body');assert.equal(bodyWorld.playerDeath.opponentName,'rival');
+  assert.equal(bodyWorld.snakes.includes(rival),false);assert.equal(bodyWorld.playerDeath.mutual,false);
+});
+
+test('mutual and one-sided head collisions report opponent without inventing a killer', () => {
+  for(const mutual of [true,false]){
+    const w=new World('player'),p=w.player;
+    const rival=createSnake(false,'opponent',10,0,80,8);
+    p.head={x:0,y:0};p.pathHistory=[{...p.head}];p.heading=mutual?0:Math.PI/2;
+    rival.heading=Math.PI;rival.pathHistory=[{...rival.head}];w.snakes=[p,rival];
+    w.update(0,{angle:p.heading,boosting:false});
+    assert.equal(p.alive,false);assert.equal(w.playerDeath.reason,'head-on');
+    assert.equal(w.playerDeath.opponentName,'opponent');assert.equal(w.playerDeath.mutual,mutual);
+    assert.equal(w.lastDeaths.find(d=>d.snake===p).killerName,mutual?null:'opponent');
+    assert.equal(rival.alive,!mutual);
+  }
+});
