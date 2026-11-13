@@ -28,7 +28,7 @@ function ProgressRail({ run }: { run: RunState }) {
   );
 }
 
-export default function PauseMenu({ run, sound, onResume, onToggleSfx, onToggleAmbient, onHelp, onMap, onTitle, onExit }: {
+export default function PauseMenu({ run, sound, onResume, onToggleSfx, onToggleAmbient, onHelp, onMap, onRelics, onTitle, onExit }: {
   run: RunState;
   sound: SoundSettings;
   onResume: () => void;
@@ -36,6 +36,7 @@ export default function PauseMenu({ run, sound, onResume, onToggleSfx, onToggleA
   onToggleAmbient: () => void;
   onHelp: () => void;
   onMap: () => void;
+  onRelics: () => void;
   onTitle: () => void;
   onExit: () => void;
 }) {
@@ -70,6 +71,7 @@ export default function PauseMenu({ run, sound, onResume, onToggleSfx, onToggleA
         <nav className="nt-pause-section" aria-label="더 보기">
           <button type="button" className="nt-pause-link" onClick={onHelp}><Glyph name="book" size={20} /><span>게임 방법</span><Glyph name="arrow" size={16} /></button>
           {run.phase !== 'map' && <button type="button" className="nt-pause-link" onClick={onMap}><Glyph name="route" size={20} /><span>노선도 보기</span><Glyph name="arrow" size={16} /></button>}
+          <button type="button" className="nt-pause-link" onClick={onRelics}><Glyph name="lantern" size={20} /><span>유물 {run.relics.length}개</span><Glyph name="arrow" size={16} /></button>
         </nav>
       </div>
 

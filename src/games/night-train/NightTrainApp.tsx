@@ -380,7 +380,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       )}
       {panel === 'menu' && run && (
         <PauseMenu run={run} sound={soundSettings} onResume={() => setPanel(null)} onToggleSfx={toggleSfx} onToggleAmbient={toggleAmbient}
-          onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onTitle={toTitle} onExit={onExit} />
+          onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onRelics={() => setPanel('relics')} onTitle={toTitle} onExit={onExit} />
       )}
       {confirmNew && (
         <Modal label="새 여행 확인" onClose={() => setConfirmNew(false)}>
