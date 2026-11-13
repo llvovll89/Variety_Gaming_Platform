@@ -92,6 +92,7 @@ const G: Record<string, ReactNode> = {
   hammer: <><path d="M14 4l6 6-3 3-6-6z" {...T} /><path d="M14 4l6 6-3 3-6-6zM12.5 8.5L3 18l3 3 9.5-9.5M14 4l-2-1" /></>,
   scissors: <><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M8 15L18 3M16 15L6 3" /></>,
   exit: <><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9" /></>,
+  check: <><path d="M5 12.5l4.5 4.5L19 7.5" strokeWidth="2.2" /></>,
   sound: <><path d="M4 9h4l5-4v14l-5-4H4z" {...T} /><path d="M4 9h4l5-4v14l-5-4H4zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></>,
   mute: <><path d="M4 9h4l5-4v14l-5-4H4z" {...T} /><path d="M4 9h4l5-4v14l-5-4H4zM17 9.5l5 5M22 9.5l-5 5" /></>,
 };

@@ -9,6 +9,7 @@ import {
   type Command, type MapNode, type Mode, type RunState, type StatusId,
 } from './engine';
 import CombatView from './ui/CombatView';
+import PauseMenu from './ui/PauseMenu';
 import MapView, { MapLegend } from './ui/MapView';
 import { DeckModal, EventScreen, RestScreen, RewardScreen, ShopScreen, TreasureScreen } from './ui/Screens';
 import { Conductor, ENEMY_ART, NightSky, Scenery } from './ui/art';
@@ -378,20 +379,8 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
         </Modal>
       )}
       {panel === 'menu' && run && (
-        <Modal label="메뉴" onClose={() => setPanel(null)}>
-          <p className="nt-modal-kicker">정차 중 · 진행은 자동 저장돼요</p>
-          <h2>열차는 기다려 줄게요</h2>
-          <div className="nt-modal-actions is-column">
-            <button type="button" className="nt-btn nt-btn-ink" onClick={() => setPanel(null)}><Glyph name="play" size={16} />계속하기</button>
-            <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => setPanel('help')}><Glyph name="book" size={18} />게임 방법</button>
-            <div className="nt-toggles" role="group" aria-label="소리">
-              <button type="button" role="switch" aria-checked={soundSettings.sfx} className="nt-toggle" onClick={toggleSfx}><Glyph name={soundSettings.sfx ? 'sound' : 'mute'} size={18} /><span>효과음</span><b>{soundSettings.sfx ? '켬' : '끔'}</b></button>
-              <button type="button" role="switch" aria-checked={soundSettings.ambient} className="nt-toggle" onClick={toggleAmbient}><Glyph name="locomotive" size={18} /><span>기차 주행음</span><b>{soundSettings.ambient ? '켬' : '끔'}</b></button>
-            </div>
-            <button type="button" className="nt-btn nt-btn-paper-line" onClick={toTitle}><Glyph name="locomotive" size={18} />시작 화면으로</button>
-            <button type="button" className="nt-btn nt-btn-paper-line" onClick={onExit}><Glyph name="exit" size={18} />게임 목록으로</button>
-          </div>
-        </Modal>
+        <PauseMenu run={run} sound={soundSettings} onResume={() => setPanel(null)} onToggleSfx={toggleSfx} onToggleAmbient={toggleAmbient}
+          onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onTitle={toTitle} onExit={onExit} />
       )}
       {confirmNew && (
         <Modal label="새 여행 확인" onClose={() => setConfirmNew(false)}>

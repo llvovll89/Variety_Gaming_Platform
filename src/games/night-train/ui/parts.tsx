@@ -5,7 +5,7 @@ import {
 } from '../engine';
 import { CARD_GLYPH, Glyph, RELIC_GLYPH, STATUS_GLYPH } from './glyphs';
 
-export function Modal({ label, onClose, children, wide = false }: { label: string; onClose?: () => void; children: ReactNode; wide?: boolean }) {
+export function Modal({ label, onClose, children, wide = false, hideClose = false, className = '' }: { label: string; onClose?: () => void; children: ReactNode; wide?: boolean; hideClose?: boolean; className?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current;
@@ -13,9 +13,9 @@ export function Modal({ label, onClose, children, wide = false }: { label: strin
     return () => dialog?.close();
   }, []);
   return (
-    <dialog ref={ref} className={`nt-modal${wide ? ' nt-modal-wide' : ''}`} aria-label={label}
+    <dialog ref={ref} className={`nt-modal${wide ? ' nt-modal-wide' : ''}${className ? ` ${className}` : ''}`} aria-label={label}
       onCancel={event => { event.preventDefault(); onClose?.(); }}>
-      {onClose && <button type="button" className="nt-modal-close" aria-label="닫기" onClick={onClose}><Glyph name="close" size={18} /></button>}
+      {onClose && !hideClose && <button type="button" className="nt-modal-close" aria-label="닫기" onClick={onClose}><Glyph name="close" size={18} /></button>}
       {children}
     </dialog>
   );
