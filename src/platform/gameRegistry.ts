@@ -13,10 +13,25 @@ const TenSecondsApp = lazy(() => import('../games/ten-seconds/TenSecondsApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
+const NightTrainApp = lazy(() => import('../games/night-train/NightTrainApp'));
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
+  {
+    id: 'night-train',
+    title: '별빛 야간열차',
+    description: '카드로 덱을 키워 새벽역까지 달리는 로그라이크 덱빌딩 · 매번 달라지는 13개 역',
+    thumbnail: '/art/hub/night-train.jpg',
+    cover: '/art/hub/night-train-large.jpg',
+    previewThumbnail: '/art/hub/night-train-small.jpg',
+    spotlightText: '카드 한 장으로 시작하는 밤 열차 원정. 노선을 고르고, 덱을 키워 새벽을 여세요.',
+    accentColor: '#f2b65a',
+    genres: ['전략'],
+    tags: ['카드', '덱빌딩', '로그라이크', '턴제', '유물'],
+    featuredText: '그림자 승객이 올라탄 마지막 밤 열차. 견습 차장이 되어 카드를 모으고 유물을 챙겨, 매번 다른 노선 끝의 검은 기관차를 물리치세요.',
+    Component: NightTrainApp,
+  },
   {
     id: 'kitchen-fighter',
     title: '밥상 대격돌',

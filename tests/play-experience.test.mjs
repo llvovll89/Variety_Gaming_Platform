@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const compiled = await build({ stdin: { contents: "export * from './src/platform/playExperience'; export * from './src/platform/savedProgress'; export { Battle, serialize } from './src/games/fantasy-tactics/game';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
-const { gamesForTime, recommendNext, scoreMessage, savedProgressLabel, Battle, serialize } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const compiled = await build({ stdin: { contents: "export * from './src/platform/playExperience'; export * from './src/platform/savedProgress'; export { Battle, serialize } from './src/games/fantasy-tactics/game'; export { createRun, act, availableNodes } from './src/games/night-train/engine';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
+const { gamesForTime, recommendNext, scoreMessage, savedProgressLabel, Battle, serialize, createRun, act, availableNodes } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 const game = (id, genres, tags=[], extra={}) => ({id,genres,tags,...extra});
 const games = [game('hachuping-balloon',['키즈','캐주얼']),game('hachuping-whack-a-mole',['액션','캐주얼']),game('hachuping-jump',['액션','캐주얼']),game('fantasy-tactics',['전략']),game('three-kingdoms',['전략']),game('hachuping-color-match',['캐주얼'],[],{releaseStatus:'coming-soon'})];
 
@@ -31,9 +31,9 @@ test('score feedback distinguishes first, improved, tied and missed records usin
 });
 test('resume detection rejects empty, corrupt and blocked storage',async()=>{
   const values=new Map();globalThis.localStorage={getItem:key=>values.get(key)??null};
-  for(const id of ['ghost-movers','ten-seconds','fantasy-tactics','three-kingdoms','three-kingdoms-card','hachuping-jump']) assert.equal(await savedProgressLabel(id),null);
-  for(const key of ['gh-ghost-movers-v1','ten-seconds-progress-v1','gh-arcade:fantasy-tactics:v1','arcade:three-kingdoms:save','three-kingdoms-local-v2'])values.set(key,'broken');
-  for(const id of ['ghost-movers','ten-seconds','fantasy-tactics','three-kingdoms','three-kingdoms-card'])assert.equal(await savedProgressLabel(id),null);
+  for(const id of ['ghost-movers','ten-seconds','fantasy-tactics','three-kingdoms','three-kingdoms-card','night-train','hachuping-jump']) assert.equal(await savedProgressLabel(id),null);
+  for(const key of ['gh-ghost-movers-v1','ten-seconds-progress-v1','gh-arcade:fantasy-tactics:v1','arcade:three-kingdoms:save','three-kingdoms-local-v2','arcade:night-train:run'])values.set(key,'broken');
+  for(const id of ['ghost-movers','ten-seconds','fantasy-tactics','three-kingdoms','three-kingdoms-card','night-train'])assert.equal(await savedProgressLabel(id),null);
   globalThis.localStorage={getItem(){throw Error('blocked');}};
   assert.equal(await savedProgressLabel('ghost-movers'),null);
 });
@@ -46,4 +46,11 @@ test('resume labels reflect validated puzzle progress and the saved battle chapt
   assert.match(await savedProgressLabel('ghost-movers'),/의뢰 2/);
   assert.match(await savedProgressLabel('ten-seconds'),/방 2/);
   assert.match(await savedProgressLabel('fantasy-tactics'),/제1장/);
+});
+test('night train offers to resume a validated run but not a finished one',async()=>{
+  const run=createRun(3),started=act(run,{t:'travel',nodeId:availableNodes(run.map,run.path)[0].id});
+  const values=new Map([['arcade:night-train:run',JSON.stringify(started)]]);globalThis.localStorage={getItem:key=>values.get(key)??null};
+  assert.equal(await savedProgressLabel('night-train'),'1번째 역 · 체력 70/70');
+  values.set('arcade:night-train:run',JSON.stringify({...started,phase:'victory',combat:null}));
+  assert.equal(await savedProgressLabel('night-train'),null);
 });

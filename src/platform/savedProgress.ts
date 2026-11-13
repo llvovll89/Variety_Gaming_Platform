@@ -3,6 +3,13 @@ import { safeGetItem } from '../shared/storage';
 /** Use each game's own validator, and load its rules only when a save exists. */
 export async function savedProgressLabel(id: string): Promise<string | null> {
   try {
+    if (id === 'night-train') {
+      const raw = safeGetItem('arcade:night-train:run');
+      if (!raw) return null;
+      const { loadRun, currentFloor, BOSS_FLOOR } = await import('../games/night-train/engine');
+      const run = loadRun(raw);
+      return run ? Math.min(currentFloor(run), BOSS_FLOOR + 1) + '번째 역 · 체력 ' + run.hp + '/' + run.maxHp : null;
+    }
     if (id === 'ghost-movers') {
       const raw = safeGetItem('gh-ghost-movers-v1');
       if (!raw) return null;
