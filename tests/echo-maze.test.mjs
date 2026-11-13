@@ -62,3 +62,19 @@ test('locked exit requires seals; active traps cost time and sleeping traps are 
  trap.player={x:1,y:1};trap.tick(3);trap.move(dir);assert.equal(trap.trapHits,1);
  trap.player={x:1,y:1};trap.tick(3);trap.remaining=5;trap.move(dir);assert.equal(trap.status,'lost');
 });
+
+test('trap countdown agrees with active/dormant boundaries and freezes with pause/end',()=>{
+ const r=new MazeRun('normal');assert.equal(r.trapsActive,true);assert.equal(r.trapPhaseRemaining,3);
+ r.tick(2.9);assert.ok(Math.abs(r.trapPhaseRemaining-.1)<1e-9);assert.equal(r.trapsActive,true);
+ r.tick(.1);assert.equal(r.trapsActive,false);assert.equal(r.trapPhaseRemaining,3);
+ r.tick(3);assert.equal(r.trapsActive,true);assert.equal(r.trapPhaseRemaining,3);
+ r.paused=true;r.tick(7);assert.equal(r.elapsed,6);assert.equal(r.trapPhaseRemaining,3);
+ r.paused=false;r.remaining=.25;r.tick(.25);const time=r.trapPhaseRemaining;r.tick(10);assert.equal(r.trapPhaseRemaining,time);
+});
+
+test('remaining seals tracks real pickups, locked exit and newly opened exit',()=>{
+ const r=new MazeRun('easy');r.cells=[[1,1,1,1,1],[1,0,0,0,1],[1,1,1,1,1]];r.player={x:1,y:1};r.exit={x:2,y:1};
+ r.seals=new Set(['3,1']);r.requiredSeals=1;r.sealsCollected=0;r.shards.clear();r.traps.clear();
+ assert.equal(r.sealsRemaining,1);r.move(1);assert.equal(r.status,'playing');assert.equal(r.sealsRemaining,1);
+ r.move(1);assert.equal(r.sealsRemaining,0);assert.equal(r.sealsCollected,1);r.move(3);assert.equal(r.status,'won');assert.equal(r.sealsRemaining,0);
+});

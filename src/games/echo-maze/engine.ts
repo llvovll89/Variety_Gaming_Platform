@@ -1,4 +1,5 @@
 export type Difficulty = 'easy' | 'normal' | 'hard';
+export const TRAP_PHASE_SECONDS = 3;
 export const LEVELS = {
   easy: { label: '쉬움', size: 17, seconds: 95, vision: 5, description: '봉인 2개 · 안개 속 첫 탐험' },
   normal: { label: '보통', size: 23, seconds: 120, vision: 4, description: '봉인 3개 · 깨어나는 시간 함정' },
@@ -34,7 +35,9 @@ export class MazeRun {
   paused = false; steps = 0; collected = 0; anchor: Point | null = null; returns = 3; pulses = 3; reveal = 0;
   visited = new Set<string>(['1,1']); shards = new Set<string>(); message = '보라색 봉인을 모두 모아 출구를 여세요.';
   seals = new Set<string>(); traps = new Set<string>(); sealsCollected = 0; requiredSeals = 0; elapsed = 0; trapHits = 0;
-  get trapsActive() { return this.elapsed % 6 < 3; }
+  get trapsActive() { return this.elapsed % (TRAP_PHASE_SECONDS * 2) < TRAP_PHASE_SECONDS; }
+  get trapPhaseRemaining() { return TRAP_PHASE_SECONDS - this.elapsed % TRAP_PHASE_SECONDS; }
+  get sealsRemaining() { return this.seals.size; }
   constructor(public difficulty: Difficulty, random = Math.random) {
     const level = LEVELS[difficulty]; this.cells = generateMaze(level.size, random); this.remaining = level.seconds;
     const sorted = [...distances(this.cells, this.player)].sort((a, b) => b[1] - a[1]);
