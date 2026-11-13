@@ -1,0 +1,34 @@
+async(page)=>{
+ await page.clock.resume();await page.reload();await page.getByRole('button',{name:'메아리 미로 시작하기',exact:true}).click();
+ await page.getByRole('button',{name:'쉬움 95초',exact:false}).click();
+ await page.clock.install();await page.clock.pauseAt(new Date(await page.evaluate(()=>Date.now()+1000)));
+ await page.evaluate(()=>{const original=Math.random;Math.random=()=>.5;try{Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='미로로 들어가기').click();}finally{Math.random=original;}});
+ const region=page.getByRole('region',{name:'탐험 진행 상황'});await region.waitFor();
+ if(!await region.textContent().then(s=>s.includes('봉인 2개 더 필요')))throw Error('Initial seals');
+ await page.clock.runFor(2900);
+ if(await page.locator('.maze-trap-status').getAttribute('data-active')!=='true')throw Error('Active state');
+ await page.clock.runFor(250);
+ if(await page.locator('.maze-trap-status').getAttribute('data-active')!=='false')throw Error('Dormant state');
+ await page.getByRole('button',{name:'일시 정지',exact:true}).click();
+ const time=await page.locator('.maze-trap-status p').textContent();await page.clock.runFor(8000);
+ if(await page.locator('.maze-trap-status p').textContent()!==time||!time.includes('일시 정지'))throw Error('Pause clock');
+ await page.getByRole('button',{name:'계속 탐험',exact:true}).click();
+ const legs=[[2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,3,3,3,3,3,3,3,3,3,3,3,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,3,3,3,3,3,3,3,3,3,3,3,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,3,3,3,3,3,3,3,3,3,3,3,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,3,3,3,3,3,3,3],[3,3,3,3],[3]];
+ for(let i=0;i<legs.length;i++){
+  for(const direction of legs[i])await page.keyboard.press(['ArrowUp','ArrowRight','ArrowDown','ArrowLeft'][direction]);
+  await page.clock.runFor(120);
+  if(i===0&&!await region.textContent().then(s=>s.includes('봉인 1개 더 필요')))throw Error('Pickup count');
+  if(i===1){if(!await region.textContent().then(s=>s.includes('출구가 열렸어요!')))throw Error('Open exit');await page.screenshot({path:'output/playwright/maze-objective-status/exit-open.png'});}
+ }
+ await page.getByRole('heading',{name:'무사히 탈출했어요!',exact:true}).waitFor();
+ await page.getByRole('button',{name:'새 미로 도전',exact:true}).click();await page.clock.runFor(120);
+ if(!await region.textContent().then(s=>s.includes('봉인 2개 더 필요')))throw Error('Reset');
+ for(const[width,height]of[[320,568],[390,844],[740,390],[1440,900]]){
+  await page.setViewportSize({width,height});await region.scrollIntoViewIfNeeded();
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Overflow '+width);
+  await page.screenshot({path:'output/playwright/maze-objective-status/status-'+width+'.png'});
+  await page.getByRole('button',{name:'위로 이동',exact:true}).scrollIntoViewIfNeeded();if(!await page.getByRole('button',{name:'위로 이동',exact:true}).isVisible())throw Error('Dpad unreachable');
+ }
+ await page.getByRole('button',{name:'일시 정지',exact:true}).click();await page.getByRole('button',{name:'캐릭터 · 난이도 설정',exact:true}).click();await page.clock.resume();
+ return 'PASS: actual seal pickups/open exit/victory/reset, trap phase boundary, pause countdown, 4 viewports and reachable movement';
+}
