@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { GameProps } from '../../platform/types';
 import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
 import { CUSTOM_CHARACTER_ID } from '../../shared/profile/useProfile';
 import { safeGetItem, safeSetItem } from '../../shared/storage';
 import {
   BOSS_FLOOR, NODE_NAMES, NODE_NOTES, RECORD_KEY, RELICS, SAVE_KEY, SNACKS, SNACK_SLOTS, STATUS_INFO,
-  act, availableNodes, checkSnack, createRun, currentFloor, loadRecords, loadRun, recordRun, regionOf, runScore,
+  act, availableNodes, checkSnack, createRun, cuesForRunChange, currentFloor, loadRecords, loadRun, recordRun, regionOf, runScore,
   type Command, type MapNode, type Mode, type RunState, type StatusId,
 } from './engine';
 import CombatView from './ui/CombatView';
@@ -14,6 +14,7 @@ import { DeckModal, EventScreen, RestScreen, RewardScreen, ShopScreen, TreasureS
 import { Conductor, ENEMY_ART, NightSky, Scenery } from './ui/art';
 import { Glyph, NODE_GLYPH, SNACK_GLYPH, STATUS_GLYPH } from './ui/glyphs';
 import { CardView, Modal, RelicIcon, Stamp } from './ui/parts';
+import { loadSoundSettings, saveSoundSettings, sound, type SoundSettings } from './ui/sound';
 import './night-train.css';
 
 type Panel = 'help' | 'deck' | 'relics' | 'menu' | 'map' | null;
@@ -47,6 +48,7 @@ function HelpContent() {
       <p>1~9·0 카드 고르기 · Enter 사용 · ←/→ 대상 바꾸기 · E 턴 종료 · D 덱 보기 · Esc 메뉴</p>
       <h3>만든 것들</h3>
       <p>캐릭터·카드·아이콘·배경은 모두 이 게임을 위해 새로 그린 그림이에요. 진행 기록은 이 브라우저에만 저장되고 어디로도 보내지 않아요. 내 사진 캐릭터는 이 탭이 열려 있는 동안만 쓰이고 저장되지 않아요.</p>
+      <p>효과음과 기차 주행음은 녹음 파일 없이 브라우저에서 바로 합성해요. 화면을 처음 누르기 전에는 소리가 나지 않고, 상단의 스피커 단추와 메뉴에서 끌 수 있어요.</p>
       <p>서체: Pretendard Variable © Kil Hyung-jin · SIL Open Font License 1.1 · <a href="/fonts/OFL-pretendard.txt" target="_blank" rel="noopener noreferrer">라이선스 전문</a></p>
     </div>
   );
@@ -102,7 +104,9 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const [aimSnack, setAimSnack] = useState<number | null>(null);
   // A run loaded from a save should not replay a fight that already ended.
   const [outroDone, setOutroDone] = useState<string | null>(() => (run ? outroKey(run) : null));
+  const [soundSettings, setSoundSettings] = useState<SoundSettings>(loadSoundSettings);
   const recorded = useRef<RunState | null>(null);
+  const previousRun = useRef<RunState | null>(run);
   const root = useRef<HTMLElement>(null);
   const photo = profile.characterId === CUSTOM_CHARACTER_ID ? profile.characterImage : null;
 
@@ -131,6 +135,37 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   }, [run, records]);
 
   useEffect(() => { root.current?.scrollTo({ top: 0 }); setPeek(null); setAimSnack(null); }, [run?.phase]);
+
+  // ── Sound: unlock on the first gesture (autoplay policy), follow settings, pause when hidden ──
+  useEffect(() => {
+    sound.configure(soundSettings);
+    saveSoundSettings(soundSettings);
+  }, [soundSettings]);
+  useEffect(() => {
+    const unlock = () => sound.unlock();
+    const visibility = () => (document.hidden ? sound.suspend() : sound.resume());
+    window.addEventListener('pointerdown', unlock);
+    window.addEventListener('keydown', unlock);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      document.removeEventListener('visibilitychange', visibility);
+      sound.setAmbientWanted(false);
+    };
+  }, []);
+  useEffect(() => { sound.setAmbientWanted(!!run && (run.phase === 'map' || run.phase === 'combat')); }, [run?.phase, run]);
+  useEffect(() => {
+    cuesForRunChange(previousRun.current, run).forEach((cue, i) => sound.play(cue, 0.7, i * 0.12));
+    previousRun.current = run;
+  }, [run]);
+  const toggleSfx = () => setSoundSettings(s => ({ ...s, sfx: !s.sfx }));
+  const toggleAmbient = () => setSoundSettings(s => ({ ...s, ambient: !s.ambient }));
+  // A soft tick for ordinary buttons; cards, enemies and turn controls have their own sounds.
+  const tapCapture = (event: ReactMouseEvent) => {
+    const button = (event.target as HTMLElement).closest('button');
+    if (button && !button.disabled && !button.closest('.nt-card, .nt-enemy-button, .nt-end, .nt-node')) sound.play('tap');
+  };
 
   const start = (chosen: Mode) => {
     removeSave();
@@ -177,7 +212,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const shownStop = peek ?? (nextStops.length === 1 ? nextStops[0] : null);
 
   return (
-    <main className="nt-app" ref={root}>
+    <main className="nt-app" ref={root} onClickCapture={tapCapture}>
       <NightSky />
       <div className="nt-shell">
         <header className="nt-header">
@@ -203,10 +238,12 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
               </button>
               <button type="button" className="nt-tool" onClick={() => setPanel('deck')} aria-label={`덱 ${run.deck.length}장 보기`}><Glyph name="deck" size={18} /><span className="nt-tool-count">{run.deck.length}</span></button>
               {run.phase !== 'map' && <button type="button" className="nt-tool" onClick={() => setPanel('map')} aria-label="노선도 보기"><Glyph name="route" size={18} /></button>}
+              <button type="button" className="nt-tool nt-tool-sound" onClick={toggleSfx} aria-pressed={soundSettings.sfx} aria-label={soundSettings.sfx ? '효과음 끄기' : '효과음 켜기'}><Glyph name={soundSettings.sfx ? 'sound' : 'mute'} size={18} /></button>
               <button type="button" className="nt-tool" onClick={() => setPanel('menu')} aria-label="메뉴"><Glyph name="menu" size={18} /></button>
             </div>
           ) : (
             <div className="nt-hud">
+              <button type="button" className="nt-tool" onClick={toggleSfx} aria-pressed={soundSettings.sfx} aria-label={soundSettings.sfx ? '효과음 끄기' : '효과음 켜기'}><Glyph name={soundSettings.sfx ? 'sound' : 'mute'} size={18} /></button>
               <button type="button" className="nt-tool" onClick={() => setPanel('help')} aria-label="게임 방법"><Glyph name="book" size={18} /></button>
               <button type="button" className="nt-tool" onClick={onExit} aria-label="게임 목록으로"><Glyph name="home" size={18} /></button>
             </div>
@@ -238,6 +275,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
               <div className="nt-title-more">
                 {hasSave && <button type="button" className="nt-btn nt-btn-brass" onClick={resume}><Glyph name="retry" size={18} />이어서 타기</button>}
                 <button type="button" className="nt-text-btn" onClick={() => setPanel('help')}>게임 방법</button>
+                <button type="button" role="switch" aria-checked={soundSettings.ambient} className="nt-text-btn" onClick={toggleAmbient}>기차 주행음 {soundSettings.ambient ? '켬' : '끔'}</button>
               </div>
               <table className="nt-log">
                 <caption>운행 기록</caption>
@@ -346,6 +384,10 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
           <div className="nt-modal-actions is-column">
             <button type="button" className="nt-btn nt-btn-ink" onClick={() => setPanel(null)}><Glyph name="play" size={16} />계속하기</button>
             <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => setPanel('help')}><Glyph name="book" size={18} />게임 방법</button>
+            <div className="nt-toggles" role="group" aria-label="소리">
+              <button type="button" role="switch" aria-checked={soundSettings.sfx} className="nt-toggle" onClick={toggleSfx}><Glyph name={soundSettings.sfx ? 'sound' : 'mute'} size={18} /><span>효과음</span><b>{soundSettings.sfx ? '켬' : '끔'}</b></button>
+              <button type="button" role="switch" aria-checked={soundSettings.ambient} className="nt-toggle" onClick={toggleAmbient}><Glyph name="locomotive" size={18} /><span>기차 주행음</span><b>{soundSettings.ambient ? '켬' : '끔'}</b></button>
+            </div>
             <button type="button" className="nt-btn nt-btn-paper-line" onClick={toTitle}><Glyph name="locomotive" size={18} />시작 화면으로</button>
             <button type="button" className="nt-btn nt-btn-paper-line" onClick={onExit}><Glyph name="exit" size={18} />게임 목록으로</button>
           </div>

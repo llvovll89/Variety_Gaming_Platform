@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import {
-  ENEMIES, SNACKS, STATUS_INFO, aliveEnemies, attackDamage, cardStats, checkPlay, checkSnack, needsTarget,
+  ENEMIES, SNACKS, STATUS_INFO, aliveEnemies, attackDamage, cardStats, checkPlay, checkSnack, cuesForFx, needsTarget,
   type CardInstance, type Command, type Fx, type Frame, type RunState, type StatusId,
 } from '../engine';
+import { sound } from './sound';
 import { Carriage, Conductor, ENEMY_ART } from './art';
 import { Glyph } from './glyphs';
 import { CardView, HpBar, IntentTag, Modal, StatusList } from './parts';
@@ -61,6 +62,12 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   const root = useRef<HTMLElement>(null);
   const handRef = useRef<HTMLDivElement>(null);
   const enemyRefs = useRef(new Map<number, HTMLElement>());
+  const showRibbon = (next: Ribbon) => {
+    setRibbon(next);
+    sound.play(next.kind === 'enemy' ? 'horn' : next.kind === 'player' ? 'whistle' : next.kind === 'win' ? 'victory' : 'defeat');
+    if (next.kind === 'player') sound.play('deal', 0.6, 0.35);
+  };
+  const warn = (text: string) => { setHint({ text, warn: true }); sound.play('buzz'); };
 
   // ── Replay of the enemy turn, one beat at a time ──
   const replayKey = combat.frames.length ? run.fxSeq : null;
@@ -69,14 +76,15 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     started.current = replayKey;
     setSelected(null);
     setReplay({ key: replayKey, step: -1 });
-    setRibbon({ key: replayKey, kind: 'enemy', title: '상대의 차례', sub: 'SHADOWS MOVE' });
+    showRibbon({ key: replayKey, kind: 'enemy', title: '상대의 차례', sub: 'SHADOWS MOVE' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replayKey]);
   useEffect(() => {
     if (!replay) return;
     const frames = combat.frames;
     if (replay.step >= frames.length) {
       setReplay(null);
-      if (!ending) setRibbon({ key: Date.now(), kind: 'player', title: `${combat.turn}번째 턴`, sub: 'YOUR MOVE' });
+      if (!ending) showRibbon({ key: Date.now(), kind: 'player', title: `${combat.turn}번째 턴`, sub: 'YOUR MOVE' });
       return;
     }
     const current = frames[replay.step];
@@ -90,7 +98,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   // ── Ending beat ──
   useEffect(() => {
     if (!ending || replaying) return;
-    setRibbon({ key: Date.now(), kind: ending, title: ending === 'win' ? '객차를 지켜 냈어요' : '열차가 멈춰 섭니다', sub: ending === 'win' ? 'VICTORY' : 'END OF THE LINE' });
+    showRibbon({ key: Date.now(), kind: ending, title: ending === 'win' ? '객차를 지켜 냈어요' : '열차가 멈춰 섭니다', sub: ending === 'win' ? 'VICTORY' : 'END OF THE LINE' });
     const timer = window.setTimeout(onEnded, ending === 'win' ? 1300 : 1800);
     return () => window.clearTimeout(timer);
   }, [ending, replaying, onEnded]);
@@ -110,6 +118,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
       else y = -Math.min(220, (hand.top - box.top) * 0.45);
     }
     setFlying({ seq: last.seq, card: last.card, x, y });
+    sound.play('whoosh');
   }, [combat.lastPlayed]);
   useEffect(() => {
     if (!flying) return;
@@ -126,6 +135,20 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     });
     return { hp: frame.hp, block: frame.block, statuses: frame.playerStatuses, enemies, fx: frame.fx };
   }, [frame, replaying, run.hp, combat]);
+
+  // Sound follows what is on screen: live effects, or the beat of the replay being shown.
+  const fxKey = view.fx.length ? `${view.fx[0].id}:${view.fx.length}` : '';
+  useEffect(() => {
+    if (!fxKey) return;
+    for (const event of cuesForFx(view.fx)) sound.play(event.cue, event.intensity, event.delay + 0.08);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fxKey]);
+  const enragedCount = combat.enemies.filter(e => e.enraged).length;
+  const lastEnraged = useRef(enragedCount);
+  useEffect(() => {
+    if (enragedCount > lastEnraged.current) sound.play('roar', 1, 0.2);
+    lastEnraged.current = enragedCount;
+  }, [enragedCount]);
 
   const { player } = combat;
   const alive = aliveEnemies(combat);
@@ -146,7 +169,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
 
   const play = (card: CardInstance, target?: number) => {
     const check = checkPlay(run, card.uid, target);
-    if (!check.ok) { setHint({ text: check.reason, warn: true }); return; }
+    if (!check.ok) { warn(check.reason); return; }
     onCommand({ t: 'play', uid: card.uid, target: check.target });
     setSelected(null);
     setHint(null);
@@ -156,9 +179,10 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     if (busy) return;
     if (suppressClick.current) { suppressClick.current = false; return; }
     if (aimSnack !== null) onCancelSnack();
-    if (cardStats(card).cost > player.energy) { setSelected(card.uid); setHint({ text: '증기가 부족해요. 턴을 마치면 다시 채워집니다.', warn: true }); return; }
+    if (cardStats(card).cost > player.energy) { setSelected(card.uid); warn('증기가 부족해요. 턴을 마치면 다시 채워집니다.'); return; }
     if (selected !== card.uid) {
       setSelected(card.uid);
+      sound.play('flick');
       setHint({ text: needsTarget(card) && alive.length > 1 ? '어느 적에게 쓸까요? 적을 누르거나 카드를 끌어다 놓으세요.' : '한 번 더 누르거나 위로 끌어 올리면 사용합니다.' });
       return;
     }
@@ -185,6 +209,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   const endTurn = () => {
     if (busy) return;
     setSelected(null);
+    sound.play('lever');
     onCommand({ t: 'endTurn' });
   };
 
@@ -209,6 +234,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
       next.moved = true;
       try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* pointer already gone */ }
       setSelected(card.uid);
+      sound.play('flick');
     }
     dragRef.current = next;
     if (next.moved) {
@@ -228,7 +254,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     setDrag(null);
     const handTop = handRef.current?.getBoundingClientRect().top ?? window.innerHeight;
     const lifted = current.y < handTop - 24;
-    if (cardStats(card).cost > player.energy) { setHint({ text: '증기가 부족해요. 턴을 마치면 다시 채워집니다.', warn: true }); return; }
+    if (cardStats(card).cost > player.energy) { warn('증기가 부족해요. 턴을 마치면 다시 채워집니다.'); return; }
     if (needsTarget(card)) {
       const uid = enemyAt(current.x, current.y);
       if (uid !== undefined) play(card, uid);

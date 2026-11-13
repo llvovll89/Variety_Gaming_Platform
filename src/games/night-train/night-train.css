@@ -476,6 +476,11 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
 .nt-modal-close:hover { background: var(--paper-2); }
 .nt-modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .nt-modal-actions.is-column { flex-direction: column; align-items: stretch; }
+.nt-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nt-toggle { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; min-height: 46px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--sepia-rule); background: transparent; color: var(--sepia) !important; font-weight: 700; font-size: 14px; text-align: left; }
+.nt-toggle b { font-size: 12px; padding: 2px 8px; border-radius: 3px; background: #2b262014; }
+.nt-toggle[aria-checked='true'] b { background: var(--sepia); color: var(--paper); }
+.nt-toggle:hover { background: #2b26200b; }
 .nt-modal .arcade-next { color: var(--sepia); }
 .nt-pick-confirm { display: flex; flex-direction: column; align-items: center; }
 .nt-pick-preview { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 12px 0; }
@@ -524,6 +529,8 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
   .nt-stat b { font-size: 15px; }
   .nt-stat small, .nt-hp-mini { display: none; }
   .nt-relic-strip { display: none; }
+  .nt-tool-sound { display: none; }
+  .nt-toggles { grid-template-columns: 1fr; }
   .nt-tool, .nt-snack { width: 30px; height: 30px; }
   .nt-snacks { gap: 2px; }
   .nt-stat-floor { display: none; }
