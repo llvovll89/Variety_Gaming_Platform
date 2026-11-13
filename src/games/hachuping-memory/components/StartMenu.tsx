@@ -32,7 +32,7 @@ export default function StartMenu({ highScore, onStart }: StartMenuProps) {
         style={{
           fontSize: "2.8rem",
           fontWeight: "900",
-          color: "#ff6fa5",
+          color: "#cc2f70",
           marginBottom: "8px",
           textAlign: "center",
           letterSpacing: "-0.02em",
@@ -45,7 +45,7 @@ export default function StartMenu({ highScore, onStart }: StartMenuProps) {
       <p
         style={{
           fontSize: "1.2rem",
-          color: "#888",
+          color: "#666",
           marginBottom: "48px",
           textAlign: "center",
           fontWeight: "600",
@@ -63,14 +63,14 @@ export default function StartMenu({ highScore, onStart }: StartMenuProps) {
             textAlign: "center",
           }}
         >
-          <p style={{ color: "#999", fontSize: "0.9rem", fontWeight: "600", marginBottom: "6px" }}>
+          <p style={{ color: "#666", fontSize: "0.9rem", fontWeight: "600", marginBottom: "6px" }}>
             🏆 최고 점수
           </p>
           <p
             style={{
               fontSize: "2.2rem",
               fontWeight: "900",
-              color: "#ff6fa5",
+              color: "#cc2f70",
             }}
           >
             {highScore}점
@@ -88,7 +88,7 @@ export default function StartMenu({ highScore, onStart }: StartMenuProps) {
           fontSize: "1.4rem",
           fontWeight: "900",
           color: "white",
-          backgroundColor: "#ff6fa5",
+          backgroundColor: "#cc2f70",
           border: "none",
           borderRadius: "28px",
           cursor: "pointer",

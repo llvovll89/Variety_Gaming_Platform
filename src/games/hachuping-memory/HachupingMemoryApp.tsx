@@ -97,7 +97,7 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              backgroundColor: "#ff6fa5",
+              backgroundColor: "#cc2f70",
               border: "none",
               color: "white",
               padding: "12px 20px",

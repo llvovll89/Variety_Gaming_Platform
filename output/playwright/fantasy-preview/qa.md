@@ -1,5 +1,0 @@
-# Battle preview QA
-
-Inventory: keyboard and pointer movement staging, path and distance, confirm executes once, cancel/Escape consumes nothing; enemy approach preview matches damage and route; actor/action/modal changes discard staged actions; desktop and mobile layout; MP skill display. Exploratory: cancel after previous committed movement; change actor/action during pending preview.
-
-Results: desktop 1440x900 and touch 390x844 passed. Real canvas touch stages movement; preview and cancel preserve saved state; confirm moves once. Keyboard Enter stages and Escape cancels, including focus on confirm button. Action change and pause discard pending preview. Approach preview predicted 24 damage and actual log reported 24 (dash); path markers and destination shown. Skill preview displays MP 4 and remaining 12. 320x568 and 844x390 have no horizontal page overflow. Small-screen confirm/cancel are 44px tall. Existing game canvas scroll remains. Full suite 339/339 and TypeScript/Vite build passed. Chromium emulation; physical devices not tested.

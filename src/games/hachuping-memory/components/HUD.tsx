@@ -23,6 +23,8 @@ export default function HUD({ snapshot, onPause }: HUDProps) {
       }}
     >
       <button
+        type="button"
+        aria-label="일시정지"
         onClick={onPause}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -44,7 +46,7 @@ export default function HUD({ snapshot, onPause }: HUDProps) {
           justifyContent: "center",
         }}
       >
-        ⏸️
+        <span aria-hidden="true">⏸️</span>
       </button>
     </div>
   );

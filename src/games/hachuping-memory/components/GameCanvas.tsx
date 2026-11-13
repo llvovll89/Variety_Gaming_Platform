@@ -61,8 +61,8 @@ export default function GameCanvas({ engine, onReady }: GameCanvasProps) {
         backgroundColor: "#fff9f5",
         borderRadius: "20px",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-        width: "100%",
-        maxWidth: "600px",
+        // Fit the 600×700 board inside the screen both ways, so landscape phones don't scroll.
+        width: "min(100%, 600px, calc((100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 6 / 7))",
         height: "auto",
         touchAction: "manipulation",
         cursor: "pointer",

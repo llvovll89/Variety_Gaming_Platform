@@ -42,3 +42,12 @@ test('the service worker parses, skips other origins and never caches pages fore
   const vercel = JSON.parse(readFileSync('vercel.json', 'utf8'));
   assert.ok(vercel.headers.some(h => h.source === '/sw.js' && h.headers.some(x => x.key === 'Cache-Control' && x.value === 'no-cache')));
 });
+
+test('shipped files stay small enough for phones (convert large art to WebP/JPEG first)', async () => {
+  const { readdirSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const LIMIT = 1024 * 1024;
+  const walk = dir => readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
+  const oversized = walk('public').filter(file => statSync(file).size > LIMIT);
+  assert.deepEqual(oversized, [], 'each file in public/ must be 1MB or smaller');
+});

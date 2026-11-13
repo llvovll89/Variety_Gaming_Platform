@@ -162,6 +162,6 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-soon-grid">{upcoming.map(game => <article key={game.id} className="hub-soon"><Cover game={game} /><div><span className="hub-soon-status">준비 중</span><h3>{game.title}</h3><p>{game.description}</p></div></article>)}</div>
       </section>}
     </main>
-    <footer className="hub-foot"><span className="hub-logo">GH ARCADE</span><p>지금 할 수 있는 게임 {playableAll.length}개, 준비 중인 게임 {upcoming.length}개</p><button type="button" onClick={jumpToSearch}>게임 찾기<ArrowRightIcon size={16} /></button></footer>
+    <footer className="hub-foot"><span className="hub-logo">GH ARCADE</span><p>지금 할 수 있는 게임 {playableAll.length}개{upcoming.length > 0 && `, 준비 중인 게임 ${upcoming.length}개`}</p><button type="button" onClick={jumpToSearch}>게임 찾기<ArrowRightIcon size={16} /></button></footer>
   </div>;
 }

@@ -1,5 +1,7 @@
 # 게임 안정화 진행 기록 — 2026-11-11
 
+> **저장소 정리(2026-11-13):** `output/playwright/` 검증 자료는 저장소 용량을 줄이려고 작업 트리에서 뺐다. 본문의 링크는 자료가 남아 있는 커밋 `8f34514`의 원본을 가리킨다. 로컬에서 다시 쓰려면 `git checkout 8f34514 -- output/playwright`로 복원한다.
+
 분석 보고서의 확인된 수정 대상 F01~F08을 한 묶음씩 처리했다. 새 게임 모드와 콘텐츠 제안은 아래 후속 작업으로 남겼다.
 
 ## 완료
@@ -25,15 +27,15 @@
 - 서버 앱·실제 DB·Safari·실물 모바일 검증은 이번 수정 범위에 포함하지 않았다.
 - 위 검증 결과는 커밋·배포 전 작업 트리를 기준으로 기록했다.
 
-증거: [전체 테스트](../output/playwright/fixes-2026-11-11/tests.txt), [빌드](../output/playwright/fixes-2026-11-11/build.txt), [기억력 결과](../output/playwright/fixes-2026-11-11/memory-verification.json), [색깔 게임 프레임 계측](../output/playwright/fixes-2026-11-11/color-verification.json).
+증거: [전체 테스트](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fixes-2026-11-11/tests.txt), [빌드](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fixes-2026-11-11/build.txt), [기억력 결과](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fixes-2026-11-11/memory-verification.json), [색깔 게임 프레임 계측](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fixes-2026-11-11/color-verification.json).
 
 ## 다음에 이어갈 순서
 
-1. **[완료] 유령 이삿짐센터 이동 미리보기:** 바닥/짐 선택 → 경로·소모/남은 행동 표시 → 확인 후 이동. 3D 경로 표시와 WebGL 대체 타일 경로 번호를 추가했다. 귀가 제한 경고, 취소/Esc, 다른 조작 시 미리보기 해제, 기존 칸별 되돌리기를 검증했다. 모바일에서는 미리보기 동안 하단 조작판 고정을 풀어 확인 버튼을 가리지 않게 했다. 전체 테스트 337개 및 빌드 통과. [검증 자료](../output/playwright/ghost-route-preview/qa.md).
-2. **[완료] 텐 세컨즈:** 모바일 조작부를 별도 하단 영역으로 분리하여 상태 패널 겹침을 해소했습니다. 남은 시간·잔상 수 표시와 44px 방향 버튼, 모달 입력 잠금을 유지했습니다. 작은 세로·가로 화면과 데스크톱, 이동·되감기·스크롤 검증 완료. 전체 테스트 337개와 빌드 통과. [검증 자료](../output/playwright/ten-seconds-touch/qa.md).
-3. **[미리보기 완료] 별빛 원정대:** 이동·접근 공격 전 경로 번호, 이동 거리, 예상 피해·남은 HP를 표시하고 확인/취소를 추가했습니다. 이동 후 위치·돌진을 반영한 피해 계산을 실제 실행과 공유합니다. 스킬 MP 사용량·잔여량 표시, Esc 취소 및 행동/동료/모달 전환 시 미리보기 초기화. 테스트 339개와 빌드 통과. [검증 자료](../output/playwright/fantasy-preview/qa.md). 모바일 상세·기록 패널도 완료: 열기 시 화면·포커스 이동, 닫기/Esc 시 버튼 복귀, 최근 행동과 최근 순 기록. 320/390px 세로·740px 가로·데스크톱 및 테스트 339개와 빌드 통과. [패널 검증 자료](../output/playwright/fantasy-panels/qa.md).
-4. **[완료] 삼국지 PK·삼국 영지:** 패업 PK에 저장 성공 시각·순 표시, 실패 안내·재시도, 진행 중 저장 잠금을 추가했습니다. 나가기 전 저장 실패 시 화면을 유지하며 이전 저장본을 보존합니다. 테스트 341개, 빌드 및 브라우저 오류 주입·복구·자동 저장·이어하기 검증 통과. [PK 검증 자료](../output/playwright/pk-save-status/qa.md). 삼국 영지의 저장 상태 표시·자동 백업·다중 탭 보호도 2026-11-12 완료했습니다. 아래 추가 완료 기록과 [영지 검증 자료](../output/playwright/card-save-status/qa.md)를 참고하세요.
-5. 나머지 아케이드: **두더지 잡기 난이도별 기록 완료**. 최고점·TOP 10을 쉬움/보통/어려움으로 분리하고 이전 통합 기록을 별도 보존했다. 난이도 표시·동점 순위·전환 시 포커스와 음소거 유지, 새 최고점·재도전·새로고침·모바일을 검증했다. 테스트 347개와 빌드 통과. [검증 자료](../output/playwright/mole-difficulty-records/qa.md). **슬리더 사망 원인 표시 완료**: 경계·몸통·머리 충돌, 상대 이름, 쌍방 탈락 여부와 충돌 당시 위치 지도를 결과에 표시한다. 기존 판정 우선순위를 유지하고 재시작 시 초기화한다. 테스트 350개·프로덕션 빌드와 브라우저 4종 충돌·320/390/740/1440px 검증 통과. [검증 자료](../output/playwright/slither-death-report/qa.md). **별빛 점프 초반 안내 완료**: 첫 비행 연습·실제 탭 간격 피드백·안전 초기화·건너뛰기·재연습·첫 선택 보존, 실패 결과 다음 게임/허브 동작을 추가했다. 테스트 352개, 프로덕션 빌드·Space/포인터/터치 및 4개 화면 크기 검증 통과. [검증 자료](../output/playwright/jump-first-flight/qa.md). **룬 레인저 초반 난이도 완료**: 첫 기본값 쉬움·마지막 선택 검증/복원·해당 난이도 최고 기록 초기화·초심자 안내를 추가했다. 테스트 355개, 빌드·프로덕션 브라우저 및 4개 화면 크기 검증 통과. [검증 자료](../output/playwright/ranger-difficulty/qa.md). **메아리 미로 진행 정보 완료**: 남은 봉인·출구 개방 목표, 함정 활성/휴면과 다음 전환 시간·막대, 정지/종료 표시를 추가했다. 테스트 357개, 빌드·프로덕션 실제 수집/탈출 및 4개 화면 크기 검증 통과. [검증 자료](../output/playwright/maze-objective-status/qa.md). 후속 후보는 풍선 터뜨리기의 화면 폭에 따른 점수 기회 차이 점검이다. 새 모드와 온라인 기능은 별도 작업 단위로 진행.
+1. **[완료] 유령 이삿짐센터 이동 미리보기:** 바닥/짐 선택 → 경로·소모/남은 행동 표시 → 확인 후 이동. 3D 경로 표시와 WebGL 대체 타일 경로 번호를 추가했다. 귀가 제한 경고, 취소/Esc, 다른 조작 시 미리보기 해제, 기존 칸별 되돌리기를 검증했다. 모바일에서는 미리보기 동안 하단 조작판 고정을 풀어 확인 버튼을 가리지 않게 했다. 전체 테스트 337개 및 빌드 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/ghost-route-preview/qa.md).
+2. **[완료] 텐 세컨즈:** 모바일 조작부를 별도 하단 영역으로 분리하여 상태 패널 겹침을 해소했습니다. 남은 시간·잔상 수 표시와 44px 방향 버튼, 모달 입력 잠금을 유지했습니다. 작은 세로·가로 화면과 데스크톱, 이동·되감기·스크롤 검증 완료. 전체 테스트 337개와 빌드 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/ten-seconds-touch/qa.md).
+3. **[미리보기 완료] 별빛 원정대:** 이동·접근 공격 전 경로 번호, 이동 거리, 예상 피해·남은 HP를 표시하고 확인/취소를 추가했습니다. 이동 후 위치·돌진을 반영한 피해 계산을 실제 실행과 공유합니다. 스킬 MP 사용량·잔여량 표시, Esc 취소 및 행동/동료/모달 전환 시 미리보기 초기화. 테스트 339개와 빌드 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fantasy-preview/qa.md). 모바일 상세·기록 패널도 완료: 열기 시 화면·포커스 이동, 닫기/Esc 시 버튼 복귀, 최근 행동과 최근 순 기록. 320/390px 세로·740px 가로·데스크톱 및 테스트 339개와 빌드 통과. [패널 검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/fantasy-panels/qa.md).
+4. **[완료] 삼국지 PK·삼국 영지:** 패업 PK에 저장 성공 시각·순 표시, 실패 안내·재시도, 진행 중 저장 잠금을 추가했습니다. 나가기 전 저장 실패 시 화면을 유지하며 이전 저장본을 보존합니다. 테스트 341개, 빌드 및 브라우저 오류 주입·복구·자동 저장·이어하기 검증 통과. [PK 검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/pk-save-status/qa.md). 삼국 영지의 저장 상태 표시·자동 백업·다중 탭 보호도 2026-11-12 완료했습니다. 아래 추가 완료 기록과 [영지 검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/card-save-status/qa.md)를 참고하세요.
+5. 나머지 아케이드: **두더지 잡기 난이도별 기록 완료**. 최고점·TOP 10을 쉬움/보통/어려움으로 분리하고 이전 통합 기록을 별도 보존했다. 난이도 표시·동점 순위·전환 시 포커스와 음소거 유지, 새 최고점·재도전·새로고침·모바일을 검증했다. 테스트 347개와 빌드 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/mole-difficulty-records/qa.md). **슬리더 사망 원인 표시 완료**: 경계·몸통·머리 충돌, 상대 이름, 쌍방 탈락 여부와 충돌 당시 위치 지도를 결과에 표시한다. 기존 판정 우선순위를 유지하고 재시작 시 초기화한다. 테스트 350개·프로덕션 빌드와 브라우저 4종 충돌·320/390/740/1440px 검증 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/slither-death-report/qa.md). **별빛 점프 초반 안내 완료**: 첫 비행 연습·실제 탭 간격 피드백·안전 초기화·건너뛰기·재연습·첫 선택 보존, 실패 결과 다음 게임/허브 동작을 추가했다. 테스트 352개, 프로덕션 빌드·Space/포인터/터치 및 4개 화면 크기 검증 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/jump-first-flight/qa.md). **룬 레인저 초반 난이도 완료**: 첫 기본값 쉬움·마지막 선택 검증/복원·해당 난이도 최고 기록 초기화·초심자 안내를 추가했다. 테스트 355개, 빌드·프로덕션 브라우저 및 4개 화면 크기 검증 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/ranger-difficulty/qa.md). **메아리 미로 진행 정보 완료**: 남은 봉인·출구 개방 목표, 함정 활성/휴면과 다음 전환 시간·막대, 정지/종료 표시를 추가했다. 테스트 357개, 빌드·프로덕션 실제 수집/탈출 및 4개 화면 크기 검증 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/maze-objective-status/qa.md). 후속 후보는 풍선 터뜨리기의 화면 폭에 따른 점수 기회 차이 점검이다. 새 모드와 온라인 기능은 별도 작업 단위로 진행.
 
 ## 재개 메모
 
@@ -43,12 +45,12 @@
 - 직전 정상 저장본을 자동 보관하고 복구 버튼을 제공한다. 기존 v2 JSON 파일 불러오기를 유지한다.
 - Web Locks 안에서 최신 저장 원문을 비교하고 쓴다. 다른 탭의 변경·삭제를 감지하면 이전 탭의 행동과 자동 저장을 멈춘다. 현재 진행을 백업하거나 최신 기록을 불러와 다시 진행할 수 있다.
 - 허브 복귀 전에 저장 결과를 확인한다. 실패 시 현재 화면을 유지하며 저장 없이 나가기는 별도 선택이다. 미저장 상태에서 브라우저를 닫을 때도 이탈 확인을 제공한다.
-- 자동 테스트 **347/347**, TypeScript/Vite 빌드 통과. 별도 Chromium의 배포용 빌드에서 저장 실패·재시도·이어하기·두 탭·백업 복구·파일 불러오기와 320/390/740/1440px 검증 통과. [검증 자료](../output/playwright/card-save-status/qa.md).
+- 자동 테스트 **347/347**, TypeScript/Vite 빌드 통과. 별도 Chromium의 배포용 빌드에서 저장 실패·재시도·이어하기·두 탭·백업 복구·파일 불러오기와 320/390/740/1440px 검증 통과. [검증 자료](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/card-save-status/qa.md).
 - 다음 작업은 위 5번의 아케이드 기록·실패 원인·초반 안내다.
 
 - 작업은 한 건씩 진행하며, 각 건의 완료 절차는 검증 → 커밋 → 푸시 → PR 생성 → 원격 검사 확인 → 병합이다.
 - 기준 분석: `docs/game-audit-2026-11-11.md`.
-- 수정 범위는 소스·회귀 테스트·두 보고서와 `output/playwright/` 검증 증거다.
+- 수정 범위는 소스·회귀 테스트·두 보고서다. 브라우저 검증 자료는 `output/`(Git 제외)에 두고, 필요한 내용은 PR 설명에 남긴다.
 - Windows PowerShell 실행 정책 때문에 `npm` 대신 `npm.cmd`를 사용한다.
 - 브라우저 테스트용 Playwright 패키지는 `%TEMP%/codex-variety-game-audit/node_modules/playwright`에 있다. 프로젝트 의존성은 변경하지 않았다.
 - Vite가 일부 파일의 변경을 놓치는 경우가 관찰됐다. 중요한 최종 확인은 새 서버 프로세스로 수행한다.
