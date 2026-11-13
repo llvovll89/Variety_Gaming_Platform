@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 
 const output = await build({ entryPoints: ['src/games/night-train/engine/index.ts'], bundle: true, write: false, platform: 'node', format: 'esm' });
 const E = await import('data:text/javascript;base64,' + Buffer.from(output.outputFiles[0].text).toString('base64'));
-const { createRun, act, availableNodes, attackDamage, cardStats, describeCard, loadRun, loadRecords, recordRun, runScore, ENEMIES, CARDS, EVENTS, BOSS_FLOOR, TREASURE_FLOOR, REST_FLOOR, restHeal, aliveEnemies, needsTarget } = E;
+const { cuesForFx, cuesForRunChange, createRun, act, availableNodes, attackDamage, cardStats, describeCard, loadRun, loadRecords, recordRun, runScore, ENEMIES, CARDS, EVENTS, BOSS_FLOOR, TREASURE_FLOOR, REST_FLOOR, restHeal, aliveEnemies, needsTarget } = E;
 
 /** Starts a fight on floor 0 and then replaces the enemies so each rule can be tested in isolation. */
 function fight(enemies, { seed = 7, hand } = {}) {
@@ -356,4 +356,36 @@ test('later stations can offer pre-upgraded cards and rewards may include a snac
   }
   assert.ok(upgraded > 0);
   assert.ok(snacks > 8 && snacks < 40, `snack drops ${snacks}/80`);
+});
+
+test('sound cues follow what happens on screen without piling up', () => {
+  const fx = [
+    { id: 1, target: 0, kind: 'damage', amount: 6 },
+    { id: 2, target: 1, kind: 'damage', amount: 18 },
+    { id: 3, target: 'player', kind: 'damage', amount: 4 },
+    { id: 4, target: 0, kind: 'block', amount: 5 },
+    { id: 5, target: 1, kind: 'block', amount: 5 },
+    { id: 6, target: 'player', kind: 'status', amount: 2, label: 'weak' },
+    { id: 7, target: 'player', kind: 'status', amount: 2, label: 'strength' },
+  ];
+  const cues = cuesForFx(fx);
+  assert.deepEqual(cues.map(c => c.cue), ['hit', 'hitBig', 'hurt', 'clink', 'debuff']);
+  assert.ok(cues.every((c, i) => i === 0 || c.delay >= cues[i - 1].delay), 'staggered like the floating numbers');
+  assert.ok(cues[1].intensity > cues[0].intensity, 'bigger hits sound heavier');
+  assert.deepEqual(cuesForFx([{ id: 9, target: 0, kind: 'status', amount: 0, label: 'move:앞니 물기' }]), []);
+
+  const base = createRun(11);
+  assert.deepEqual(cuesForRunChange(null, base), []);
+  assert.deepEqual(cuesForRunChange(base, base), []);
+  const travelled = act(base, { t: 'travel', nodeId: availableNodes(base.map, base.path)[0].id });
+  assert.deepEqual(cuesForRunChange(base, travelled), ['clack']);
+  const shop = structuredClone(base);
+  shop.phase = 'shop'; shop.gold = 200;
+  shop.shop = { cards: [{ card: { uid: 900, id: 'umbrella', up: false }, price: 50, sold: false }], relics: [], snacks: [{ id: 'mint', price: 40, sold: false }], removePrice: 75, removed: false };
+  assert.deepEqual(cuesForRunChange(shop, act(shop, { t: 'buyCard', index: 0 })), ['register', 'flick']);
+  assert.deepEqual(cuesForRunChange(shop, act(shop, { t: 'buySnack', index: 0 })), ['register', 'snack']);
+  const rest = structuredClone(base);
+  rest.phase = 'rest'; rest.rest = { done: false }; rest.hp = 30;
+  assert.deepEqual(cuesForRunChange(rest, act(rest, { t: 'rest' })), ['chime']);
+  assert.deepEqual(cuesForRunChange(rest, act(rest, { t: 'upgrade', uid: rest.deck[0].uid })), ['upgrade']);
 });

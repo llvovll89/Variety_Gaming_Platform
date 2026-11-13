@@ -69,6 +69,7 @@
 .nt-sky-hills { position: absolute; left: 0; bottom: 0; width: 200%; height: 140px; animation: nt-pan 80s linear infinite; }
 
 .nt-shell { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100dvh; max-width: 1320px; margin: 0 auto; padding: 0 20px calc(16px + env(safe-area-inset-bottom)); }
+.nt-shell:has(> .nt-combat) { padding-bottom: 0; }
 
 /* ── Header / HUD ── */
 .nt-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; margin: 0 -20px; padding: max(10px, env(safe-area-inset-top)) 20px 10px;
@@ -125,7 +126,7 @@
 .nt-btn:disabled { opacity: .45; }
 .nt-btn-sm { min-height: 36px; padding: 0 12px; font-size: 13px; }
 .nt-text-btn { background: none; border: 0; padding: 6px 2px; color: var(--cream-dim); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
-.nt-eyebrow { margin: 0 0 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .14em; color: var(--brass-2); }
+.nt-eyebrow { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--brass-2); }
 
 /* ── Title ── */
 .nt-title { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 56px; align-items: center; padding: 20px 0 48px; }
@@ -148,11 +149,11 @@
 .nt-fare button small { font-size: 12px; color: var(--sepia-2); }
 .nt-fare button[aria-checked='true'] { border-color: var(--sepia); background: #2b26200d; box-shadow: inset 0 0 0 1px var(--sepia); }
 .nt-pass-stub { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 16px 14px; border-left: 2px dashed var(--sepia-rule); }
-.nt-pass-stub small { font-size: 10px; letter-spacing: .12em; color: var(--sepia-2); }
+.nt-pass-stub small { font-size: 11px; letter-spacing: .02em; color: var(--sepia-2); }
 .nt-pass-stub .nt-btn { width: 100%; padding: 0 8px; }
 .nt-title-more { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; }
 .nt-log { width: 100%; max-width: 540px; margin: 26px 0 0; border-collapse: collapse; font-size: 13px; }
-.nt-log caption { text-align: left; font-size: 11px; letter-spacing: .14em; color: var(--cream-dim); padding-bottom: 6px; }
+.nt-log caption { text-align: left; font-size: 12px; letter-spacing: .02em; color: var(--cream-dim); padding-bottom: 6px; }
 .nt-log th, .nt-log td { padding: 7px 0; border-top: 1px solid var(--rule); text-align: left; font-weight: 400; }
 .nt-log th { color: var(--cream-dim); }
 .nt-log td { text-align: right; font: 700 15px var(--display); }
@@ -467,11 +468,14 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
 
 /* ── Dialogs (paper) ── */
 .nt-modal { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(92vw, 480px); max-height: min(92dvh, 880px); overflow-y: auto; padding: 28px 26px 24px; border: 0; border-radius: 3px; background: var(--paper); color: var(--sepia); font-family: var(--sans); box-shadow: 0 30px 80px #000c; overscroll-behavior: contain; }
-.nt-modal::backdrop { background: #070914d9; backdrop-filter: blur(2px); }
+.nt-modal::backdrop { background: #070914d9; backdrop-filter: blur(2px); animation: nt-fade .2s ease-out; }
+.nt-modal[open] { animation: nt-pop .24s cubic-bezier(.2, .8, .3, 1); }
+@keyframes nt-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes nt-fade { from { opacity: 0; } }
 .nt-modal-wide { width: min(94vw, 900px); }
 .nt-modal h2 { margin: 0 0 6px; font: 800 26px/1.2 var(--display); letter-spacing: -.02em; }
 .nt-modal p { color: var(--sepia-2); line-height: 1.65; font-size: 14.5px; margin: 0 0 10px; }
-.nt-modal-kicker { margin: 0 0 6px !important; font-size: 11.5px !important; font-weight: 700; letter-spacing: .14em; color: var(--signal) !important; }
+.nt-modal-kicker { margin: 0 0 6px !important; font-size: 12px !important; font-weight: 700; letter-spacing: .01em; color: var(--signal) !important; }
 .nt-modal-close { position: absolute; top: 14px; right: 14px; z-index: 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 4px; background: var(--paper); border: 1px solid var(--sepia-rule); color: var(--sepia) !important; }
 .nt-modal-close:hover { background: var(--paper-2); }
 .nt-modal-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
@@ -502,6 +506,67 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
 .nt-result-stats dd { margin: 2px 0 0; font: 800 22px var(--display); }
 .nt-modal .arcade-score-feedback { color: var(--sepia) !important; }
 
+/* ── Pause menu ("정차 중"): a ticket with the trip on top and actions below the perforation ── */
+.nt-pause { width: min(92vw, 420px); padding: 0; }
+.nt-pause-head { position: relative; padding: 24px 24px 0; }
+.nt-pause-stamp { position: absolute; top: 18px; right: 20px; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--signal); color: var(--signal); font: 850 13px/1.15 var(--display); text-align: center; transform: rotate(-12deg); box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4.5px var(--signal); opacity: .92; }
+.nt-pause-where { margin: 0 0 4px !important; font-size: 13px !important; font-weight: 700; color: var(--signal) !important; }
+.nt-pause h2 { margin: 0 0 18px; padding-right: 72px; font-size: 24px; }
+.nt-rail { position: relative; display: flex; align-items: center; justify-content: space-between; margin: 0 2px 18px; }
+.nt-rail::before { content: ''; position: absolute; left: 4px; right: 4px; top: 50%; height: 2px; margin-top: -1px; background: repeating-linear-gradient(90deg, #2b262066 0 5px, transparent 5px 9px); }
+.nt-rail-stop { position: relative; width: 10px; height: 10px; border-radius: 50%; background: var(--paper); border: 1.5px solid #2b262080; }
+.nt-rail-stop.is-passed { background: var(--signal); border-color: var(--signal); }
+.nt-rail-stop.is-here { width: 18px; height: 18px; border: 3.5px solid var(--signal); box-shadow: 0 0 0 4px #a63f3324; }
+.nt-rail-stop.is-terminal { width: 14px; height: 14px; border-radius: 3px; background: var(--sepia); border-color: var(--sepia); }
+.nt-pause-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 -24px; border-top: 1px solid var(--sepia); }
+.nt-pause-stats div { padding: 10px 0 12px; text-align: center; }
+.nt-pause-stats div + div { border-left: 1px solid var(--sepia-rule); }
+.nt-pause-stats dt { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11.5px; color: var(--sepia-2); }
+.nt-pause-stats dt .nt-glyph { color: var(--signal); }
+.nt-pause-stats dd { margin: 2px 0 0; font: 800 19px var(--display); letter-spacing: -.02em; }
+.nt-pause-stats dd small { font-size: 11.5px; font-weight: 600; color: var(--sepia-2); }
+.nt-pause-body { position: relative; padding: 20px 24px 10px; border-top: 2px dashed var(--sepia-rule); }
+.nt-pause-body::before, .nt-pause-body::after { content: ''; position: absolute; top: -10px; width: 18px; height: 18px; border-radius: 50%; background: #0b0d1c; }
+.nt-pause-body::before { left: -9px; }
+.nt-pause-body::after { right: -9px; }
+.nt-resume { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--sepia); color: var(--paper) !important; font: 800 17px var(--display); text-align: left; box-shadow: inset 0 -4px 0 #0007; transition: background .15s, transform .1s; }
+.nt-resume:hover { background: #3b342b; }
+.nt-resume:active { transform: translateY(1px); }
+.nt-resume kbd { padding: 3px 7px; border-radius: 4px; background: #f0e5cd1f; color: #f0e5cdb8; font: 700 11px var(--sans); }
+.nt-pause-section { margin-top: 18px; }
+.nt-pause-section + .nt-pause-section { margin-top: 0; }
+nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
+.nt-resume:focus-visible { outline: 2px solid var(--sepia); outline-offset: 3px; }
+.nt-pause-section h3 { margin: 0 0 4px; font: 700 12.5px var(--sans); color: var(--sepia-2); }
+.nt-switch-row, .nt-pause-link { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 4px; background: none; border: 0; border-bottom: 1px solid var(--sepia-rule); color: var(--sepia) !important; text-align: left; transition: background .15s; }
+.nt-switch-row:first-of-type, .nt-pause-link:first-child { border-top: 1px solid var(--sepia-rule); }
+.nt-switch-row:hover, .nt-pause-link:hover { background: #2b26200b; }
+.nt-switch-row > .nt-glyph, .nt-pause-link > .nt-glyph:first-child { color: var(--sepia); }
+.nt-pause-link > .nt-glyph:last-child { color: var(--sepia-2); }
+.nt-pause-link span { font: 700 15px var(--display); }
+.nt-switch-text b { display: block; font: 700 15px var(--display); }
+.nt-switch-text small { display: block; margin-top: 1px; font-size: 12.5px; color: var(--sepia-2); }
+.nt-switch { position: relative; width: 46px; height: 26px; border-radius: 13px; background: #2b26201a; border: 1.5px solid #2b262070; transition: background .18s, border-color .18s; }
+.nt-switch span { position: absolute; top: 2px; left: 2px; width: 19px; height: 19px; border-radius: 50%; background: var(--paper); border: 1.5px solid #2b262070; box-shadow: 0 1px 2px #0004; transition: transform .22s cubic-bezier(.3, .7, .3, 1.3), border-color .18s; }
+.nt-switch-row[aria-checked='true'] .nt-switch { background: var(--rail); border-color: var(--rail); }
+.nt-switch-row[aria-checked='true'] .nt-switch span { transform: translateX(20px); border-color: transparent; }
+.nt-pause-foot { padding: 14px 24px 20px; background: #2b26200a; border-top: 1px solid var(--sepia-rule); }
+.nt-pause-foot p { display: flex; align-items: center; gap: 6px; margin: 0 0 10px !important; font-size: 13px !important; }
+.nt-pause-foot p .nt-glyph { color: var(--rail); }
+.nt-pause-foot div { display: flex; flex-wrap: wrap; gap: 8px; }
+.nt-pause-leave { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--sepia-rule); background: transparent; color: var(--sepia) !important; font-size: 13.5px; font-weight: 700; }
+.nt-pause-leave:hover { background: #2b26200d; border-color: #2b262066; }
+
+/* ── Narrow desktop / tablet header: drop decorative text before anything overflows ── */
+@media (max-width: 1180px) {
+  .nt-brand-text { display: none; }
+  .nt-relic-strip > span:nth-child(n + 4) { display: none; }
+}
+@media (max-width: 900px) {
+  .nt-relic-strip, .nt-tool-sound { display: none; }
+  .nt-stat { padding: 0 8px; }
+}
+
 /* ── Tablet ── */
 @media (max-width: 980px) {
   .nt-title { grid-template-columns: 1fr; gap: 40px; padding-top: 4px; }
@@ -510,7 +575,18 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
   .nt-map-aside { position: static; display: grid; grid-template-columns: 1fr 1fr; }
   .nt-map-scroll { height: calc(100dvh - 330px); min-height: 360px; }
   .nt-shop { grid-template-columns: 1fr; }
-  .nt-table { grid-template-columns: 110px minmax(0, 1fr) 140px; }
+  /* Tablet: controls on one row, the hand gets the full width below. */
+  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hint right" "hand hand hand"; column-gap: 12px; margin-top: -56px; }
+  .nt-table-left, .nt-table-right { flex-direction: row; align-items: center; padding-bottom: 0; }
+  .nt-hint { align-self: center; margin: 0; }
+  .nt-gauge { width: 66px; height: 66px; }
+  .nt-gauge b { font-size: 26px; }
+  .nt-gauge small { display: none; }
+  .nt-hand .nt-card { --w: 128px; }
+  .nt-hand .nt-card-art { height: 36px; }
+  .nt-hand-slot { margin: 0 -6px; }
+  .nt-hand { padding-bottom: 22px; }
+  .nt-end { width: 120px; height: 56px; }
 }
 
 /* ── Phone ── */
@@ -524,6 +600,7 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
   .nt-stat b { font-size: 15px; }
   .nt-stat small, .nt-hp-mini { display: none; }
   .nt-relic-strip { display: none; }
+  .nt-tool-sound { display: none; }
   .nt-tool, .nt-snack { width: 30px; height: 30px; }
   .nt-snacks { gap: 2px; }
   .nt-stat-floor { display: none; }
@@ -604,9 +681,133 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
   .nt-result-stats { grid-template-columns: repeat(2, 1fr); }
   .nt-result-stats div:nth-child(3) { border-left: 0; }
   .nt-modal { padding: 24px 16px 18px; }
+  .nt-pause { padding: 0; }
+  .nt-pause-head { padding: 22px 18px 0; }
+  .nt-pause-stats { margin: 0 -18px; }
+  .nt-pause h2 { font-size: 20px; margin-bottom: 14px; padding-right: 60px; }
+  .nt-pause-stamp { width: 50px; height: 50px; font-size: 11.5px; top: 16px; right: 16px; }
+  .nt-rail { margin-bottom: 14px; }
+  .nt-pause-stats div { padding: 8px 0 9px; }
+  .nt-pause-stats dd { font-size: 16px; }
+  .nt-pause-body { padding: 16px 18px 6px; }
+  .nt-resume { min-height: 50px; font-size: 16px; }
+  .nt-pause-section { margin-top: 12px; }
+  .nt-switch-row { min-height: 50px; padding: 5px 2px; }
+  nav.nt-pause-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; margin-top: 12px; }
+  nav.nt-pause-section .nt-pause-link { grid-template-columns: 20px 1fr; min-height: 46px; padding: 0 12px; border: 0; border-radius: 6px; background: #2b26200d; }
+  nav.nt-pause-section .nt-pause-link > .nt-glyph:last-child { display: none; }
+  nav.nt-pause-section .nt-pause-link span { font-size: 14px; }
+  .nt-pause-foot { padding: 12px 18px 16px; }
+  .nt-pause-foot p { font-size: 12px !important; }
+  .nt-pause-leave { min-height: 38px; font-size: 13px; }
   .nt-map-modal { margin: 0 -16px -18px; }
   .nt-ribbon { padding: 8px 30px; }
   .nt-ribbon b { font-size: 19px; }
+}
+
+/* ── Short phones (e.g. iPhone SE, small Androids): compress the carriage so the hand stays on screen ── */
+@media (max-width: 640px) and (max-height: 700px) {
+  .nt-windows { height: 15%; }
+  .nt-enemy { padding-top: 42px; }
+  .nt-enemy-button .nt-fighter-art { max-width: min(110px, 14dvh); }
+  .nt-enemy-boss .nt-enemy-button .nt-fighter-art { max-width: min(200px, 22dvh); }
+  .nt-plate { gap: 4px; }
+  .nt-player { margin-top: 4px; }
+  .nt-player .nt-fighter-art { width: 48px; }
+  .nt-stage { padding-bottom: 60px; }
+  .nt-hand { min-height: 160px; padding-top: 10px; }
+  .nt-hand .nt-card { --w: 104px; }
+  .nt-hand .nt-card-art { height: 24px; margin-top: 4px; }
+}
+
+/* ── Very narrow phones (≤ 360px): fewer HUD items, two-row table ── */
+@media (max-width: 360px) {
+  .nt-brand { display: none; }
+  .nt-header .nt-hud { width: 100%; justify-content: space-between; }
+  .nt-header .nt-tool[aria-label='노선도 보기'] { display: none; }
+  .nt-snack { width: 28px; height: 28px; }
+  .nt-stat { padding: 0 4px; gap: 3px; }
+  .nt-stat b { font-size: 14px; }
+  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hint right" "hand hand hand"; }
+  .nt-table-right .nt-pile { display: none; }
+  .nt-gauge { width: 46px; height: 46px; }
+  .nt-gauge b { font-size: 19px; }
+  .nt-end { width: 72px; height: 44px; }
+  .nt-end b { font-size: 14px; gap: 4px; }
+  .nt-hint { font-size: 11px; }
+  .nt-enemies.count-2 .nt-plate-name small, .nt-enemies.count-3 .nt-plate-name small { display: none; }
+}
+
+/* ── Phones held sideways: everything in one screen, battle above a short hand ── */
+@media (orientation: landscape) and (max-height: 520px) {
+  .nt-shell { padding: 0 12px; }
+  .nt-header { margin: 0 -12px; padding: 4px 12px; gap: 8px; }
+  .nt-brand-text, .nt-relic-strip, .nt-tool-sound { display: none; }
+  .nt-brand-mark { width: 30px; height: 30px; }
+  .nt-stat { height: 30px; padding: 0 6px; }
+  .nt-stat b { font-size: 14px; }
+  .nt-stat small, .nt-hp-mini { display: none; }
+  .nt-tool, .nt-snack { width: 30px; height: 30px; }
+  /* Fill whatever the header leaves instead of guessing its height. */
+  .nt-combat { margin: 0 -12px; min-height: 0; }
+  .nt-carriage { min-height: 0; }
+  .nt-windows { top: 2%; height: 26%; }
+  .nt-window-pane { border-radius: 20px 20px 4px 4px; max-width: 220px; }
+  .nt-stage { grid-template-columns: 170px minmax(0, 1fr); align-items: end; gap: 8px; padding: 2px 16px 34px; }
+  .nt-enemies { order: 0; }
+  .nt-player { flex-direction: row; align-items: center; gap: 8px; margin-top: 0; }
+  .nt-player .nt-fighter-art { width: 46px; flex: none; }
+  .nt-player .nt-plate { max-width: 120px; }
+  .nt-plate-name { font-size: 12px; }
+  .nt-plate-name small { display: none; }
+  .nt-hp { height: 14px; }
+  .nt-hp-text { font-size: 10px; line-height: 12px; }
+  .nt-enemy { padding-top: 32px; gap: 3px; }
+  .nt-enemy-button .nt-fighter-art { max-width: min(96px, 22dvh); margin: 0 auto; }
+  .nt-enemy-boss .nt-enemy-button .nt-fighter-art { max-width: min(170px, 30dvh); }
+  .nt-tag { height: 26px; font-size: 11px; }
+  .nt-tag b { font-size: 15px; }
+  .nt-tag-name { display: none; }
+  .nt-tag-string { top: 26px; height: 10px; }
+  .nt-statuses { min-height: 0; }
+  .nt-statuses li { height: 18px; font-size: 11px; }
+  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hand right"; column-gap: 8px; margin-top: -30px; padding: 0 16px 6px; }
+  .nt-hint { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); max-width: 70%; padding: 1px 10px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nt-table-left, .nt-table-right { gap: 6px; padding-bottom: 4px; }
+  .nt-gauge { width: 50px; height: 50px; }
+  .nt-gauge b { font-size: 20px; }
+  .nt-gauge small, .nt-gauge::before { display: none; }
+  .nt-pile { height: 28px; padding: 0 6px; }
+  .nt-pile span { display: none; }
+  .nt-end { width: 80px; height: 44px; }
+  .nt-end b { font-size: 14px; }
+  .nt-end small { display: none; }
+  .nt-hand { justify-content: flex-start; min-height: 0; padding: 10px 2px 0; overflow-x: auto; scrollbar-width: none; }
+  .nt-hand-slot { margin: 0 2px; transform: none; }
+  .nt-hand-slot.is-selected, .nt-hand-slot.is-aiming { transform: translateY(-8px); }
+  .nt-hand-slot:hover:not(.is-dragging) { transform: none; }
+  .nt-hand-key { display: none; }
+  /* Short stubs: name and rules only, so the whole hand fits under the battle. */
+  .nt-hand .nt-card { --w: 100px; height: 92px; }
+  .nt-hand .nt-card-art { display: none !important; }
+  .nt-hand .nt-card-band { height: 18px; padding-left: 26px; font-size: 8.5px; }
+  .nt-hand .nt-card-band i { display: none; }
+  .nt-hand .nt-card-cost { width: 20px; height: 20px; font-size: 12px; top: 3px; left: 4px; }
+  .nt-hand .nt-card-name { margin: 4px 7px 0; font-size: 11.5px; }
+  .nt-hand .nt-card-text { padding: 3px 7px 0; font-size: 10.5px; }
+  .nt-hand .nt-card-text b { font-size: 11.5px; }
+  .nt-hand .nt-card-foot { display: none; }
+  .nt-map-layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .nt-map-aside { position: static; }
+  .nt-legend { display: none; }
+  .nt-map-scroll { height: calc(100dvh - 110px); min-height: 0; }
+  .nt-title { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: 20px; padding: 6px 0 20px; }
+  .nt-title h1 { font-size: 44px; }
+  .nt-poster { order: 0; }
+  .nt-poster-cards { display: none; }
+  .nt-ribbon { top: 34%; padding: 6px 28px; }
+  .nt-ribbon b { font-size: 17px; }
+  .nt-modal { max-height: 94dvh; }
 }
 
 @media (prefers-reduced-motion: reduce) {
