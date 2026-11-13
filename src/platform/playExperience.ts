@@ -11,6 +11,7 @@ export interface PlayInfo {
 /** Durations describe a round, puzzle or battle, rather than the entire campaign. */
 export const PLAY_INFO: Record<string, PlayInfo> = {
   'kitchen-fighter': { duration: '약 3분 / 경기', minutes: 3, controls: '키보드 권장', experience: '격투 · 콤보', save: '한 판씩 플레이' },
+  'night-train': { duration: '약 20분 / 여행', minutes: 20, controls: '터치 · 마우스', experience: '덱빌딩 · 로그라이크', save: '진행 자동 저장' },
   'ghost-movers': { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '차근차근 퍼즐', save: '완료한 의뢰 저장' },
   'ten-seconds': { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '시간 협동 퍼즐', save: '완료한 방 저장' },
   'fantasy-tactics': { duration: '약 15분 / 전투', minutes: 15, controls: '터치 · 마우스', experience: '턴제 · 동료 성장', save: '진행 자동 저장' },
