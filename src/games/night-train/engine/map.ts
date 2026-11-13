@@ -9,11 +9,48 @@ export const REST_FLOOR = FLOORS - 1;
 
 /** Each stretch of the line has its own name and scenery. */
 export const REGIONS = [
-  { from: 0, to: 3, name: '교외 선로', note: '불 꺼진 마을을 지나는 첫 구간' },
-  { from: 4, to: 7, name: '안개 협곡', note: '강적이 숨어드는 깊은 골짜기' },
-  { from: 8, to: 11, name: '별빛 철교', note: '하늘과 가장 가까운 다리' },
-  { from: 12, to: 12, name: '새벽역', note: '검은 기관차가 기다리는 종착역' },
+  { from: 0, to: 3, name: '교외 선로', note: '불 꺼진 마을을 지나는 첫 구간', color: '#2f8a5a' },
+  { from: 4, to: 7, name: '안개 협곡', note: '강적이 숨어드는 깊은 골짜기', color: '#7a52b0' },
+  { from: 8, to: 11, name: '별빛 철교', note: '하늘과 가장 가까운 다리', color: '#2c6cc0' },
+  { from: 12, to: 12, name: '새벽역', note: '검은 기관차가 기다리는 종착역', color: '#d0562a' },
 ] as const;
+
+const STATION_POOLS = [
+  ['등불마을', '버드나무', '우체국 앞', '물레방아', '붉은 지붕', '종탑', '양떼 목장', '건초 언덕', '작은 다리', '시계방', '빵집 골목', '풍차', '사과밭', '우물가', '개울', '달맞이'],
+  ['안개 고개', '이끼 동굴', '메아리 절벽', '흐린 호수', '부엉이 숲', '고사리 계곡', '낡은 등대', '회색 폭포', '구름다리', '늑대 바위', '버섯 마을', '은방울 숲', '바람 고개', '물안개 나루', '갈대밭', '이슬 언덕'],
+  ['북두 철교', '은하 나루', '별똥 언덕', '혜성 광장', '달빛 정원', '오리온', '견우 다리', '직녀 정원', '유성 전망대', '성운 터널', '샛별 마을', '천문대', '은빛 철탑', '별자리 공원', '하늘 정원', '새벽별'],
+] as const;
+
+/**
+ * Deterministic station names: every node gets a unique name from its region's pool, shuffled by
+ * the run seed, so the same run always shows the same line without storing names in the save.
+ */
+export function stationNames(map: MapNode[], seed: number): Map<string, string> {
+  const names = new Map<string, string>();
+  STATION_POOLS.forEach((pool, region) => {
+    const nodes = map.filter(n => n.type !== 'boss' && regionIndex(n.floor) === region).sort((a, b) => a.floor - b.floor || a.x - b.x);
+    const order = [...pool];
+    let h = (seed ^ (region + 1) * 0x9e3779b1) >>> 0;
+    for (let i = order.length - 1; i > 0; i--) {
+      h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
+      const j = h % (i + 1);
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    nodes.forEach((node, i) => names.set(node.id, order[i % order.length]));
+  });
+  for (const node of map) if (node.type === 'boss') names.set(node.id, '새벽역');
+  return names;
+}
+
+export function regionIndex(floor: number) {
+  return Math.max(0, REGIONS.findIndex(region => floor >= region.from && floor <= region.to));
+}
+
+/** Pretend timetable: the train leaves at 23:58 and each stop is 24 minutes up the line. */
+export function departureTime(floor: number, platform = 0) {
+  const minutes = (23 * 60 + 58 + floor * 24 + platform * 4) % (24 * 60);
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
 
 export function regionOf(floor: number) {
   return REGIONS.find(region => floor >= region.from && floor <= region.to) ?? REGIONS[0];

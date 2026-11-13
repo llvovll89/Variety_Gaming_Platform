@@ -389,3 +389,30 @@ test('sound cues follow what happens on screen without piling up', () => {
   assert.deepEqual(cuesForRunChange(rest, act(rest, { t: 'rest' })), ['chime']);
   assert.deepEqual(cuesForRunChange(rest, act(rest, { t: 'upgrade', uid: rest.deck[0].uid })), ['upgrade']);
 });
+
+test('every station gets a stable, unique name and a timetable slot', () => {
+  const { stationNames, departureTime, BOSS_FLOOR } = E;
+  for (const seed of [1, 99, 4242]) {
+    const run = createRun(seed);
+    const a = stationNames(run.map, run.seed), b = stationNames(run.map, run.seed);
+    assert.deepEqual([...a], [...b], 'deterministic for a run');
+    assert.equal(a.size, run.map.length);
+    const names = run.map.filter(n => n.type !== 'boss').map(n => a.get(n.id));
+    assert.equal(new Set(names).size, names.length, 'no repeated station names');
+    assert.equal(a.get(run.map.find(n => n.floor === BOSS_FLOOR).id), '새벽역');
+  }
+  assert.notDeepEqual([...stationNames(createRun(1).map, 1)], [...stationNames(createRun(1).map, 2)]);
+  assert.equal(departureTime(0), '23:58');
+  assert.equal(departureTime(1), '00:22');
+  assert.equal(departureTime(12), '04:46');
+});
+
+test('real-world saves with clock-based 32-bit seeds load again', () => {
+  for (const seed of [4_123_456_789, 2 ** 32 - 1, Date.now() >>> 0]) {
+    let run = createRun(seed);
+    run = act(run, { t: 'travel', nodeId: availableNodes(run.map, run.path)[0].id });
+    const loaded = loadRun(JSON.stringify(run));
+    assert.ok(loaded, `seed ${seed} survives a save round trip`);
+    assert.equal(loaded.seed, run.seed);
+  }
+});

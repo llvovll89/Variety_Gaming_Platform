@@ -37,7 +37,8 @@ const node = z.object({
 });
 
 export const runSchema = z.object({
-  version: z.literal(1), seed: count.max(2 ** 32), rng: z.number().int().min(0).max(2 ** 32), mode: z.enum(['normal', 'easy']),
+  // Seeds are full 32-bit values (createRun uses the clock), so they must not share `count`'s cap.
+  version: z.literal(1), seed: z.number().int().min(0).max(2 ** 32), rng: z.number().int().min(0).max(2 ** 32), mode: z.enum(['normal', 'easy']),
   phase: z.enum(['map', 'combat', 'reward', 'rest', 'shop', 'event', 'treasure', 'victory', 'defeat']),
   hp: count, maxHp: count.min(1), gold: count, deck: pile.min(1), relics: z.array(relicId).max(20), snacks: z.array(snackId).max(3).default([]), nextUid: count,
   map: z.array(node).min(2).max(80), path: z.array(z.string()).max(20),
