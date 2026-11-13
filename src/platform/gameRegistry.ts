@@ -178,8 +178,6 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#ff6fa5",
     genres: ["키즈", "캐주얼"],
     tags: ["기억력", "동물", "두뇌", "패턴"],
-    releaseStatus: "coming-soon",
-    disabled: true,
     Component: HachupingMemoryApp,
   },
   {
@@ -206,8 +204,6 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#22c55e",
     genres: ["키즈", "캐주얼"],
     tags: ["색깔", "반응 속도", "교육"],
-    releaseStatus: "coming-soon",
-    disabled: true,
     Component: HachupingColorMatchApp,
   },
   {

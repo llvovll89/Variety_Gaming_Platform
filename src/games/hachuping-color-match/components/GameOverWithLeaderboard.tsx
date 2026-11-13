@@ -1,3 +1,4 @@
+import { NextGameActions } from "../../../platform/PlaySession";
 import type { LeaderboardEntry } from "../../../shared/hooks/useLeaderboard";
 
 interface GameOverWithLeaderboardProps {
@@ -92,7 +93,7 @@ export default function GameOverWithLeaderboard({
               <p className="text-xs text-white/50">{leaderboard.length}명</p>
             </div>
 
-            <div className="space-y-1.5 bg-black/30 rounded-2xl p-4 max-h-48 overflow-y-auto border border-white/5">
+            <div tabIndex={0} role="region" aria-label="TOP 10 랭킹 목록" className="space-y-1.5 bg-black/30 rounded-2xl p-4 max-h-48 overflow-y-auto border border-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white/70">
               {leaderboard.map((entry, idx) => {
                 const isPlayerScore = entry.score === finalScore && playerRank;
                 const rank = idx + 1;
@@ -144,6 +145,8 @@ export default function GameOverWithLeaderboard({
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
+            type="button"
+            autoFocus
             onClick={onRestart}
             className="flex-1 relative px-6 py-3.5 rounded-xl font-bold text-white transition-all duration-300 active:scale-95 overflow-hidden group hover:shadow-lg"
             style={{
@@ -171,6 +174,7 @@ export default function GameOverWithLeaderboard({
             </span>
           </button>
         </div>
+        <NextGameActions />
       </div>
 
       <style>{`
