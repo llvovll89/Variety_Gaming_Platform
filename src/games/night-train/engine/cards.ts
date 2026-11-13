@@ -88,6 +88,7 @@ function line(effect: Effect, ctx: DescribeContext): string {
   switch (effect.k) {
     case 'attack': return effect.times && effect.times > 1 ? `피해 ${dmg(effect.n)} × ${effect.times}` : `피해 ${dmg(effect.n)}`;
     case 'attackAll': return `모든 적에게 피해 ${dmg(effect.n)}`;
+    case 'damageAll': return `모든 적에게 피해 ${effect.n}`;
     case 'blockAttack': return ctx.block === undefined ? '현재 방어만큼 피해' : `현재 방어만큼 피해 (${dmg(ctx.block)})`;
     case 'block': return `방어 ${effect.n}`;
     case 'draw': return `카드 ${effect.n}장 뽑기`;

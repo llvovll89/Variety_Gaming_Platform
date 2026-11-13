@@ -7,6 +7,28 @@ export const BOSS_FLOOR = FLOORS;
 export const TREASURE_FLOOR = 6;
 export const REST_FLOOR = FLOORS - 1;
 
+/** Each stretch of the line has its own name and scenery. */
+export const REGIONS = [
+  { from: 0, to: 3, name: '교외 선로', note: '불 꺼진 마을을 지나는 첫 구간' },
+  { from: 4, to: 7, name: '안개 협곡', note: '강적이 숨어드는 깊은 골짜기' },
+  { from: 8, to: 11, name: '별빛 철교', note: '하늘과 가장 가까운 다리' },
+  { from: 12, to: 12, name: '새벽역', note: '검은 기관차가 기다리는 종착역' },
+] as const;
+
+export function regionOf(floor: number) {
+  return REGIONS.find(region => floor >= region.from && floor <= region.to) ?? REGIONS[0];
+}
+
+export const NODE_NOTES: Record<NodeType, string> = {
+  battle: '그림자 승객과 싸워 카드와 골드를 얻어요.',
+  elite: '위험하지만 유물을 꼭 하나 줘요.',
+  rest: '체력을 회복하거나 카드 한 장을 강화해요.',
+  shop: '카드·유물·간식을 사거나 카드를 덜어 내요.',
+  event: '무슨 일이 일어날지 몰라요.',
+  treasure: '잠긴 화물 상자에 유물이 들어 있어요.',
+  boss: '새벽을 삼킨 검은 기관차. 체력이 절반 아래면 폭주해요.',
+};
+
 export const NODE_NAMES: Record<NodeType, string> = {
   battle: '그림자 승객', elite: '강적 칸', rest: '침대칸', shop: '매점칸', event: '수상한 객차', treasure: '화물칸', boss: '새벽역',
 };

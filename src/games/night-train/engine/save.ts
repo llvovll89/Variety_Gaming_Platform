@@ -3,6 +3,7 @@ import { CARDS } from './cards';
 import { ENEMIES } from './enemies';
 import { EVENTS } from './events';
 import { RELICS } from './relics';
+import { SNACKS } from './snacks';
 import type { RunState } from './types';
 
 export const SAVE_KEY = 'arcade:night-train:run';
@@ -13,6 +14,7 @@ const statusIds = ['strength', 'weak', 'vulnerable', 'burn', 'thorns', 'plating'
 const statuses = z.partialRecord(z.enum(statusIds), z.number().int().min(-99).max(999));
 const cardId = z.string().refine(id => id in CARDS, '알 수 없는 카드');
 const relicId = z.string().refine(id => id in RELICS, '알 수 없는 유물');
+const snackId = z.string().refine(id => id in SNACKS, '알 수 없는 간식');
 const card = z.object({ uid: count, id: cardId, up: z.boolean() });
 const pile = z.array(card).max(200);
 
@@ -26,6 +28,7 @@ const combat = z.object({
   player: z.object({ block: count, energy: count, maxEnergy: count, statuses }),
   draw: pile, hand: pile.max(10), discard: pile, exhausted: pile,
   fx: z.array(z.unknown()).transform(() => []), log: z.array(z.string()).max(60), attacksPlayed: count,
+  frames: z.array(z.unknown()).optional().transform(() => []), lastPlayed: z.unknown().optional().transform(() => null),
 });
 
 const node = z.object({
@@ -36,13 +39,14 @@ const node = z.object({
 export const runSchema = z.object({
   version: z.literal(1), seed: count.max(2 ** 32), rng: z.number().int().min(0).max(2 ** 32), mode: z.enum(['normal', 'easy']),
   phase: z.enum(['map', 'combat', 'reward', 'rest', 'shop', 'event', 'treasure', 'victory', 'defeat']),
-  hp: count, maxHp: count.min(1), gold: count, deck: pile.min(1), relics: z.array(relicId).max(20), nextUid: count,
+  hp: count, maxHp: count.min(1), gold: count, deck: pile.min(1), relics: z.array(relicId).max(20), snacks: z.array(snackId).max(3).default([]), nextUid: count,
   map: z.array(node).min(2).max(80), path: z.array(z.string()).max(20),
   combat: combat.nullable(),
-  reward: z.object({ gold: count.nullable(), cards: z.array(card).max(4).nullable(), relic: relicId.nullable() }).nullable(),
+  reward: z.object({ gold: count.nullable(), cards: z.array(card).max(4).nullable(), relic: relicId.nullable(), snack: snackId.nullable().default(null) }).nullable(),
   shop: z.object({
     cards: z.array(z.object({ card, price: count, sold: z.boolean() })).max(8),
     relics: z.array(z.object({ id: relicId, price: count, sold: z.boolean() })).max(4),
+    snacks: z.array(z.object({ id: snackId, price: count, sold: z.boolean() })).max(4).default([]),
     removePrice: count, removed: z.boolean(),
   }).nullable(),
   event: z.object({ id: z.string().refine(id => id in EVENTS, '알 수 없는 사건'), result: z.string().nullable() }).nullable(),

@@ -1,9 +1,10 @@
 import { CARDS, STARTER_DECK } from './cards';
-import { aliveEnemies, checkPlay, endTurn, playCard, startCombat } from './combat';
+import { aliveEnemies, checkPlay, checkSnack, endTurn, playCard, startCombat, useSnack } from './combat';
 import { ENCOUNTERS } from './enemies';
 import { EVENTS } from './events';
 import { availableNodes, generateMap, nodeById } from './map';
 import { RELIC_POOL } from './relics';
+import { SNACK_POOL, SNACK_SLOTS, SNACKS } from './snacks';
 import { pick, random, randInt, weighted } from './rng';
 import type { CardInstance, Command, Mode, Rarity, RunState } from './types';
 
@@ -13,7 +14,7 @@ export function createRun(seed: number, mode: Mode = 'normal'): RunState {
   const run: RunState = {
     version: 1, seed: seed >>> 0, rng: seed >>> 0, mode, phase: 'map',
     hp: START_HP[mode], maxHp: START_HP[mode], gold: 99,
-    deck: [], relics: ['lantern'], nextUid: 1, map: [], path: [],
+    deck: [], relics: ['lantern'], snacks: ['star-candy'], nextUid: 1, map: [], path: [],
     combat: null, reward: null, shop: null, event: null, rest: null, treasure: null,
     seenEvents: [], stats: { battles: 0, elites: 0, damageDealt: 0, cardsPlayed: 0 }, fxSeq: 0,
   };
@@ -39,10 +40,14 @@ export function randomCardId(run: RunState, rarities: Exclude<Rarity, 'starter'>
   return pick(run, pool.length ? pool : rarities.flatMap(BY_RARITY));
 }
 
-function rollCardChoices(run: RunState, weights: Record<'common' | 'uncommon' | 'rare', number>, count: number) {
+function rollCardChoices(run: RunState, weights: Record<'common' | 'uncommon' | 'rare', number>, count: number, upgradeChance = 0) {
   const ids: string[] = [];
   while (ids.length < count) ids.push(randomCardId(run, [weighted(run, weights)], ids));
-  return ids.map(id => makeCard(run, id));
+  return ids.map(id => {
+    const card = makeCard(run, id);
+    if (upgradeChance > 0 && random(run) < upgradeChance) card.up = true;
+    return card;
+  });
 }
 
 export function gainRelic(run: RunState): string | null {
@@ -102,7 +107,13 @@ function enterNode(run: RunState) {
         const index = Math.floor(random(run) * relicPool.length);
         relics.push({ id: relicPool.splice(index, 1)[0], price: priceCut(run, randInt(run, 140, 165)), sold: false });
       }
-      run.shop = { cards, relics, removePrice: priceCut(run, 75), removed: false };
+      const snackPool = [...SNACK_POOL];
+      const snacks: { id: string; price: number; sold: boolean }[] = [];
+      while (snacks.length < 3) {
+        const id = snackPool.splice(Math.floor(random(run) * snackPool.length), 1)[0];
+        snacks.push({ id, price: priceCut(run, randInt(run, SNACKS[id].price[0], SNACKS[id].price[1])), sold: false });
+      }
+      run.shop = { cards, relics, snacks, removePrice: priceCut(run, 75), removed: false };
       break;
     }
     case 'event': {
@@ -122,17 +133,21 @@ function finishCombat(run: RunState) {
   run.stats.battles += 1;
   if (combat.kind === 'elite') run.stats.elites += 1;
   if (run.relics.includes('thermos')) run.hp = Math.min(run.maxHp, run.hp + 5);
-  run.combat = null;
+  // The finished fight stays on the run (frozen) so the screen can show its final beat; leaving clears it.
+  combat.hand = [];
   if (combat.kind === 'boss') {
     run.phase = 'victory';
     return;
   }
   const elite = combat.kind === 'elite';
+  const floor = currentFloor(run);
+  const unowned = RELIC_POOL.filter(id => !run.relics.includes(id));
   run.phase = 'reward';
   run.reward = {
     gold: (elite ? randInt(run, 28, 36) : randInt(run, 12, 20)) + (run.relics.includes('ticket') ? 10 : 0),
-    cards: rollCardChoices(run, elite ? { common: 45, uncommon: 42, rare: 13 } : { common: 62, uncommon: 33, rare: 5 }, 3),
-    relic: elite ? (RELIC_POOL.filter(id => !run.relics.includes(id)).length ? pick(run, RELIC_POOL.filter(id => !run.relics.includes(id))) : null) : null,
+    cards: rollCardChoices(run, elite ? { common: 45, uncommon: 42, rare: 13 } : { common: 62, uncommon: 33, rare: 5 }, 3, floor > 6 ? (elite ? 0.25 : 0.12) : 0),
+    relic: elite && unowned.length ? pick(run, unowned) : null,
+    snack: random(run) < (elite ? 0.6 : 0.4) ? pick(run, SNACK_POOL) : null,
   };
 }
 
@@ -186,6 +201,24 @@ export function act(state: RunState, command: Command): RunState {
       obtainRelic(run, run.reward!.relic!);
       run.reward!.relic = null;
       break;
+    case 'takeSnack':
+      run.snacks.push(run.reward!.snack!);
+      run.reward!.snack = null;
+      break;
+    case 'useSnack':
+      useSnack(run, command.index, command.target);
+      settleCombat(run);
+      break;
+    case 'dropSnack':
+      run.snacks.splice(command.index, 1);
+      break;
+    case 'buySnack': {
+      const item = run.shop!.snacks[command.index];
+      run.gold -= item.price;
+      item.sold = true;
+      run.snacks.push(item.id);
+      break;
+    }
     case 'rest':
       run.hp = Math.min(run.maxHp, run.hp + restHeal(run));
       run.rest!.done = true;
@@ -252,6 +285,16 @@ export function isLegal(run: RunState, command: Command): boolean {
       return run.phase === 'reward' && !!run.reward?.cards;
     case 'takeRelic':
       return run.phase === 'reward' && !!run.reward?.relic;
+    case 'takeSnack':
+      return run.phase === 'reward' && !!run.reward?.snack && run.snacks.length < SNACK_SLOTS;
+    case 'useSnack':
+      return checkSnack(run, command.index, command.target).ok;
+    case 'dropSnack':
+      return command.index >= 0 && command.index < run.snacks.length && run.phase !== 'victory' && run.phase !== 'defeat';
+    case 'buySnack': {
+      const item = run.phase === 'shop' ? run.shop?.snacks[command.index] : undefined;
+      return !!item && !item.sold && run.gold >= item.price && run.snacks.length < SNACK_SLOTS;
+    }
     case 'rest':
       return run.phase === 'rest' && !!run.rest && !run.rest.done;
     case 'upgrade':

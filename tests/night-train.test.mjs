@@ -157,7 +157,7 @@ test('winning a fight offers gold, three distinct cards and a relic only for eli
   let run = fight([{ defId: 'soot-rat', hp: 5, intent: 'bite' }], { hand: ['punch'] });
   run = act(run, { t: 'play', uid: 1000 });
   assert.equal(run.phase, 'reward');
-  assert.equal(run.combat, null);
+  assert.ok(run.combat.enemies.every(e => e.hp === 0), 'the final beat of the fight is kept for the screen');
   assert.ok(run.reward.gold >= 12 && run.reward.gold <= 20);
   assert.equal(new Set(run.reward.cards.map(c => c.id)).size, 3);
   assert.ok(run.reward.cards.every(c => CARDS[c.id].rarity !== 'starter'));
@@ -171,6 +171,7 @@ test('winning a fight offers gold, three distinct cards and a relic only for eli
   assert.equal(act(run, { t: 'pickCard', index: 0 }), run, 'only one card per reward');
   run = act(run, { t: 'leave' });
   assert.equal(run.phase, 'map');
+  assert.equal(run.combat, null);
   assert.equal(run.stats.battles, 1);
 });
 
@@ -299,4 +300,60 @@ test('a simple autopilot can finish runs without breaking invariants', () => {
     finished++;
   }
   assert.equal(finished, 25);
+});
+
+test('snacks cost no energy, respect targets and the three-slot bag', () => {
+  let run = fight([{ defId: 'moth', hp: 20, intent: 'flutter' }, { defId: 'moth', hp: 20, intent: 'flutter' }], { hand: [] });
+  assert.deepEqual(run.snacks, ['star-candy'], 'every run starts with one snack');
+  run.snacks = ['star-candy', 'lemon-drop', 'emergency-whistle'];
+  const energy = run.combat.player.energy;
+  run = act(run, { t: 'useSnack', index: 0 });
+  assert.equal(run.combat.player.block, 12);
+  assert.equal(run.combat.player.energy, energy);
+  assert.deepEqual(run.snacks, ['lemon-drop', 'emergency-whistle']);
+  assert.equal(act(run, { t: 'useSnack', index: 0 }), run, 'a targeted snack needs a target when several enemies stand');
+  run = act(run, { t: 'useSnack', index: 0, target: 1 });
+  assert.equal(run.combat.enemies[1].statuses.vulnerable, 3);
+  run.combat.player.statuses.strength = 5;
+  run = act(run, { t: 'useSnack', index: 0 });
+  assert.deepEqual(run.combat.enemies.map(e => e.hp), [10, 10], 'whistle damage ignores strength and vulnerable');
+  assert.equal(act(run, { t: 'useSnack', index: 0 }), run, 'empty bag');
+
+  const outside = createRun(4);
+  outside.snacks = ['cocoa', 'gimbap'];
+  outside.hp = 40;
+  assert.equal(act(outside, { t: 'useSnack', index: 1 }), outside, 'combat snacks stay in the bag on the map');
+  assert.equal(act(outside, { t: 'useSnack', index: 0 }).hp, 55);
+  const full = structuredClone(outside);
+  full.snacks = ['cocoa', 'mint', 'mint'];
+  full.phase = 'reward'; full.reward = { gold: null, cards: null, relic: null, snack: 'gimbap' };
+  assert.equal(act(full, { t: 'takeSnack' }), full, 'a full bag cannot take more');
+  assert.deepEqual(act(act(full, { t: 'dropSnack', index: 1 }), { t: 'takeSnack' }).snacks, ['cocoa', 'mint', 'gimbap']);
+});
+
+test('the enemy turn is recorded beat by beat for the screen to replay', () => {
+  let run = fight([{ defId: 'soot-rat', hp: 30, intent: 'bite' }, { defId: 'ticketless', hp: 30, intent: 'spook' }], { hand: [] });
+  run.combat.player.statuses = { plating: 2 };
+  run = act(run, { t: 'endTurn' });
+  const actors = run.combat.frames.map(f => f.actor);
+  assert.deepEqual(actors.slice(0, 3), ['player', 0, 1]);
+  assert.equal(run.combat.frames[1].label, '앞니 물기');
+  assert.ok(run.combat.frames[1].fx.some(f => f.target === 'player'));
+  assert.equal(run.combat.frames[2].playerStatuses.vulnerable, 2);
+  const after = act(run, { t: 'play', uid: run.combat.hand[0].uid, target: 0 });
+  if (after !== run) assert.deepEqual(after.combat.frames, [], 'playing a card clears the replay');
+  assert.equal(loadRun(JSON.stringify(run)).combat.frames.length, 0, 'replays are not saved');
+});
+
+test('later stations can offer pre-upgraded cards and rewards may include a snack', () => {
+  let upgraded = 0, snacks = 0;
+  for (let seed = 1; seed <= 80; seed++) {
+    let run = fight([{ defId: 'soot-rat', hp: 1, intent: 'bite' }], { seed, hand: ['punch'] });
+    run.path = run.map.filter(n => n.floor <= 8).sort((a, b) => a.floor - b.floor).filter((n, i, list) => list.findIndex(m => m.floor === n.floor) === i).map(n => n.id);
+    run = act(run, { t: 'play', uid: 1000 });
+    upgraded += run.reward.cards.filter(c => c.up).length;
+    if (run.reward.snack) snacks++;
+  }
+  assert.ok(upgraded > 0);
+  assert.ok(snacks > 15 && snacks < 50);
 });

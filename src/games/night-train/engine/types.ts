@@ -15,6 +15,7 @@ export type Statuses = Partial<Record<StatusId, number>>;
 export type Effect =
   | { k: 'attack'; n: number; times?: number }
   | { k: 'attackAll'; n: number }
+  | { k: 'damageAll'; n: number }
   | { k: 'blockAttack' }
   | { k: 'block'; n: number }
   | { k: 'draw'; n: number }
@@ -91,6 +92,17 @@ export interface Fx {
   label?: string;
 }
 
+/** One beat of the enemy turn, replayed by the UI so each action reads on its own. */
+export interface Frame {
+  actor: 'player' | number;
+  label: string;
+  fx: Fx[];
+  hp: number;
+  block: number;
+  playerStatuses: Statuses;
+  enemies: { uid: number; hp: number; block: number; statuses: Statuses; intent: string }[];
+}
+
 export interface CombatState {
   kind: 'normal' | 'elite' | 'boss';
   turn: number;
@@ -103,6 +115,9 @@ export interface CombatState {
   fx: Fx[];
   log: string[];
   attacksPlayed: number;
+  /** Transient presentation data; never needed to continue a saved fight. */
+  frames: Frame[];
+  lastPlayed: { seq: number; card: CardInstance; target?: number } | null;
 }
 
 export type NodeType = 'battle' | 'elite' | 'rest' | 'shop' | 'event' | 'treasure' | 'boss';
@@ -119,11 +134,13 @@ export interface RewardState {
   gold: number | null;
   cards: CardInstance[] | null;
   relic: string | null;
+  snack: string | null;
 }
 
 export interface ShopState {
   cards: { card: CardInstance; price: number; sold: boolean }[];
   relics: { id: string; price: number; sold: boolean }[];
+  snacks: { id: string; price: number; sold: boolean }[];
   removePrice: number;
   removed: boolean;
 }
@@ -147,6 +164,7 @@ export interface RunState {
   gold: number;
   deck: CardInstance[];
   relics: string[];
+  snacks: string[];
   nextUid: number;
   map: MapNode[];
   path: string[];
@@ -169,6 +187,10 @@ export type Command =
   | { t: 'pickCard'; index: number }
   | { t: 'skipCards' }
   | { t: 'takeRelic' }
+  | { t: 'takeSnack' }
+  | { t: 'useSnack'; index: number; target?: number }
+  | { t: 'dropSnack'; index: number }
+  | { t: 'buySnack'; index: number }
   | { t: 'rest' }
   | { t: 'upgrade'; uid: number }
   | { t: 'buyCard'; index: number }

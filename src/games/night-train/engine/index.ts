@@ -2,6 +2,7 @@ export * from './types';
 export * from './cards';
 export * from './enemies';
 export * from './relics';
+export * from './snacks';
 export * from './map';
 export * from './combat';
 export * from './events';

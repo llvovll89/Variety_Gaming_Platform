@@ -1,12 +1,9 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
-  ArrowFatUp, Bed, Bell, Compass, Cookie, Cube, Drop, Fire, Flame, Flask, Gift, Ghost, HandFist, HardHat, Lamp, Lightning,
-  Question, Shield, ShieldCheckered, Skull, Sparkle, Stack, Storefront, Sword, Ticket, TrainRegional, Watch, Wind, X,
-} from '@phosphor-icons/react';
-import {
   CARDS, ENEMIES, RARITY_NAMES, RELICS, STATUS_INFO, TYPE_NAMES, cardStats, describeCard,
-  type CardInstance, type DescribeContext, type EnemyState, type NodeType, type StatusId, type Statuses,
+  type CardInstance, type DescribeContext, type EnemyState, type StatusId, type Statuses,
 } from '../engine';
+import { CARD_GLYPH, Glyph, RELIC_GLYPH, STATUS_GLYPH } from './glyphs';
 
 export function Modal({ label, onClose, children, wide = false }: { label: string; onClose?: () => void; children: ReactNode; wide?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -18,73 +15,72 @@ export function Modal({ label, onClose, children, wide = false }: { label: strin
   return (
     <dialog ref={ref} className={`nt-modal${wide ? ' nt-modal-wide' : ''}`} aria-label={label}
       onCancel={event => { event.preventDefault(); onClose?.(); }}>
-      {onClose && <button type="button" className="nt-modal-close" aria-label="닫기" onClick={onClose}><X size={20} weight="bold" /></button>}
+      {onClose && <button type="button" className="nt-modal-close" aria-label="닫기" onClick={onClose}><Glyph name="close" size={18} /></button>}
       {children}
     </dialog>
   );
 }
 
-export function CardView({ card, ctx, selected, disabled, onClick, label, compact, showUpgrade }: {
+const SERIAL = Object.fromEntries(Object.keys(CARDS).map((id, index) => [id, String(index + 1).padStart(3, '0')]));
+const RARITY_PIPS = { starter: 0, common: 1, uncommon: 2, rare: 3 } as const;
+const TYPE_LABEL = { attack: '공격', skill: '기술', power: '능력' } as const;
+
+/** Splits a rule line so numbers can be set in the display face and coloured when modified. */
+function RuleLine({ text, base }: { text: string; base: string }) {
+  const parts = text.split(/(\d+)/);
+  const nums = text.match(/\d+/g)?.map(Number) ?? [];
+  const baseNums = base.match(/\d+/g)?.map(Number) ?? [];
+  const tone = nums[0] !== undefined && baseNums[0] !== undefined && nums[0] !== baseNums[0] ? (nums[0] > baseNums[0] ? ' is-boosted' : ' is-reduced') : '';
+  const keyword = text === '소멸' || text === '전투 내내 유지';
+  return <span className={`${tone}${keyword ? ' is-keyword' : ''}`}>{parts.map((part, i) => (i % 2 ? <b key={i}>{part}</b> : part))}</span>;
+}
+
+export function CardView({ card, ctx, selected, disabled, onClick, label, size, showUpgrade, className = '' }: {
   card: CardInstance;
   ctx?: DescribeContext;
   selected?: boolean;
   disabled?: boolean;
   onClick?: () => void;
   label?: string;
-  compact?: boolean;
+  size?: 'compact' | 'large';
   showUpgrade?: boolean;
+  className?: string;
 }) {
   const def = CARDS[card.id];
   const shown = showUpgrade ? { ...card, up: true } : card;
   const stats = cardStats(shown);
   const lines = describeCard(shown, ctx);
-  const costChanged = showUpgrade && stats.cost !== def.cost;
+  const baseLines = describeCard(shown);
+  const cheaper = stats.cost < def.cost;
   const body = (
     <>
-      <span className={`nt-card-cost${costChanged ? ' is-upgraded' : ''}`} aria-hidden="true">{stats.cost}</span>
-      <span className="nt-card-head">
-        <span className="nt-card-name">{def.name}{shown.up ? '+' : ''}</span>
-        <span className="nt-card-type">{TYPE_NAMES[def.type]} · {RARITY_NAMES[def.rarity]}</span>
+      <span className={`nt-card-cost${cheaper ? ' is-cheaper' : ''}`} aria-hidden="true">{stats.cost}</span>
+      <span className="nt-card-band" aria-hidden="true">{TYPE_LABEL[def.type]}<i>No.{SERIAL[card.id]}</i></span>
+      <span className="nt-card-name">{def.name}</span>
+      <span className="nt-card-art" aria-hidden="true"><Glyph name={CARD_GLYPH[card.id]} size={size === 'compact' ? 26 : 32} strokeWidth={1.6} /></span>
+      <span className="nt-card-text">{lines.map((text, i) => <RuleLine key={text + i} text={text} base={baseLines[i] ?? text} />)}</span>
+      <span className="nt-card-flavor">{def.flavor}</span>
+      <span className="nt-card-foot" aria-hidden="true">
+        <span>{RARITY_NAMES[def.rarity]}</span>
+        <span className="nt-rarity">{[1, 2, 3].map(n => <span key={n} className={n <= RARITY_PIPS[def.rarity] ? 'on' : ''} />)}</span>
       </span>
-      <span className="nt-card-art" aria-hidden="true"><CardGlyph id={card.id} /></span>
-      <span className="nt-card-text">{lines.map(text => <span key={text}>{text}</span>)}</span>
-      {!compact && <span className="nt-card-flavor">{def.flavor}</span>}
     </>
   );
-  const className = `nt-card nt-card-${def.type} nt-rarity-${def.rarity}${selected ? ' is-selected' : ''}${shown.up ? ' is-up' : ''}${compact ? ' is-compact' : ''}`;
+  const classes = `nt-card nt-card-${def.type} nt-rarity-${def.rarity}${selected ? ' is-selected' : ''}${shown.up ? ' is-up' : ''}${size ? ` is-${size}` : ''} ${className}`;
   const aria = label ?? `${def.name}${shown.up ? '+' : ''}, 비용 ${stats.cost}, ${TYPE_NAMES[def.type]}. ${lines.join(', ')}`;
-  if (!onClick) return <div className={className} role="img" aria-label={aria}>{body}</div>;
-  return <button type="button" className={className} aria-label={aria} aria-pressed={selected} disabled={disabled} onClick={onClick}>{body}</button>;
+  if (!onClick) return <div className={classes} role="img" aria-label={aria}>{body}</div>;
+  return <button type="button" className={classes} aria-label={aria} aria-pressed={selected} disabled={disabled} onClick={onClick}>{body}</button>;
 }
-
-const GLYPHS: Record<string, typeof Sword> = {
-  punch: Ticket, coat: Shield, 'lantern-flash': Lamp, 'double-punch': Ticket, whistle: TrainRegional, 'sudden-stop': Lightning,
-  spark: Sparkle, gust: Wind, 'ember-toss': Fire, 'trunk-swing': Cube, umbrella: Shield, blanket: Bed, timetable: Stack,
-  coffee: Flask, 'fog-window': Drop, 'steam-blast': Wind, 'luggage-slam': Cube, 'shooting-star': Sparkle, 'brake-lever': HandFist,
-  'first-aid': Gift, 'luggage-wall': ShieldCheckered, focus: ArrowFatUp, 'iron-coat': ShieldCheckered, 'barbed-wire': Sparkle,
-  rhythm: HandFist, 'last-train': TrainRegional, 'coal-burst': Flame, boiler: Fire, 'fire-engine': Flame, starlight: Sparkle, fortress: ShieldCheckered,
-};
-
-function CardGlyph({ id }: { id: string }) {
-  const Icon = GLYPHS[id] ?? Sparkle;
-  return <Icon size={30} weight="duotone" />;
-}
-
-const STATUS_ICONS: Record<StatusId, typeof Sword> = {
-  strength: HandFist, weak: Drop, vulnerable: ShieldCheckered, burn: Flame, thorns: Sparkle, plating: Shield, drawUp: Stack, kindle: Fire,
-};
 
 export function StatusList({ statuses }: { statuses: Statuses }) {
   const entries = (Object.entries(statuses) as [StatusId, number][]).filter(([, value]) => value);
-  if (!entries.length) return null;
   return (
     <ul className="nt-statuses" aria-label="상태">
       {entries.map(([id, value]) => {
-        const Icon = STATUS_ICONS[id];
         const info = STATUS_INFO[id];
         return (
           <li key={id} className={info.debuff ? 'is-debuff' : 'is-buff'} title={`${info.name} ${value}: ${info.desc}`} aria-label={`${info.name} ${value}. ${info.desc}`}>
-            <Icon size={14} weight="fill" aria-hidden="true" /><span aria-hidden="true">{value}</span>
+            <Glyph name={STATUS_GLYPH[id]} size={14} strokeWidth={2} /><span aria-hidden="true">{value}</span>
           </li>
         );
       })}
@@ -92,7 +88,7 @@ export function StatusList({ statuses }: { statuses: Statuses }) {
   );
 }
 
-export function intentSummary(enemy: EnemyState, damageTo: (base: number) => number) {
+export function intentSummary(enemy: Pick<EnemyState, 'defId' | 'intent'>, damageTo: (base: number) => number) {
   const move = ENEMIES[enemy.defId].moves[enemy.intent];
   if (!move) return { move: null, damage: 0, hits: 0, text: '' };
   let damage = 0, hits = 0;
@@ -109,7 +105,8 @@ export function intentSummary(enemy: EnemyState, damageTo: (base: number) => num
   return { move, damage, hits, text: parts.join(', ') };
 }
 
-export function IntentBadge({ enemy, damageTo }: { enemy: EnemyState; damageTo: (base: number) => number }) {
+/** The enemy's next move, printed on a luggage tag hanging above its head. */
+export function IntentTag({ enemy, damageTo }: { enemy: Pick<EnemyState, 'defId' | 'intent'>; damageTo: (base: number) => number }) {
   const { move, damage, hits, text } = intentSummary(enemy, damageTo);
   if (!move) return null;
   const attack = move.intent.startsWith('attack');
@@ -117,38 +114,36 @@ export function IntentBadge({ enemy, damageTo }: { enemy: EnemyState; damageTo: 
   const buff = move.intent.includes('buff') && !move.intent.includes('debuff');
   const debuff = move.intent.includes('debuff');
   return (
-    <div className={`nt-intent${attack ? ' is-attack' : ''}`} title={`${move.name}: ${text}`} aria-label={`다음 행동 ${move.name}: ${text}`}>
-      {attack && <><Sword size={16} weight="fill" aria-hidden="true" /><b>{damage}{hits > 1 ? `×${hits}` : ''}</b></>}
-      {defend && <Shield size={16} weight="fill" aria-hidden="true" />}
-      {buff && <ArrowFatUp size={16} weight="fill" aria-hidden="true" />}
-      {debuff && <Drop size={16} weight="fill" aria-hidden="true" />}
-      <span className="nt-intent-name">{move.name}</span>
-    </div>
+    <>
+      <div className={`nt-tag${attack ? ' is-attack' : ''}`} title={`${move.name}: ${text}`} aria-label={`다음 행동 ${move.name}: ${text}`}>
+        {attack && <><Glyph name="sword" size={16} strokeWidth={2} /><b>{damage}{hits > 1 ? `×${hits}` : ''}</b></>}
+        {defend && <Glyph name="shield" size={16} strokeWidth={2} />}
+        {buff && <Glyph name="up" size={16} strokeWidth={2} />}
+        {debuff && <Glyph name="spiral" size={16} strokeWidth={2} />}
+        <span className="nt-tag-name">{move.name}</span>
+      </div>
+      <span className="nt-tag-string" aria-hidden="true" />
+    </>
   );
 }
 
-const RELIC_ICONS: Record<string, typeof Sword> = {
-  lantern: Lamp, thermos: Flask, glove: HandFist, candy: Cookie, scarf: Wind, cap: HardHat, bell: Bell, coal: Cube,
-  flint: Fire, compass: Compass, ticket: Ticket, watch: Watch,
-};
-
 export function RelicIcon({ id, size = 22 }: { id: string; size?: number }) {
-  const Icon = RELIC_ICONS[RELICS[id]?.icon] ?? Sparkle;
-  return <Icon size={size} weight="duotone" aria-hidden="true" />;
+  return <Glyph name={RELIC_GLYPH[RELICS[id]?.icon] ?? 'spark'} size={size} />;
 }
 
-export const NODE_ICONS: Record<NodeType, typeof Sword> = {
-  battle: Ghost, elite: Skull, rest: Bed, shop: Storefront, event: Question, treasure: Gift, boss: TrainRegional,
-};
-
 export function HpBar({ hp, max, block = 0, label }: { hp: number; max: number; block?: number; label: string }) {
-  const ratio = Math.max(0, Math.min(1, hp / max));
+  const ratio = `${Math.max(0, Math.min(1, hp / max)) * 100}%`;
   return (
     <div className={`nt-hp${block > 0 ? ' has-block' : ''}`} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={hp}
       aria-valuetext={`${hp} / ${max}${block ? `, 방어 ${block}` : ''}`}>
-      <span className="nt-hp-fill" style={{ width: `${ratio * 100}%` }} />
+      <span className="nt-hp-lag" style={{ width: `calc(${ratio} - 2px)` }} />
+      <span className="nt-hp-fill" style={{ width: `calc(${ratio} - 2px)` }} />
       <span className="nt-hp-text">{hp} / {max}</span>
-      {block > 0 && <span className="nt-block-badge" aria-hidden="true"><Shield size={14} weight="fill" />{block}</span>}
+      {block > 0 && <span className="nt-block" aria-hidden="true"><Glyph name="shield" size={30} strokeWidth={1.6} /><b>{block}</b></span>}
     </div>
   );
+}
+
+export function Stamp({ glyph, size = 30, className = '' }: { glyph: string; size?: number; className?: string }) {
+  return <span className={`nt-stamp ${className}`} aria-hidden="true"><Glyph name={glyph} size={size} /></span>;
 }
