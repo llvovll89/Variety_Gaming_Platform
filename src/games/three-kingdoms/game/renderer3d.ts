@@ -35,7 +35,7 @@ export class MapRenderer3D {
     this.gl.toneMapping = T.ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 1.12;
     this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type = T.PCFSoftShadowMap;
+    this.gl.shadowMap.type = T.PCFShadowMap;
     this.scene.fog = new T.Fog('#292a26', 2200, 4200);
     this.scene.add(new T.HemisphereLight('#d3d7cb', '#474132', 1.35));
     this.sun.castShadow = true;

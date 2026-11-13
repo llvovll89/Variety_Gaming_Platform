@@ -79,7 +79,7 @@ export class KitchenScene {
   cameraX: number | null = null; cameraY = 150; cameraWidth = 540; punch = 0;
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = T.PCFSoftShadowMap;
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = T.PCFShadowMap;
     this.renderer.outputColorSpace = T.SRGBColorSpace; this.renderer.toneMapping = T.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.2;
     this.scene.background = new T.Color('#3f494f'); this.scene.fog = new T.Fog('#3f494f', 1100, 1900);
     this.camera.position.set(0, 320, 1100); this.camera.lookAt(0, 150, 0);

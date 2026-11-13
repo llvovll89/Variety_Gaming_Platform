@@ -86,7 +86,7 @@ export class TimeScene {
   private height=1;
   constructor(private host:HTMLElement,readonly run:TimeRun){
     this.room=buildRoom(run.levelIndex);
-    try{this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.8));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;this.canvas=this.renderer.domElement;}
+    try{this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.8));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.1;this.canvas=this.renderer.domElement;}
     catch{this.canvas=document.createElement('canvas');this.context=this.canvas.getContext('2d');}
     this.canvas.setAttribute('aria-hidden','true');host.appendChild(this.canvas);this.camera.position.set(11,15,13);this.camera.lookAt(0,0,-.3);this.resize();
   }

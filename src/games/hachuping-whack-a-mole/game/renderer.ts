@@ -47,7 +47,7 @@ export class MoleScene {
   constructor(canvas: HTMLCanvasElement, private preview = false) {
     this.renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.setClearColor(0x000000,0);
     this.camera.position.set(0,10,12); this.camera.lookAt(0,0,0);
