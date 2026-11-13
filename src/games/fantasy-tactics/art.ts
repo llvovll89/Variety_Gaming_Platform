@@ -43,7 +43,7 @@ export const artReady = Promise.all([
       }
       resolve();
     };
-    atlas.onerror = () => resolve(); atlas.src = '/art/fantasy-tactics/expanded-roles.png';
+    atlas.onerror = () => resolve(); atlas.src = '/art/fantasy-tactics/expanded-roles.webp';
   }),
   new Promise<void>(resolve => {
     const atlas=new Image();atlas.onload=()=>{
@@ -54,7 +54,7 @@ export const artReady = Promise.all([
         for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(pixels[(y*w+x)*4+3]>32){l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);b=Math.max(b,y);}
         const crop=document.createElement('canvas');crop.width=Math.max(1,r-l+1);crop.height=Math.max(1,b-t+1);crop.getContext('2d')!.drawImage(cell,l,t,crop.width,crop.height,0,0,crop.width,crop.height);beginners.push(crop);
       }resolve();
-    };atlas.onerror=()=>resolve();atlas.src='/art/fantasy-tactics/beginners.png';
+    };atlas.onerror=()=>resolve();atlas.src='/art/fantasy-tactics/beginners.webp';
   }),
   new Promise<void>((resolve) => {
     const atlas = new Image();
@@ -99,7 +99,7 @@ export const artReady = Promise.all([
       }
       resolve();
     };
-    atlas.onerror=()=>resolve();atlas.src='/art/fantasy-tactics/animation.png';
+    atlas.onerror=()=>resolve();atlas.src='/art/fantasy-tactics/animation.webp';
   }),
   new Promise<void>((resolve) => {
     const atlas = new Image();
@@ -121,9 +121,9 @@ export const artReady = Promise.all([
       }
       resolve();
     };
-    atlas.onerror = () => resolve(); atlas.src = '/art/fantasy-tactics/sprites.png';
+    atlas.onerror = () => resolve(); atlas.src = '/art/fantasy-tactics/sprites.webp';
   }),
-  new Promise<void>((resolve) => { portraits.onload = () => resolve(); portraits.onerror = () => resolve(); portraits.src = '/art/fantasy-tactics/portraits.png'; }),
+  new Promise<void>((resolve) => { portraits.onload = () => resolve(); portraits.onerror = () => resolve(); portraits.src = '/art/fantasy-tactics/portraits.webp'; }),
 ]).then(() => { loaded = true; });
 
 export function sprite(c: CanvasRenderingContext2D, role: Role | 'tree', x: number, y: number, scale = 1, direction: Facing = 'se', pose: 'idle' | 'walk' | 'attack' = 'idle', clock = 0, promoted = true): boolean {

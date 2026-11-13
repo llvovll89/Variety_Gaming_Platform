@@ -4,10 +4,10 @@ All 120 historical officers have fixed illustrated identities. 56 reuse the matc
 
 Saved workspace assets:
 
-- `public/art/three-kingdoms/portraits-pk-1.png` — 1254 × 1254 PNG, 16 portraits
-- `public/art/three-kingdoms/portraits-pk-2.png` — 1254 × 1254 PNG, 16 portraits
-- `public/art/three-kingdoms/portraits-pk-3.png` — 1254 × 1254 PNG, 16 portraits
-- `public/art/three-kingdoms/portraits-pk-4.png` — 1254 × 1254 PNG, 16 portraits
+- `public/art/three-kingdoms/portraits-pk-1.webp` — 1254 × 1254 WebP, 16 portraits
+- `public/art/three-kingdoms/portraits-pk-2.webp` — 1254 × 1254 WebP, 16 portraits
+- `public/art/three-kingdoms/portraits-pk-3.webp` — 1254 × 1254 WebP, 16 portraits
+- `public/art/three-kingdoms/portraits-pk-4.webp` — 1254 × 1254 WebP, 16 portraits
 
 The four outputs were visually inspected for the 4 × 4 grid, subject order, complete faces and headgear, absence of text, and consistency with the existing card portraits. Crop coordinates use equal grid fractions. `game/officerPortraits.ts` records the row-major identity mapping. Renaming or moving an officer does not change their portrait. Custom officers use a deterministic existing face; they do not receive a uniquely generated portrait.
 

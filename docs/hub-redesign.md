@@ -10,7 +10,7 @@ Typography uses variable Pretendard subsets and a small licensed Gasoek One subs
 
 All 13 covers were produced individually with the built-in image generation tool, then resized and JPEG-compressed to 160×90 picker previews, 640×360 catalog thumbnails and 1280×720 feature covers in public/art/hub. Artwork is promotional illustration, not an in-game screenshot. Existing game artwork and game interfaces remain intact.
 
-References: docs/screenshots/ghost-movers.png; public/art/fantasy-tactics/cover.png; public/art/three-kingdoms-card/valley.png; public/art/mole-3d.png.
+References: docs/screenshots/ghost-movers.png; public/art/fantasy-tactics/cover.webp; public/art/three-kingdoms-card/valley.webp; public/art/mole-3d.png.
 
 Initial cover briefs: Ghost Movers — cozy nocturnal isometric apartment, friendly ghost, moving boxes and seven furniture abilities; Ten Seconds — clockwork laboratory, tiny explorer and three temporal echoes with plates, doors and laser puzzles; Fantasy Tactics — four adventurers on a maritime journey beyond the forest toward islands and a lighthouse; Three Kingdoms Card — collectible officers and a growing walled valley settlement.
 

@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import Module from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { webpSize } from './imageSize.mjs';
 
 const compiled=await build({stdin:{contents:`
   export {createElement} from 'react';
@@ -49,9 +50,9 @@ test('all 120 historical officers have distinct illustrated portraits backed by 
     assert.ok(coordinates.every(n=>Number.isFinite(n)&&n>=0&&n<=100));
   }
   for(const asset of [...images].filter(p=>p.includes('portraits-pk-'))) {
-    const png=readFileSync(`public${asset}`);
-    assert.equal(png.readUInt32BE(16),png.readUInt32BE(20),'square portrait atlas');
-    assert.ok(png.readUInt32BE(16)>=1024);
+    const {width,height}=webpSize(readFileSync(`public${asset}`));
+    assert.equal(width,height,'square portrait atlas');
+    assert.ok(width>=1024);
   }
 });
 
@@ -75,7 +76,7 @@ test('officer editor and details render portrait art without 3D preview or appea
   const detail=renderToStaticMarkup(createElement(OfficerDetails,{officer:state.officers.guanyu,state,onClose:()=>{}}));
   assert.match(detail,/관우 초상/);assert.match(detail,/사용 가능한 전법/);
   assert.doesNotMatch(detail,/<canvas/);
-  assert.match(detail,/heroes\.png/);
+  assert.match(detail,/heroes\.webp/);
 });
 
 test('main menu shows actual faction resources and requires an explicit campaign start',()=>{

@@ -1,6 +1,6 @@
 # Additional officers, 2026-09-29
 
-`public/art/three-kingdoms-card/heroes-expansion-2.png` was generated using the built-in imagegen tool. The original atlas remains unchanged. New atlas: 1448 × 1086, four columns and three rows of 362px square portraits.
+`public/art/three-kingdoms-card/heroes-expansion-2.webp` was generated using the built-in imagegen tool. The original atlas remains unchanged. New atlas: 1448 × 1086, four columns and three rows of 362px square portraits.
 
 Order: Xu Shu, Fa Zheng, Guan Ping, Cao Ren; Jia Xu, Pang De, Lu Su, Taishi Ci; Zhou Tai, Dong Zhuo, Zhang Jiao, Meng Huo.
 
@@ -20,11 +20,11 @@ The 16 existing individual SVG portraits in `public/art/three-kingdoms-card/hero
 ## Portrait replacement and fourth expansion, 2026-09-30
 
 The third expansion's 16 silhouette SVGs are superseded in the game by
-`public/art/three-kingdoms-card/heroes-expansion-3.png` (4 columns × 4 rows).
+`public/art/three-kingdoms-card/heroes-expansion-3.webp` (4 columns × 4 rows).
 The original SVG files remain as source assets; they are no longer used by portraitStyle.
 Tile order follows EXPANSION3_HEROES exactly, preserving all existing officer keys and saves.
 
-`public/art/three-kingdoms-card/heroes-expansion-4.png` (4 columns × 2 rows)
+`public/art/three-kingdoms-card/heroes-expansion-4.webp` (4 columns × 2 rows)
 adds eight illustrated officers, bringing the catalog to 72:
 
 1. Zhang Bao / 장포 — Shu warrior, green-black armor and spear.
@@ -53,7 +53,7 @@ Abilities, stats, titles and dialogue are fictional game content.
 
 ## Fifth expansion, 2026-10-21
 
-Saved project asset: `public/art/three-kingdoms-card/heroes-expansion-5.png`.
+Saved project asset: `public/art/three-kingdoms-card/heroes-expansion-5.webp`.
 Created with the built-in imagegen tool; no CLI/API fallback. The generated
 1254 × 1254 PNG was inspected and copied into the project without editing.
 It contains sixteen equal cells in a 4 × 4 atlas. Catalog tile indexes follow
