@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type { GameProps } from "../../platform/types";
+import { useExitGuard } from "../../platform/exitGuard";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { MapCanvas } from "./components/MapCanvas";
 import { StartMenu } from "./components/StartMenu";
@@ -61,6 +62,9 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     resumeRef.current = saved;
     setFactionId(saved.playerFactionId);
   }, []);
+
+  // Browser back during a campaign leaves the same way as the toolbar button: save first, stay if it fails.
+  useExitGuard(factionId ? () => { if (!engine || engine.save()) onExit(); } : null);
 
   if (!factionId) {
     return <StartMenu onStart={startNew} onResume={resume} onExit={onExit} />;
