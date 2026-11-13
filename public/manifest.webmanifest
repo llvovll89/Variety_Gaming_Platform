@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "GH ARCADE",
+  "short_name": "GH ARCADE",
+  "description": "설치 없이 바로 시작하는 브라우저 게임 모음. 전략, 액션, 퍼즐과 캐주얼 게임을 플레이하세요.",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#191c22",
+  "theme_color": "#191c22",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
