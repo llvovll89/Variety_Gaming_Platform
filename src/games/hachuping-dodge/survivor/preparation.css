@@ -26,3 +26,5 @@
 @media(max-width:767px){.prep-hero-effect{font-size:10px;margin-top:8px}.prep-showcase-model:after{display:none}}
 @media(min-width:768px){.prep-launch{position:sticky;bottom:-22px;background:#24262d;z-index:2;padding-bottom:8px}.prep-workbench{padding-bottom:12px}}
 @media(max-height:650px) and (min-width:768px){.prep-heading h1{font-size:25px}.prep-workbench{gap:20px}.prep-heroes .survivor-portrait{height:54px}.prep-heroes button{padding:9px}.prep-showcase{min-height:260px}.prep-showcase-model{max-width:300px}.prep-model-caption{margin-bottom:6px}.prep-model-caption h2{font-size:20px}.prep-detail{margin-top:10px}.prep-stats{padding-bottom:10px}.prep-stats b{font-size:21px}.prep-detail-title{margin-bottom:10px}.prep-careers h3{margin:12px 0 8px}.prep-careers>div{margin:8px 0}.prep-careers>p{display:none}.prep-trait,.prep-synergy{font-size:11px;margin:8px 0}.prep-launch{bottom:-14px;padding-top:12px}}
+.prep-launch .prep-difficulty-hint{font-size:11px;line-height:1.6;margin:6px 0 0;color:#d5c8ad;max-width:52ch}
+@media(max-width:767px){.prep-launch .prep-difficulty-hint{font-size:10px}}
