@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { build } from 'esbuild';
 import postcss from 'postcss';
+import { webpSize } from './imageSize.mjs';
 
 const compiled = await build({ stdin: { contents: `
   export * from './src/games/three-kingdoms-card/lib/heroCatalog';
@@ -21,6 +22,7 @@ export * from './src/games/three-kingdoms-card/lib/equipment';
 const mod = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
 const { HERO_CATALOG, createDemo, createCollectedHero, demoSchema, portraitStyle, actDemo, HERO_SKILLS, heroSkills, skillTier, simulateBattle } =
   mod;
+
 
 test('equipment crafting, upgrade and salvage pay exact costs without recycling profit', () => {
   let state = started(); state.castle.gold = 100000;
@@ -150,8 +152,7 @@ test('replacement and new officers use complete raster atlases with unique in-bo
     assert.deepEqual(heroes.map(h => h.tile), Array.from({ length: expected }, (_, i) => i));
     const asset = portraitStyle(heroes[0].key).backgroundImage.match(/url\('([^']+)'\)/)[1];
     const bytes = readFileSync(`public${asset}`);
-    assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
-    const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
+    const { width, height } = webpSize(bytes);
     assert.ok(Math.abs(width / 4 - height / rows) < 1, `${atlas}: square portrait cells`);
     assert.ok(width / 4 >= 256, `${atlas}: usable portrait resolution`);
   }
@@ -693,9 +694,9 @@ test('new officers have unique atlas crops and all five recruitable grades prese
   const additions = HERO_CATALOG.filter(h => h.atlas === 'expansion5');
   assert.equal(additions.length, 16);
   assert.deepEqual(additions.map(h => h.tile), Array.from({ length: 16 }, (_, i) => i));
-  const bytes = readFileSync('public/art/three-kingdoms-card/heroes-expansion-5.png');
-  assert.equal(bytes.readUInt32BE(16), bytes.readUInt32BE(20));
-  assert.ok(bytes.readUInt32BE(16) / 4 >= 256);
+  const { width, height } = webpSize(readFileSync('public/art/three-kingdoms-card/heroes-expansion-5.webp'));
+  assert.equal(width, height);
+  assert.ok(width / 4 >= 256);
   assert.equal(new Set(additions.map(h => JSON.stringify(portraitStyle(h.key)))).size, 16);
   for (const template of additions) for (let stars = 1; stars <= 5; stars++) {
     const state = started(); state.heroes = [createCollectedHero('guanyu', 3, 'old'), createCollectedHero(template.key, stars, 'new')];

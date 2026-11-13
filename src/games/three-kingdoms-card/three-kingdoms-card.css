@@ -70,7 +70,7 @@ a { color: inherit; }
 
 /* Onboarding */
 .onboarding { position: relative; min-height: 100svh; display: flex; align-items: center; overflow: hidden; background: var(--indigo-deep); }
-.onboard-art { position: absolute; inset: 0; background: linear-gradient(90deg, #080808f7 0%, #080808d0 34%, #08080830 72%), url('/art/three-kingdoms-card/valley.png') center / cover; }
+.onboard-art { position: absolute; inset: 0; background: linear-gradient(90deg, #080808f7 0%, #080808d0 34%, #08080830 72%), url('/art/three-kingdoms-card/valley.webp') center / cover; }
 .onboard-content { position: relative; width: 100%; max-width: 1400px; margin: auto; padding: 48px 7vw; }
 .onboard-intro { margin: 64px 0 32px; }
 .onboard-intro h1 { font-size: clamp(40px, 4.6vw, 66px); line-height: 1.28; font-weight: 750; color: var(--silk); letter-spacing: -.035em; }
@@ -143,7 +143,7 @@ a { color: inherit; }
 
 /* Recruit hall */
 .summon-hall { position: relative; min-height: 460px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--panel); isolation: isolate; }
-.hall-mist { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, #080808f7 0%, #101010d0 48%, #10101088), url('/art/three-kingdoms-card/valley.png') center / cover; }
+.hall-mist { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, #080808f7 0%, #101010d0 48%, #10101088), url('/art/three-kingdoms-card/valley.webp') center / cover; }
 .hall-copy { position: relative; z-index: 2; width: 46%; padding: 40px 40px 150px; }
 .hall-label { display: inline-block; padding: 4px 10px; border: 1px solid #bec3cc66; border-radius: 999px; color: var(--bronze-soft); font-size: 13px; }
 .hall-copy h2 { margin: 20px 0 16px; color: var(--silk); font-size: clamp(32px, 3vw, 44px); line-height: 1.3; }
@@ -272,7 +272,7 @@ progress { display: block; width: 100%; height: 6px; margin: 10px 0 14px; accent
 .reinforce-panel button { width: 100%; margin-top: 12px; }
 
 /* Territory */
-.territory-banner { display: flex; align-items: center; min-height: 320px; padding: 40px; border: 1px solid var(--line-strong); border-radius: 3px; background: linear-gradient(90deg, #080808eb 10%, #08080840), url('/art/three-kingdoms-card/valley.png') center 57% / cover; }
+.territory-banner { display: flex; align-items: center; min-height: 320px; padding: 40px; border: 1px solid var(--line-strong); border-radius: 3px; background: linear-gradient(90deg, #080808eb 10%, #08080840), url('/art/three-kingdoms-card/valley.webp') center 57% / cover; }
 .territory-banner h1 { margin: 6px 0 14px; font-size: 48px; }
 .territory-banner p:not(.eyebrow) { color: var(--silk-dim); font-size: 15px; line-height: 1.85; }
 .territory-banner .subtle-tag { margin-top: 22px; background: #080808b3; }
@@ -299,7 +299,7 @@ progress { display: block; width: 100%; height: 6px; margin: 10px 0 14px; accent
 /* Expedition */
 .target-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .target-card { overflow: hidden; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
-.target-scenery { position: relative; display: grid; place-items: center; height: 150px; background: linear-gradient(0deg, var(--panel), #15151522), url('/art/three-kingdoms-card/valley.png') 55% 45% / 240%; }
+.target-scenery { position: relative; display: grid; place-items: center; height: 150px; background: linear-gradient(0deg, var(--panel), #15151522), url('/art/three-kingdoms-card/valley.webp') 55% 45% / 240%; }
 .target-1 .target-scenery { background-position: 15% 30%; }
 .target-2 .target-scenery { background-position: 90% 45%; }
 .target-scenery > span { padding-left: .2em; color: var(--silk); font-family: var(--font-display); font-size: 38px; font-weight: 900; letter-spacing: .2em; text-shadow: 0 2px 20px #000; }
@@ -462,7 +462,7 @@ meter::-webkit-meter-optimum-value { border-radius: 3px; background: var(--rarit
   h1 { font-size: 28px; }
   h2 { font-size: 21px; }
   .onboard-content { padding: 72px 20px 40px; }
-  .onboard-art { background-image: linear-gradient(180deg, #080808b0, #080808f2 55%), url('/art/three-kingdoms-card/valley.png'); background-position: 65% center; }
+  .onboard-art { background-image: linear-gradient(180deg, #080808b0, #080808f2 55%), url('/art/three-kingdoms-card/valley.webp'); background-position: 65% center; }
   .onboard-intro { margin: 48px 0 28px; }
   .onboard-intro h1 { font-size: 38px; }
   .onboard-intro > p:last-child { font-size: 15px; }
@@ -681,7 +681,7 @@ meter::-webkit-meter-optimum-value { border-radius: 3px; background: var(--rarit
 .command-heading p, .command-date { font-size: 12px; color: var(--silk-dim); }
 .command-seal { display: grid; place-items: center; width: 44px; height: 52px; border: 3px double #bec3cc; color: var(--bronze-soft); writing-mode: vertical-rl; font: 700 19px var(--font-display); }
 .command-columns { display: grid; grid-template-columns: minmax(0, 1fr) 250px; border: 1px solid var(--line-strong); box-shadow: 0 3px 12px #0003; }
-.campaign-map { position: relative; min-height: 340px; overflow: hidden; background: linear-gradient(#17191c77, #13141688), url('/art/three-kingdoms-card/valley.png') center / cover; }
+.campaign-map { position: relative; min-height: 340px; overflow: hidden; background: linear-gradient(#17191c77, #13141688), url('/art/three-kingdoms-card/valley.webp') center / cover; }
 .campaign-map::after { position: absolute; inset: 0; border: 7px solid #08080855; content: ''; pointer-events: none; }
 .map-caption { position: relative; z-index: 1; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 14px; padding: 12px 16px; background: #080808d9; border-bottom: 1px solid #72757d88; }
 .map-caption strong { font-family: var(--font-display); font-size: 16px; }
@@ -722,7 +722,7 @@ meter::-webkit-meter-optimum-value { border-radius: 3px; background: var(--rarit
 .report-transcript summary { cursor: pointer; padding: 14px 20px; border-top: 1px solid var(--line-strong); color: var(--bronze-soft); font-size: 13px; }
 .battle-replay { padding: 18px 22px; border-top: 1px solid var(--line-strong); }
 .replay-top { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--silk-dim); }
-.replay-field { display: grid; position: relative; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 14px; padding: 24px; border: 1px solid #72757d77; background: linear-gradient(#08080899, #080808e8), url('/art/three-kingdoms-card/valley.png') center / cover; }
+.replay-field { display: grid; position: relative; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 14px; padding: 24px; border: 1px solid #72757d77; background: linear-gradient(#08080899, #080808e8), url('/art/three-kingdoms-card/valley.webp') center / cover; }
 .replay-army { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .army-banner { padding: 4px 12px 8px; background: #374b57; border: 1px solid #b5c1c4; font: 700 25px var(--font-display); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%); }
 .army-defender .army-banner { background: #34363d; border-color: #c8907b; }
@@ -824,7 +824,7 @@ meter::-webkit-meter-optimum-value { border-radius: 3px; background: var(--rarit
 .brand-seal { background: #25272c; border: 1px solid #626771; color: #ededed; }
 .outline-button { border-color: #62646c; }
 .outline-button:hover:not(:disabled) { background: #ffffff0b; }
-.campaign-map { background-image: linear-gradient(#08080844, #08080888), url('/art/three-kingdoms-card/valley.png'); }
+.campaign-map { background-image: linear-gradient(#08080844, #08080888), url('/art/three-kingdoms-card/valley.webp'); }
 .map-home, .map-target { min-width: 0; max-width: 29%; }
 .map-home strong, .map-target strong { overflow-wrap: anywhere; }
 .map-home small, .map-target small { white-space: nowrap; }

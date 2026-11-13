@@ -22,7 +22,7 @@ export function CampScreen({ battle, revision, locked, onGear, onUpdate, onDepar
     let active = true;
     const background = new Image();
     const loaded = new Promise<void>(resolve => { background.onload = () => resolve(); background.onerror = () => resolve(); });
-    background.src = '/art/fantasy-tactics/camp.png';
+    background.src = '/art/fantasy-tactics/camp.webp';
     c.fillStyle = '#18253b'; c.fillRect(0,0,1120,747);
     void Promise.all([artReady, loaded]).then(() => {
       if (!active) return;

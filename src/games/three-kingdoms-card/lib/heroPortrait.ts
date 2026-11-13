@@ -6,27 +6,27 @@ const expandedY = [0, 220, 440, 664, 883, 1103, 1374];
 export function portraitStyle(key: string) {
   const hero = catalogHero(key);
   if (hero.atlas === "expansion5") return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-5.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-5.webp')",
     backgroundSize: "400% 400%",
     backgroundPosition: `${(hero.tile % 4) * 100 / 3}% ${Math.floor(hero.tile / 4) * 100 / 3}%`,
   };
   if (hero.atlas === "expansion3") return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-3.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-3.webp')",
     backgroundSize: "400% 400%",
     backgroundPosition: `${(hero.tile % 4) * 100 / 3}% ${Math.floor(hero.tile / 4) * 100 / 3}%`,
   };
   if (hero.atlas === "expansion4") return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-4.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-4.webp')",
     backgroundSize: "400% 200%",
     backgroundPosition: `${(hero.tile % 4) * 100 / 3}% ${Math.floor(hero.tile / 4) * 100}%`,
   };
   if (hero.atlas === "expansion2") return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-2.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expansion-2.webp')",
     backgroundSize: "400% 300%",
     backgroundPosition: `${(hero.tile % 4) * 100 / 3}% ${Math.floor(hero.tile / 4) * 50}%`,
   };
   if (hero.atlas === "original") return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes.webp')",
     backgroundSize: "300% 200%",
     backgroundPosition: `${(hero.tile % 3) * 50}% ${Math.floor(hero.tile / 3) * 100}%`,
   };
@@ -35,7 +35,7 @@ export function portraitStyle(key: string) {
   const width = expandedX[col + 1] - x;
   const height = Math.min(expandedY[row + 1] - y, width);
   return {
-    backgroundImage: "url('/art/three-kingdoms-card/heroes-expanded.png')",
+    backgroundImage: "url('/art/three-kingdoms-card/heroes-expanded.webp')",
     backgroundSize: `${1145 / width * 100}% ${1374 / height * 100}%`,
     backgroundPosition: `${x / (1145 - width) * 100}% ${y / (1374 - height) * 100}%`,
   };

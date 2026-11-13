@@ -1,6 +1,7 @@
 
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useExitGuard } from "../../../platform/exitGuard";
 import { actDemo, assignedIds, OFFLINE_CAP_SECONDS, offlineSummary, createCollectedHero, createDemo, demoSchema, production, STORAGE_KEY, syncDemo, type DemoAction, type DemoHero, type DemoState } from "../lib/demoGame";
 import { HERO_CATALOG } from "../lib/heroCatalog";
 import { BACKUP_KEY, browserSave, type LocalSave } from "../lib/localSave";
@@ -129,6 +130,8 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
     if (await write(current.current)) { onExit?.(); return; }
     if (window.confirm("현재 진행을 저장하지 못했습니다. 필요한 기록을 먼저 백업하세요. 저장하지 않고 허브로 돌아갈까요?")) onExit?.();
   }
+  // Browser back runs the same save-then-leave routine as the hub button.
+  useExitGuard(onExit ? () => void exit() : null);
   function loadLatest() {
     if (!window.confirm("현재 화면의 미저장 진행을 버리고 최신 저장 기록을 불러올까요? 필요하면 먼저 백업하세요.")) return;
     try {

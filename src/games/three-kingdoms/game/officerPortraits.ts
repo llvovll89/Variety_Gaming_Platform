@@ -32,7 +32,7 @@ export function officerPortraitStyle(id:string): CSSProperties {
   const source=officerPortraitSource(id);
   if(source.kind==='shared')return portraitStyle(source.key);
   return {
-    backgroundImage:`url('/art/three-kingdoms/portraits-pk-${source.atlas}.png')`,
+    backgroundImage:`url('/art/three-kingdoms/portraits-pk-${source.atlas}.webp')`,
     backgroundSize:'400% 400%',
     backgroundPosition:`${(source.tile%4)*100/3}% ${Math.floor(source.tile/4)*100/3}%`,
   };
