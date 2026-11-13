@@ -11,6 +11,7 @@ import { DEFAULT_LOADOUT, HEROES, TINTS, WEAPONS, type Loadout } from './world';
 import Preparation, { Portrait } from './Preparation';
 import { ADVANCE_LEVELS, MAX_LEVEL, PATHS, promotionOptions, promotionTrait, skillDescription } from './classes';
 import { heroWeaponName } from './heroVisuals';
+import { readDifficulty, saveDifficulty, readBest } from './preferences';
 
 function readLoadout(): Loadout {
   try { const v=JSON.parse(localStorage.getItem('rune-ranger-loadout')||'null');
@@ -19,16 +20,15 @@ function readLoadout(): Loadout {
   return {...DEFAULT_LOADOUT};
 }
 const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
-const readBest=(difficulty:Difficulty)=>{try{return Number(localStorage.getItem(`rune-ranger-best-${difficulty}`))||0;}catch{return 0;}};
 const upgradeIcons={damage:SwordIcon,haste:LightningIcon,vitality:HeartIcon,speed:WindIcon,multishot:StackIcon,magnet:MagnetIcon};
 export default function SurvivorApp({onExit}:GameProps) {
-  const [initialWorld]=useState(()=>createWorld('menu','hard',readLoadout()));
+  const [initialWorld]=useState(()=>createWorld('menu',readDifficulty(),readLoadout()));
   const world=useRef<World>(initialWorld);
   const canvas=useRef<HTMLCanvasElement>(null);
   const keys=useRef(new Set<string>());
   const pointer=useRef<{x:number;y:number}|null>(null);
   const [ui,setUi]=useState(()=>structuredClone(world.current));
-  const [best,setBest]=useState(()=>readBest('hard'));
+  const [best,setBest]=useState(()=>readBest(initialWorld.difficulty));
   const [previousBest, setPreviousBest] = useState(best);
   const bestRef=useRef(best);
   const publish=()=>setUi(structuredClone(world.current));
@@ -36,7 +36,7 @@ export default function SurvivorApp({onExit}:GameProps) {
   const start=()=>{setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const mainMenu=()=>{world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const selectLoadout=(change:Partial<Loadout>)=>{world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
-  const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
+  const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;saveDifficulty(difficulty);bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
   const pause=()=>{ const w=world.current; if(w.status==='playing')w.status='paused';else if(w.status==='paused')w.status='playing';resetInput();publish();};
   useEffect(()=>{
     const element=canvas.current; if(!element)return;
