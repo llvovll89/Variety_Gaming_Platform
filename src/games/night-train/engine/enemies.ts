@@ -110,12 +110,12 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
 
   'black-engine': {
-    id: 'black-engine', name: '새벽을 삼킨 검은 기관차', kind: 'boss', hp: [150, 150],
+    id: 'black-engine', name: '새벽을 삼킨 검은 기관차', kind: 'boss', hp: [170, 170],
     blurb: '종착역 직전, 새벽을 막아선 거대한 기관차. 연기가 별빛을 가린다.',
     moves: {
       smog: { id: 'smog', name: '검은 매연', intent: 'debuff', effects: [{ k: 'debuff', status: 'weak', n: 2 }, { k: 'debuff', status: 'burn', n: 3 }] },
-      charge: { id: 'charge', name: '전속력 돌진', intent: 'attack', effects: [{ k: 'attack', n: 20 }] },
-      horns: { id: 'horns', name: '경적 연타', intent: 'attack', effects: [{ k: 'attack', n: 5, times: 3 }] },
+      charge: { id: 'charge', name: '전속력 돌진', intent: 'attack', effects: [{ k: 'attack', n: 22 }] },
+      horns: { id: 'horns', name: '경적 연타', intent: 'attack', effects: [{ k: 'attack', n: 6, times: 3 }] },
       stoke: { id: 'stoke', name: '보일러 점화', intent: 'defend-buff', effects: [{ k: 'block', n: 14 }, { k: 'buff', status: 'strength', n: 2 }] },
       rampage: { id: 'rampage', name: '폭주', intent: 'defend-buff', effects: [{ k: 'block', n: 20 }, { k: 'buff', status: 'strength', n: 3 }] },
     },

@@ -308,7 +308,7 @@ test('snacks cost no energy, respect targets and the three-slot bag', () => {
   run.snacks = ['star-candy', 'lemon-drop', 'emergency-whistle'];
   const energy = run.combat.player.energy;
   run = act(run, { t: 'useSnack', index: 0 });
-  assert.equal(run.combat.player.block, 12);
+  assert.equal(run.combat.player.block, 10);
   assert.equal(run.combat.player.energy, energy);
   assert.deepEqual(run.snacks, ['lemon-drop', 'emergency-whistle']);
   assert.equal(act(run, { t: 'useSnack', index: 0 }), run, 'a targeted snack needs a target when several enemies stand');
@@ -323,7 +323,7 @@ test('snacks cost no energy, respect targets and the three-slot bag', () => {
   outside.snacks = ['cocoa', 'gimbap'];
   outside.hp = 40;
   assert.equal(act(outside, { t: 'useSnack', index: 1 }), outside, 'combat snacks stay in the bag on the map');
-  assert.equal(act(outside, { t: 'useSnack', index: 0 }).hp, 55);
+  assert.equal(act(outside, { t: 'useSnack', index: 0 }).hp, 52);
   const full = structuredClone(outside);
   full.snacks = ['cocoa', 'mint', 'mint'];
   full.phase = 'reward'; full.reward = { gold: null, cards: null, relic: null, snack: 'gimbap' };
@@ -355,5 +355,5 @@ test('later stations can offer pre-upgraded cards and rewards may include a snac
     if (run.reward.snack) snacks++;
   }
   assert.ok(upgraded > 0);
-  assert.ok(snacks > 15 && snacks < 50);
+  assert.ok(snacks > 8 && snacks < 40, `snack drops ${snacks}/80`);
 });

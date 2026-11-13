@@ -14,7 +14,7 @@ export const RELICS: Record<string, RelicDef> = Object.fromEntries(([
   { id: 'scarf', name: '붉은 목도리', desc: '전투 시작 시 모든 적에게 취약 1을 겁니다.', icon: 'scarf' },
   { id: 'cap', name: '기관사 모자', desc: '얻을 때 최대 체력 +10, 체력 10 회복.', icon: 'cap' },
   { id: 'bell', name: '고양이 방울', desc: '휴식칸에서 체력을 15 더 회복합니다.', icon: 'bell' },
-  { id: 'coal', name: '여분 석탄', desc: '전투 첫 턴에 에너지 1을 더 얻습니다.', icon: 'coal' },
+  { id: 'coal', name: '여분 석탄', desc: '전투 첫 턴에 증기 1을 더 얻습니다.', icon: 'coal' },
   { id: 'flint', name: '부싯돌', desc: '적에게 거는 화상이 1 늘어납니다.', icon: 'flint' },
   { id: 'compass', name: '고장 난 나침반', desc: '매점 가격이 25% 싸집니다.', icon: 'compass' },
   { id: 'ticket', name: '금빛 정기권', desc: '전투 보상 골드가 10 늘어납니다.', icon: 'ticket' },

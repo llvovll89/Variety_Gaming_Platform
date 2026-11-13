@@ -147,7 +147,7 @@ function finishCombat(run: RunState) {
     gold: (elite ? randInt(run, 28, 36) : randInt(run, 12, 20)) + (run.relics.includes('ticket') ? 10 : 0),
     cards: rollCardChoices(run, elite ? { common: 45, uncommon: 42, rare: 13 } : { common: 62, uncommon: 33, rare: 5 }, 3, floor > 6 ? (elite ? 0.25 : 0.12) : 0),
     relic: elite && unowned.length ? pick(run, unowned) : null,
-    snack: random(run) < (elite ? 0.6 : 0.4) ? pick(run, SNACK_POOL) : null,
+    snack: random(run) < (elite ? 0.5 : 0.25) ? pick(run, SNACK_POOL) : null,
   };
 }
 

@@ -225,7 +225,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
                   <div className="nt-pass-head"><b>승차권</b><span>NIGHT EXPRESS · No.{String(records.runs + 1).padStart(4, '0')}</span></div>
                   <div className="nt-fare" role="radiogroup" aria-label="좌석 등급(난이도)">
                     <button type="button" role="radio" aria-checked={mode === 'normal'} onClick={() => setMode('normal')}><b>일반석</b><small>체력 70 · 정석 난이도</small></button>
-                    <button type="button" role="radio" aria-checked={mode === 'easy'} onClick={() => setMode('easy')}><b>침대석</b><small>체력 85 · 적 체력 -20%</small></button>
+                    <button type="button" role="radio" aria-checked={mode === 'easy'} onClick={() => setMode('easy')}><b>침대석</b><small>체력 85 · 적 체력 -25%</small></button>
                   </div>
                 </div>
                 <div className="nt-pass-stub">

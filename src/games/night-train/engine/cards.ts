@@ -92,7 +92,7 @@ function line(effect: Effect, ctx: DescribeContext): string {
     case 'blockAttack': return ctx.block === undefined ? '현재 방어만큼 피해' : `현재 방어만큼 피해 (${dmg(ctx.block)})`;
     case 'block': return `방어 ${effect.n}`;
     case 'draw': return `카드 ${effect.n}장 뽑기`;
-    case 'energy': return `에너지 ${effect.n} 얻기`;
+    case 'energy': return `증기 ${effect.n} 얻기`;
     case 'heal': return `체력 ${effect.n} 회복`;
     case 'apply': {
       const name = STATUS_INFO[effect.status].name;

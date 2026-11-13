@@ -525,7 +525,7 @@ button.nt-ledger-row:hover:not(:disabled) { background: #2b26200b; }
   .nt-tool, .nt-snack { width: 30px; height: 30px; }
   .nt-snacks { gap: 2px; }
   .nt-stat-floor { display: none; }
-  .nt-card-band { padding-left: 30px; letter-spacing: .04em; }
+  .nt-card-band { padding-left: 36px; letter-spacing: .02em; font-size: 9.5px; }
   .nt-snack-pop { right: -60px; }
   .nt-title h1 { font-size: 60px; }
   .nt-timetable { gap: 12px; font-size: 11px; }

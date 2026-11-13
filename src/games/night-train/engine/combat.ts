@@ -126,7 +126,7 @@ export function startCombat(run: RunState, enemyIds: readonly string[], kind: Co
   const enemies: EnemyState[] = enemyIds.map((defId, uid) => {
     const def = ENEMIES[defId];
     let maxHp = randInt(run, def.hp[0], def.hp[1]);
-    if (run.mode === 'easy') maxHp = Math.max(1, Math.round(maxHp * 0.8));
+    if (run.mode === 'easy') maxHp = Math.max(1, Math.round(maxHp * 0.75));
     return { uid, defId, hp: maxHp, maxHp, block: 0, statuses: {}, intent: '', history: [] };
   });
   const combat: CombatState = {
@@ -233,7 +233,7 @@ export function checkPlay(run: RunState, uid: number, target?: number): PlayChec
   if (run.phase !== 'combat' || !combat) return { ok: false, reason: '전투 중이 아닙니다.' };
   const card = combat.hand.find(c => c.uid === uid);
   if (!card) return { ok: false, reason: '손에 없는 카드입니다.' };
-  if (cardStats(card).cost > combat.player.energy) return { ok: false, reason: '에너지가 부족해요. 턴을 마치면 다시 채워집니다.' };
+  if (cardStats(card).cost > combat.player.energy) return { ok: false, reason: '증기가 부족해요. 턴을 마치면 다시 채워집니다.' };
   return resolveTarget(combat, needsTarget(card), target);
 }
 
