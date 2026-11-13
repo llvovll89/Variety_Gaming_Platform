@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import '@fontsource-variable/hahmlet';
 import type { GameProps } from '../../platform/types';
 import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
 import { CUSTOM_CHARACTER_ID } from '../../shared/profile/useProfile';
@@ -46,6 +45,9 @@ function HelpContent() {
       <p>강적 칸은 위험하지만 유물을 줘요. 침대칸에서는 회복하거나 카드를 강화하고, 매점칸에서는 카드·유물·간식을 사거나 카드를 덜어 낼 수 있어요. 덱이 얇을수록 좋은 카드를 자주 뽑아요.</p>
       <h3>키보드</h3>
       <p>1~9·0 카드 고르기 · Enter 사용 · ←/→ 대상 바꾸기 · E 턴 종료 · D 덱 보기 · Esc 메뉴</p>
+      <h3>만든 것들</h3>
+      <p>캐릭터·카드·아이콘·배경은 모두 이 게임을 위해 새로 그린 그림이에요. 진행 기록은 이 브라우저에만 저장되고 어디로도 보내지 않아요. 내 사진 캐릭터는 이 탭이 열려 있는 동안만 쓰이고 저장되지 않아요.</p>
+      <p>서체: Pretendard Variable © Kil Hyung-jin · SIL Open Font License 1.1 · <a href="/fonts/OFL-pretendard.txt" target="_blank" rel="noopener noreferrer">라이선스 전문</a></p>
     </div>
   );
 }
@@ -185,12 +187,12 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
           </button>
           {run && !finished ? (
             <div className="nt-hud">
-              <span className="nt-stat nt-stat-hp" aria-label={`체력 ${run.hp} / ${run.maxHp}`}>
+              <span className="nt-stat nt-stat-hp" role="img" aria-label={`체력 ${run.hp} / ${run.maxHp}`}>
                 <Glyph name="heart" size={18} />
                 <span className="nt-stat-stack"><b>{run.hp}<small>/{run.maxHp}</small></b><span className="nt-hp-mini"><span style={{ width: `${(run.hp / run.maxHp) * 100}%` }} /></span></span>
               </span>
-              <span className="nt-stat nt-stat-gold" aria-label={`골드 ${run.gold}`}><Glyph name="coin" size={18} /><b>{run.gold}</b></span>
-              <span className="nt-stat nt-stat-floor" aria-label={`${Math.min(floor, BOSS_FLOOR + 1)}번째 역, ${region.name}`}>
+              <span className="nt-stat nt-stat-gold" role="img" aria-label={`골드 ${run.gold}`}><Glyph name="coin" size={18} /><b>{run.gold}</b></span>
+              <span className="nt-stat nt-stat-floor" role="img" aria-label={`${Math.min(floor, BOSS_FLOOR + 1)}번째 역, ${region.name}`}>
                 <Glyph name="route" size={18} />
                 <span className="nt-stat-stack"><b>{Math.min(floor, BOSS_FLOOR + 1)}<small>/{BOSS_FLOOR + 1}</small></b><small>{region.name}</small></span>
               </span>

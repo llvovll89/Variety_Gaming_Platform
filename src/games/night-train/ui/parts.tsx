@@ -115,7 +115,7 @@ export function IntentTag({ enemy, damageTo }: { enemy: Pick<EnemyState, 'defId'
   const debuff = move.intent.includes('debuff');
   return (
     <>
-      <div className={`nt-tag${attack ? ' is-attack' : ''}`} title={`${move.name}: ${text}`} aria-label={`다음 행동 ${move.name}: ${text}`}>
+      <div className={`nt-tag${attack ? ' is-attack' : ''}`} role="img" title={`${move.name}: ${text}`} aria-label={`다음 행동 ${move.name}: ${text}`}>
         {attack && <><Glyph name="sword" size={16} strokeWidth={2} /><b>{damage}{hits > 1 ? `×${hits}` : ''}</b></>}
         {defend && <Glyph name="shield" size={16} strokeWidth={2} />}
         {buff && <Glyph name="up" size={16} strokeWidth={2} />}
