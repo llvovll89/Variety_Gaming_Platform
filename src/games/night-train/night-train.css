@@ -267,6 +267,7 @@
 .nt-stop-label { position: absolute; top: 4px; display: flex; flex-direction: column; gap: 1px; white-space: nowrap; pointer-events: none; text-align: left; }
 .nt-stop-label.is-right { left: 38px; }
 .nt-stop-label.is-left { right: 38px; text-align: right; align-items: flex-end; }
+.nt-stop-label.is-below { top: 36px; left: 50%; transform: translateX(-50%); align-items: center; text-align: center; }
 .nt-stop-label b { padding: 0 3px; background: var(--paper); font: 800 13px/1.25 var(--display); letter-spacing: -.02em; color: var(--sepia); }
 .nt-stop-label small { padding: 0 3px; background: var(--paper); font-size: 10.5px; font-weight: 600; color: var(--sepia-2); }
 .nt-stop.is-dead .nt-stop-label { opacity: .45; }
@@ -680,7 +681,7 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-map-meta { display: none; }
   .nt-map-scroll { height: calc(100dvh - 120px - var(--board-h, 150px)); min-height: 300px; }
   /* Narrow sheet: names sit centred under the stop so neighbours never collide. */
-  .nt-stop-label, .nt-stop-label.is-left, .nt-stop-label.is-right { top: 34px; left: 50%; right: auto; transform: translateX(-50%); align-items: center; text-align: center; }
+  .nt-stop-label, .nt-stop-label.is-left, .nt-stop-label.is-right, .nt-stop-label.is-below { top: 34px; left: 50%; right: auto; transform: translateX(-50%); align-items: center; text-align: center; }
   .nt-stop-label b { font-size: 11.5px; }
   .nt-stop-label small { display: none; }
   .nt-stop.is-open .nt-stop-label b { font-size: 12px; }

@@ -23,12 +23,20 @@ function geometry(width: number): Geo {
 const yOf = (g: Geo, floor: number) => g.top + (BOSS_FLOOR - floor) * g.row;
 const xOf = (g: Geo, node: MapNode) => g.left + node.x * g.usable;
 
-/** Vertical, then 45°, then vertical — the way metro maps bend. */
+/**
+ * Only vertical and 45° runs, the way metro maps bend. Steep links go vertical → 45° → vertical;
+ * wide links go 45° → horizontal → 45°, with the level run kept halfway between rows so it never
+ * passes through a station.
+ */
 function octilinear(x1: number, y1: number, x2: number, y2: number) {
-  const dy = y1 - y2, adx = Math.abs(x2 - x1);
-  if (adx >= dy - 6) return `M${x1} ${y1}L${x2} ${y2}`;
-  const v = (dy - adx) / 2;
-  return `M${x1} ${y1}V${y1 - v}L${x2} ${y1 - v - adx}V${y2}`;
+  const dy = y1 - y2, dx = x2 - x1, adx = Math.abs(dx), sx = Math.sign(dx);
+  if (Math.abs(adx - dy) < 6) return `M${x1} ${y1}L${x2} ${y2}`;
+  if (adx < dy) {
+    const v = (dy - adx) / 2;
+    return `M${x1} ${y1}V${y1 - v}L${x2} ${y1 - v - adx}V${y2}`;
+  }
+  const d = dy / 2;
+  return `M${x1} ${y1}L${x1 + sx * d} ${y1 - d}H${x2 - sx * d}L${x2} ${y2}`;
 }
 
 type EdgeState = 'traveled' | 'open' | 'ahead' | 'dead';
@@ -77,6 +85,21 @@ export default function MapView({ run, onCommand, locked, readOnly = false, onPe
   const depot = { x: g.left + g.usable / 2, y: g.depotY };
   const here = current ? pos(current) : depot;
   const narrow = g.w < 520;
+  // Put each name where its row has the most room; when both neighbours are close, drop it below.
+  const labelSide = useMemo(() => {
+    const sides = new Map<string, 'right' | 'left' | 'below'>();
+    const LABEL = 132;
+    for (let floor = 0; floor < BOSS_FLOOR; floor++) {
+      const row = run.map.filter(n => n.floor === floor).sort((a, b) => a.x - b.x);
+      row.forEach((node, i) => {
+        const x = xOf(g, node);
+        const roomRight = (i < row.length - 1 ? xOf(g, row[i + 1]) - 40 : g.w - 8) - x;
+        const roomLeft = x - (i > 0 ? xOf(g, row[i - 1]) + 40 : 8);
+        sides.set(node.id, roomRight >= LABEL ? 'right' : roomLeft >= LABEL ? 'left' : 'below');
+      });
+    }
+    return sides;
+  }, [run.map, g]);
 
   useEffect(() => {
     const el = scroller.current;
@@ -149,7 +172,7 @@ export default function MapView({ run, onCommand, locked, readOnly = false, onPe
           const isDead = !isVisited && !isOpen && !reachable.has(node.id) && node.type !== 'boss';
           const color = REGIONS[regionIndex(node.floor)].color;
           const name = names.get(node.id) ?? '';
-          const right = node.type === 'boss' ? false : node.x < 0.62;
+          const side = labelSide.get(node.id) ?? 'right';
           const showLabel = node.type === 'boss' || !narrow || isOpen || isCurrent || peekId === node.id;
           return (
             <button key={node.id} type="button"
@@ -161,7 +184,7 @@ export default function MapView({ run, onCommand, locked, readOnly = false, onPe
               onClick={() => depart(node)}>
               <span className="nt-stop-mark" aria-hidden="true"><Glyph name={NODE_GLYPH[node.type]} size={node.type === 'boss' ? 24 : 14} strokeWidth={2} /></span>
               {showLabel && (
-                <span className={`nt-stop-label${right ? ' is-right' : ' is-left'}`} aria-hidden="true">
+                <span className={`nt-stop-label is-${side}`} aria-hidden="true">
                   <b>{name}</b>
                   <small>{node.type === 'boss' ? '종착 · 검은 기관차' : `${String(node.floor + 1).padStart(2, '0')} · ${NODE_NAMES[node.type]}`}</small>
                 </span>
