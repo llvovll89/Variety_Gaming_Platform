@@ -30,3 +30,6 @@ public/3.jpg
 src/shared/assets/1.jpg
 src/shared/assets/2.jpg
 src/shared/assets/3.jpg
+
+# Local browser QA output (screenshots, traces). Summaries go in PR descriptions instead.
+output/

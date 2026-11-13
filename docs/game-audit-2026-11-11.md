@@ -1,5 +1,7 @@
 # GH ARCADE 게임 종합 분석 — 2026-11-11
 
+> **저장소 정리(2026-11-13):** `output/playwright/` 검증 자료는 저장소 용량을 줄이려고 작업 트리에서 뺐다. 본문의 링크는 자료가 남아 있는 커밋 `8f34514`의 원본을 가리킨다. 로컬에서 다시 쓰려면 `git checkout 8f34514 -- output/playwright`로 복원한다.
+
 검토 기준 커밋: `1acd159`. 게임 코드 변경 없이 분석 보고서와 재현 자료를 추가했다.
 
 > 이 문서는 수정 전 분석 기록이다. 이후 승인된 안정화 작업의 완료 상태와 검증 결과는 [수정 진행 기록](game-fix-progress-2026-11-11.md)을 참고한다.
@@ -23,7 +25,7 @@
 
 직접 모든 장수·직업·분기·캠페인 엔딩을 플레이한 것은 아니다. 유령 이사 24개 의뢰와 시간 퍼즐 9개 방의 정답 가능성 등은 기존 자동 테스트 결과를 근거로 평가했다. 밸런스·손맛·장기 성능 관련 항목은 재현된 버그와 구분해 **개선 제안 또는 추가 검증**으로 표시한다.
 
-원자료: [브라우저 QA 범위](../output/playwright/audit-2026-11-11/qa-inventory.md), [엔진 재현 결과](../output/playwright/audit-2026-11-11/probe-results.json), [모바일 검사](../output/playwright/audit-2026-11-11/mobile-results.json), [정상 실행 오류 기록](../output/playwright/audit-2026-11-11/runtime-errors.json), [전체 모바일 초기 화면](../output/playwright/audit-2026-11-11/mobile-lobby-overview.png).
+원자료: [브라우저 QA 범위](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/qa-inventory.md), [엔진 재현 결과](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/probe-results.json), [모바일 검사](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/mobile-results.json), [정상 실행 오류 기록](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/runtime-errors.json), [전체 모바일 초기 화면](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/mobile-lobby-overview.png).
 
 ## 2. 확인된 수정 대상
 
@@ -36,7 +38,7 @@ P1은 화면 전체 실패 또는 공개 전 해결할 차단 문제, P2는 규�
 - **원인:** [App.tsx:27](../src/App.tsx#L27)에 `Suspense`는 있지만 오류를 처리하는 경계가 없다. Suspense의 로딩 UI만으로 import 실패나 하위 렌더 오류는 복구되지 않는다.
 - **수정:** 게임 단위 Error Boundary, 허브 복귀, 재시도 안내. 청크 갱신 실패는 새로고침 복구 경로를 구분하고 저장 데이터는 보존한다.
 - **검증 기준:** 요청 실패·렌더 예외를 주입해도 허브 복귀가 가능하고 다른 게임을 실행할 수 있어야 한다.
-- **증거:** [실패 화면](../output/playwright/audit-2026-11-11/chunk-failure.png), [예외](../output/playwright/audit-2026-11-11/chunk-failure.json).
+- **증거:** [실패 화면](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/chunk-failure.png), [예외](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/chunk-failure.json).
 
 ### F02 · P1 · 삼국지 패업 PK: 손상 저장본을 정상으로 판정
 
@@ -45,7 +47,7 @@ P1은 화면 전체 실패 또는 공개 전 해결할 차단 문제, P2는 규�
 - **원인:** [save.ts:40](../src/games/three-kingdoms/game/save.ts#L40)의 검증은 지도 크기·도시·장수·플레이어 세력 일부에 국한된다. `units`, 명령, 로그, 개체 참조 무결성 등은 확인하지 않는다.
 - **수정:** 저장 스키마와 관계 검증을 추가하고, 잘못된 기록은 원본 보관·내려받기·새 게임 선택으로 복구한다. 기존 버전의 정상 기록은 마이그레이션 후 검증한다.
 - **검증 기준:** 필드 누락·잘못된 세력/장수/부대 참조를 거부하고 정상 구버전 기록은 복구해야 한다.
-- **증거:** [실패 화면](../output/playwright/audit-2026-11-11/pk-corrupt-save.png), [예외](../output/playwright/audit-2026-11-11/pk-corrupt-save.json).
+- **증거:** [실패 화면](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/pk-corrupt-save.png), [예외](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/pk-corrupt-save.json).
 
 ### F03 · P2 · 밥상 대격돌: 같은 프레임 공격에 1P 처리 우선권
 
@@ -59,7 +61,7 @@ P1은 화면 전체 실패 또는 공개 전 해결할 차단 문제, P2는 규�
 - **재현:** WebGL 컨텍스트 생성을 실패시켰다. 선수 선택에서는 오류 안내가 나왔지만 시작 버튼은 활성화돼 있었다. 시작 후 오류 문구는 사라지고 `ROUND 1 준비!`에서 진행하지 않았다.
 - **원인:** [KitchenFighterApp.tsx:95](../src/games/kitchen-fighter/KitchenFighterApp.tsx#L95)의 생성 실패가 렌더 루프를 종료한다. 오류는 설정 화면에서만 표시하고 시작 버튼은 이미지 로딩 여부만 본다.
 - **수정:** 렌더러 준비 상태로 시작을 제어하고, 경기 화면에서도 오류·복귀를 제공한다. 지원 가능한 2D 대체 화면은 별도 선택 사항이다.
-- **증거:** [실패 화면](../output/playwright/audit-2026-11-11/kitchen-no-webgl.png).
+- **증거:** [실패 화면](https://github.com/llvovll89/Variety_Gaming_Platform/blob/8f34514c5a3e49de93f7b1685e307eb23aabf7e8/output/playwright/audit-2026-11-11/kitchen-no-webgl.png).
 
 ### F05 · 공개 차단 P1 · 색깔 맞추기: 정지·재개마다 실행 루프 누적
 
