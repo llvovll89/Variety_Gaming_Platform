@@ -69,6 +69,7 @@
 .nt-sky-hills { position: absolute; left: 0; bottom: 0; width: 200%; height: 140px; animation: nt-pan 80s linear infinite; }
 
 .nt-shell { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100dvh; max-width: 1320px; margin: 0 auto; padding: 0 20px calc(16px + env(safe-area-inset-bottom)); }
+.nt-shell:has(> .nt-combat) { padding-bottom: 0; }
 
 /* ── Header / HUD ── */
 .nt-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; margin: 0 -20px; padding: max(10px, env(safe-area-inset-top)) 20px 10px;
@@ -574,11 +575,18 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-map-aside { position: static; display: grid; grid-template-columns: 1fr 1fr; }
   .nt-map-scroll { height: calc(100dvh - 330px); min-height: 360px; }
   .nt-shop { grid-template-columns: 1fr; }
-  .nt-table { grid-template-columns: 100px minmax(0, 1fr) 120px; column-gap: 8px; }
+  /* Tablet: controls on one row, the hand gets the full width below. */
+  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hint right" "hand hand hand"; column-gap: 12px; margin-top: -56px; }
+  .nt-table-left, .nt-table-right { flex-direction: row; align-items: center; padding-bottom: 0; }
+  .nt-hint { align-self: center; margin: 0; }
+  .nt-gauge { width: 66px; height: 66px; }
+  .nt-gauge b { font-size: 26px; }
+  .nt-gauge small { display: none; }
   .nt-hand .nt-card { --w: 128px; }
   .nt-hand .nt-card-art { height: 36px; }
-  .nt-hand-slot { margin: 0 -12px; }
-  .nt-end { width: 116px; }
+  .nt-hand-slot { margin: 0 -6px; }
+  .nt-hand { padding-bottom: 22px; }
+  .nt-end { width: 120px; height: 56px; }
 }
 
 /* ── Phone ── */
@@ -740,19 +748,21 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-stat b { font-size: 14px; }
   .nt-stat small, .nt-hp-mini { display: none; }
   .nt-tool, .nt-snack { width: 30px; height: 30px; }
-  .nt-combat { margin: 0 -12px; min-height: calc(100dvh - 38px); }
+  /* Fill whatever the header leaves instead of guessing its height. */
+  .nt-combat { margin: 0 -12px; min-height: 0; }
   .nt-carriage { min-height: 0; }
   .nt-windows { top: 2%; height: 26%; }
   .nt-window-pane { border-radius: 20px 20px 4px 4px; max-width: 220px; }
-  .nt-stage { grid-template-columns: 170px minmax(0, 1fr); align-items: end; gap: 8px; padding: 4px 16px 44px; }
-  .nt-player { flex-direction: row; align-items: center; gap: 8px; }
+  .nt-stage { grid-template-columns: 170px minmax(0, 1fr); align-items: end; gap: 8px; padding: 2px 16px 34px; }
+  .nt-enemies { order: 0; }
+  .nt-player { flex-direction: row; align-items: center; gap: 8px; margin-top: 0; }
   .nt-player .nt-fighter-art { width: 46px; flex: none; }
   .nt-player .nt-plate { max-width: 120px; }
   .nt-plate-name { font-size: 12px; }
   .nt-plate-name small { display: none; }
   .nt-hp { height: 14px; }
   .nt-hp-text { font-size: 10px; line-height: 12px; }
-  .nt-enemy { padding-top: 34px; gap: 4px; }
+  .nt-enemy { padding-top: 32px; gap: 3px; }
   .nt-enemy-button .nt-fighter-art { max-width: min(96px, 22dvh); margin: 0 auto; }
   .nt-enemy-boss .nt-enemy-button .nt-fighter-art { max-width: min(170px, 30dvh); }
   .nt-tag { height: 26px; font-size: 11px; }
@@ -761,7 +771,7 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-tag-string { top: 26px; height: 10px; }
   .nt-statuses { min-height: 0; }
   .nt-statuses li { height: 18px; font-size: 11px; }
-  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hand right"; column-gap: 8px; margin-top: -40px; padding: 0 16px 6px; }
+  .nt-table { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "left hand right"; column-gap: 8px; margin-top: -30px; padding: 0 16px 6px; }
   .nt-hint { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); max-width: 70%; padding: 1px 10px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .nt-table-left, .nt-table-right { gap: 6px; padding-bottom: 4px; }
   .nt-gauge { width: 50px; height: 50px; }
@@ -772,18 +782,18 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-end { width: 80px; height: 44px; }
   .nt-end b { font-size: 14px; }
   .nt-end small { display: none; }
-  .nt-hand { justify-content: flex-start; min-height: 0; padding: 14px 2px 0; overflow-x: auto; scrollbar-width: none; }
+  .nt-hand { justify-content: flex-start; min-height: 0; padding: 10px 2px 0; overflow-x: auto; scrollbar-width: none; }
   .nt-hand-slot { margin: 0 2px; transform: none; }
   .nt-hand-slot.is-selected, .nt-hand-slot.is-aiming { transform: translateY(-8px); }
   .nt-hand-slot:hover:not(.is-dragging) { transform: none; }
   .nt-hand-key { display: none; }
-  .nt-hand .nt-card { --w: 92px; }
+  /* Short stubs: name and rules only, so the whole hand fits under the battle. */
+  .nt-hand .nt-card { --w: 100px; height: 92px; }
+  .nt-hand .nt-card-art { display: none !important; }
   .nt-hand .nt-card-band { height: 18px; padding-left: 26px; font-size: 8.5px; }
   .nt-hand .nt-card-band i { display: none; }
   .nt-hand .nt-card-cost { width: 20px; height: 20px; font-size: 12px; top: 3px; left: 4px; }
   .nt-hand .nt-card-name { margin: 4px 7px 0; font-size: 11.5px; }
-  .nt-hand .nt-card-art { height: 18px; margin: 3px 7px 0; }
-  .nt-hand .nt-card-art .nt-glyph { width: 18px; height: 18px; }
   .nt-hand .nt-card-text { padding: 3px 7px 0; font-size: 10.5px; }
   .nt-hand .nt-card-text b { font-size: 11.5px; }
   .nt-hand .nt-card-foot { display: none; }
