@@ -5,12 +5,12 @@ import { CUSTOM_CHARACTER_ID } from '../../shared/profile/useProfile';
 import { safeGetItem, safeSetItem } from '../../shared/storage';
 import {
   BOSS_FLOOR, NODE_NAMES, NODE_NOTES, RECORD_KEY, RELICS, SAVE_KEY, SNACKS, SNACK_SLOTS, STATUS_INFO,
-  act, availableNodes, checkSnack, createRun, cuesForRunChange, currentFloor, loadRecords, loadRun, recordRun, regionOf, runScore,
+  act, availableNodes, checkSnack, createRun, cuesForRunChange, currentFloor, departureTime, loadRecords, loadRun, recordRun, regionOf, runScore, stationNames,
   type Command, type MapNode, type Mode, type RunState, type StatusId,
 } from './engine';
 import CombatView from './ui/CombatView';
 import PauseMenu from './ui/PauseMenu';
-import MapView, { MapLegend } from './ui/MapView';
+import MapView, { DepartureBoard, MapLegend } from './ui/MapView';
 import { DeckModal, EventScreen, RestScreen, RewardScreen, ShopScreen, TreasureScreen } from './ui/Screens';
 import { Conductor, ENEMY_ART, NightSky, Scenery } from './ui/art';
 import { Glyph, NODE_GLYPH, SNACK_GLYPH, STATUS_GLYPH } from './ui/glyphs';
@@ -314,23 +314,27 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
           <section className="nt-map-layout" aria-label="노선도">
             <div className="nt-map-aside">
               <div className="nt-board nt-sheet">
-                <p className="nt-modal-kicker">{region.name} · {run.path.length === 0 ? '출발 준비' : `${floor}번째 역 통과`}</p>
-                <h1>다음 역을 고르세요</h1>
-                <p>{region.note}. 검은 테두리 역으로만 갈 수 있어요.</p>
+                <p className="nt-board-where"><i style={{ background: region.color }} />{region.name} · {run.path.length === 0 ? '차고지 출발 대기' : `${stationNames(run.map, run.seed).get(run.path[run.path.length - 1])}역 정차 중`}</p>
+                <h1>다음 정차역을 고르세요</h1>
                 <div className="nt-next" aria-live="polite">
                   {shownStop ? (
                     <>
-                      <div className="nt-next-head"><Stamp glyph={NODE_GLYPH[shownStop.type]} size={20} /><span><small>{shownStop.floor === BOSS_FLOOR ? '종착역' : `${shownStop.floor + 1}번째 역`}</small><b>{NODE_NAMES[shownStop.type]}</b></span></div>
+                      <div className="nt-next-head"><Stamp glyph={NODE_GLYPH[shownStop.type]} size={20} /><span><small>{shownStop.floor === BOSS_FLOOR ? '종착역' : `${String(shownStop.floor + 1).padStart(2, '0')}번 역 · ${departureTime(shownStop.floor)}`}</small><b>{stationNames(run.map, run.seed).get(shownStop.id)} · {NODE_NAMES[shownStop.type]}</b></span></div>
                       <p>{NODE_NOTES[shownStop.type]}</p>
                     </>
-                  ) : <p>역에 마우스를 올리면 무엇이 있는지 알려 드려요. 갈 수 있는 역 {nextStops.length}곳.</p>}
+                  ) : <p>{region.note}. 노선도의 역이나 아래 안내판을 눌러 출발하세요.</p>}
                 </div>
               </div>
+              <DepartureBoard run={run} onCommand={send} onPeek={setPeek} peekId={peek?.id ?? null} locked={panel !== null} />
               <MapLegend />
             </div>
             <div className="nt-map-sheet nt-sheet">
-              <div className="nt-map-title"><h2>별빛선 노선도</h2><span>STARLIGHT LINE · 13 STATIONS</span></div>
-              <MapView run={run} onCommand={send} locked={panel !== null} onPeek={setPeek} />
+              <div className="nt-map-title">
+                <span className="nt-line-badge" aria-hidden="true"><Glyph name="star" size={16} strokeWidth={2.2} /></span>
+                <h2>별빛선<small>STARLIGHT LINE</small></h2>
+                <span className="nt-map-meta">새벽역 방면 · 13개 역 · {departureTime(0)} 출발</span>
+              </div>
+              <MapView run={run} onCommand={send} locked={panel !== null} onPeek={setPeek} peekId={peek?.id ?? null} />
             </div>
           </section>
         ) : run.phase === 'reward' ? <RewardScreen run={run} send={send} />
