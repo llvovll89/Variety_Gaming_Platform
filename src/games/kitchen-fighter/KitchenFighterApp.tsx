@@ -9,6 +9,8 @@ import { FightAudio } from './audio';
 import { movementInput } from './controls';
 import './fighter-ui.css';
 
+// Two photographed chefs on a transparent sheet (see public/art/kitchen-fighter/ASSETS.md).
+const CHEF_ATLAS = '/art/kitchen-fighter/fighters-realistic-cutout.webp';
 type Character = { name: string; weapon: Weapon; photo: string; zoom: number; x: number; y: number };
 const key = 'arcade:kitchen-fighter:characters';
 function readCharacters(name: string): [Character, Character] {
@@ -128,6 +130,25 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
     } catch { setError('사진을 읽을 수 없습니다. JPG, PNG 또는 WebP로 다시 선택해 주세요.'); }
     finally { URL.revokeObjectURL(url); setLoading(null); }
   }
+  /** One of the two photographed chefs from the bundled atlas (left: 1P, right: 2P), trimmed to the person. */
+  async function pickChef(index: number) {
+    setError(''); setLoading(index);
+    try {
+      const img = new Image(); img.src = CHEF_ATLAS; await img.decode();
+      const half = Math.floor(img.naturalWidth / 2), h = img.naturalHeight, sx = index === 0 ? 0 : half;
+      const scan = document.createElement('canvas'); scan.width = half; scan.height = h;
+      const sc = scan.getContext('2d', { willReadFrequently: true }); if (!sc) throw new Error('canvas');
+      sc.drawImage(img, sx, 0, half, h, 0, 0, half, h);
+      const alpha = sc.getImageData(0, 0, half, h).data; let left = half, right = 0, top = h, bottom = 0;
+      for (let y = 0; y < h; y++) for (let x = 0; x < half; x++) if (alpha[(y * half + x) * 4 + 3] > 16) { if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y; }
+      if (right <= left || bottom <= top) throw new Error('empty');
+      const w = right - left + 1, ht = bottom - top + 1, scale = Math.min(1, 1024 / Math.max(w, ht));
+      const el = document.createElement('canvas'); el.width = Math.round(w * scale); el.height = Math.round(ht * scale);
+      const c = el.getContext('2d'); if (!c) throw new Error('canvas'); c.drawImage(scan, left, top, w, ht, 0, 0, el.width, el.height);
+      update(index, { photo: el.toDataURL('image/webp', .9), zoom: 1, x: 0, y: 0 });
+    } catch { setError('실사 셰프 사진을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+    finally { setLoading(null); }
+  }
   function start() {
     if (!renderReady) return;
     fight.current = new Fight(mode, characters.map(ch => ch.weapon) as [Weapon, Weapon], difficulty);
@@ -157,6 +178,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
         <div className="kf-selection">{characters.map((ch, i) => <section className={`kf-character kf-character-${i}`} key={i}><div className="kf-character-heading"><span>{i + 1}P</span><input aria-label={`${i + 1}P 이름`} value={ch.name} maxLength={14} onChange={e => update(i, { name: e.target.value })} /><label className="kf-upload"><Camera size={18} />{loading === i ? '읽는 중…' : ch.photo ? '사진 바꾸기' : '내 사진 넣기'}<input type="file" accept="image/*" disabled={loading !== null} onChange={e => { void upload(i, e.target.files?.[0]); e.target.value = ''; }} /></label></div>
           <div className="kf-weapons">{(Object.keys(WEAPONS) as Weapon[]).map(weapon => <button key={weapon} className={ch.weapon === weapon ? 'selected' : ''} aria-pressed={ch.weapon === weapon} onClick={() => update(i, { weapon })}><span>{WEAPONS[weapon].short}</span><small>{weapon === 'spatula' ? '균형 잡힌 찰싹' : weapon === 'swatter' ? '빠른 연속 타격' : '묵직한 긴 사거리'}</small></button>)}</div>
           <p className="kf-skill-note">띄우기: {WEAPONS[ch.weapon].skill} <span>필살기: {WEAPONS[ch.weapon].ultimate}</span></p>
+          {!ch.photo && <div className="kf-photo-adjust"><button disabled={loading !== null} onClick={() => void pickChef(i)}>사진이 없다면 실사 셰프로 나가기</button></div>}
           {ch.photo && <div className="kf-photo-adjust"><label>크기<input type="range" min=".5" max="2" step=".05" value={ch.zoom} onChange={e => update(i, { zoom: Number(e.target.value) })} /></label><label>좌우<input type="range" min="-2" max="2" step=".05" value={ch.x} onChange={e => update(i, { x: Number(e.target.value) })} /></label><label>상하<input type="range" min="-2" max="2" step=".05" value={ch.y} onChange={e => update(i, { y: Number(e.target.value) })} /></label><button onClick={() => update(i, { photo: '', zoom: 1, x: 0, y: 0 })}>사진 지우기</button></div>}
         </section>)}</div>
         {error && <p className="kf-error" role="alert">{error}</p>}

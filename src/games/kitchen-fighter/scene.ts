@@ -8,6 +8,10 @@ type Rig = {
   trail: T.Mesh; history: number[]; hp: number; flash: number;
 };
 const TRAIL = 6;
+const KITCHEN_PHOTO = '/art/kitchen-fighter/kitchen-realistic.jpg';
+// Plate width in world units: the back counter reads a bit over half a fighter tall, and the plate
+// still fills the view when the camera pulls all the way out (fighters at opposite walls).
+const PHOTO_WIDTH = 1400, PHOTO_Z = -240, PHOTO_FLOOR_LINE = .84, PHOTO_FLOOR_Y = -37;
 // Half-turned stance toward the camera, like a 3D fighter's side view.
 const STANCE = .38;
 const up = new T.Vector3(0, 1, 0), axis = new T.Vector3(), a = new T.Vector3(), b = new T.Vector3();
@@ -77,6 +81,7 @@ export class KitchenScene {
   renderer: T.WebGLRenderer; scene = new T.Scene(); camera = new T.OrthographicCamera(-540, 540, 310, -310, 1, 2600);
   rigs: [Rig, Rig]; sparks: T.Mesh[] = []; rings: T.Mesh[] = []; reduced = false; width = 0; height = 0; previous = 0;
   cameraX: number | null = null; cameraY = 150; cameraWidth = 540; punch = 0;
+  disposed = false;
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new T.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = T.PCFShadowMap;
@@ -93,18 +98,40 @@ export class KitchenScene {
   }
   stage() {
     const steel = mat('#9ba5a9', .65, .45), wall = mat('#687270'), cabinet = mat('#525e62'), dark = mat('#303a40'), wood = mat('#896447');
-    box(this.scene, [1800, 8, 1500], [0, -9, 330], mat('#6b6e68'));
-    for (let x = -880; x < 900; x += 110) for (let z = -330; z < 1080; z += 110) box(this.scene, [108, 1, 108], [x, -4, z], mat((Math.round(x / 110) + Math.round(z / 110)) % 2 ? '#858980' : '#777e78'));
-    box(this.scene, [1800, 640, 20], [0, 280, -240], wall);
-    for (let x = -880; x < 900; x += 75) for (let y = 80; y < 560; y += 48) box(this.scene, [73, 46, 1], [x, y, -229], mat(y % 96 ? '#778180' : '#737d7b'));
-    box(this.scene, [1500, 14, 112], [0, 125, -176], steel);
-    for (let x = -700; x < 720; x += 145) { box(this.scene, [138, 116, 98], [x, 60, -180], cabinet); box(this.scene, [31, 4, 5], [x, 100, -127], dark); }
-    box(this.scene, [400, 35, 135], [0, 365, -167], steel); box(this.scene, [260, 160, 75], [0, 460, -206], steel);
-    for (const x of [-360, 370]) { box(this.scene, [270, 14, 100], [x, 280, -173], wood); for (let i = 0; i < 5; i++) { const pan = new T.Mesh(new T.CylinderGeometry(17, 17, 7, 24), steel); pan.position.set(x - 90 + i * 43, 292, -175); this.scene.add(pan); } }
-    for (const x of [-570, 565]) { box(this.scene, [145, 105, 9], [x, 334, -221], dark); box(this.scene, [127, 87, 3], [x, 334, -213], mat('#abb9b6', .4, .2)); }
-    for (const x of [-120, 120]) { const burner = new T.Mesh(new T.CylinderGeometry(28, 28, 6, 24), dark); burner.position.set(x, 137, -158); this.scene.add(burner); }
-    const pot = new T.Mesh(new T.CylinderGeometry(24, 23, 36, 24), steel); pot.position.set(-120, 157, -158); pot.castShadow = true; this.scene.add(pot);
-    box(this.scene, [115, 10, 56], [370, 140, -165], wood);
+    // The modeled kitchen shows until the photo backdrop loads, and stays if it never does.
+    const floor = new T.Group(), set = new T.Group(); this.scene.add(floor, set);
+    box(floor, [1800, 8, 1500], [0, -9, 330], mat('#6b6e68'));
+    for (let x = -880; x < 900; x += 110) for (let z = -330; z < 1080; z += 110) box(floor, [108, 1, 108], [x, -4, z], mat((Math.round(x / 110) + Math.round(z / 110)) % 2 ? '#858980' : '#777e78'));
+    box(set, [1800, 640, 20], [0, 280, -240], wall);
+    for (let x = -880; x < 900; x += 75) for (let y = 80; y < 560; y += 48) box(set, [73, 46, 1], [x, y, -229], mat(y % 96 ? '#778180' : '#737d7b'));
+    box(set, [1500, 14, 112], [0, 125, -176], steel);
+    for (let x = -700; x < 720; x += 145) { box(set, [138, 116, 98], [x, 60, -180], cabinet); box(set, [31, 4, 5], [x, 100, -127], dark); }
+    box(set, [400, 35, 135], [0, 365, -167], steel); box(set, [260, 160, 75], [0, 460, -206], steel);
+    for (const x of [-360, 370]) { box(set, [270, 14, 100], [x, 280, -173], wood); for (let i = 0; i < 5; i++) { const pan = new T.Mesh(new T.CylinderGeometry(17, 17, 7, 24), steel); pan.position.set(x - 90 + i * 43, 292, -175); set.add(pan); } }
+    for (const x of [-570, 565]) { box(set, [145, 105, 9], [x, 334, -221], dark); box(set, [127, 87, 3], [x, 334, -213], mat('#abb9b6', .4, .2)); }
+    for (const x of [-120, 120]) { const burner = new T.Mesh(new T.CylinderGeometry(28, 28, 6, 24), dark); burner.position.set(x, 137, -158); set.add(burner); }
+    const pot = new T.Mesh(new T.CylinderGeometry(24, 23, 36, 24), steel); pot.position.set(-120, 157, -158); pot.castShadow = true; set.add(pot);
+    box(set, [115, 10, 56], [370, 140, -165], wood);
+    this.photoStage(floor, set);
+  }
+  /**
+   * Swaps the modeled kitchen for the photographed one (public/art/kitchen-fighter/kitchen-realistic.jpg).
+   * The plate is drawn so its floor-contact line (84% down the image) lands where the fighters' feet are,
+   * and an invisible floor keeps their real-time shadows.
+   */
+  photoStage(floor: T.Group, set: T.Group) {
+    new T.TextureLoader().load(KITCHEN_PHOTO, texture => {
+      if (this.disposed) { texture.dispose(); return; }
+      texture.colorSpace = T.SRGBColorSpace; texture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      const { width, height } = texture.image as { width: number; height: number }, h = PHOTO_WIDTH * height / width;
+      const plate = new T.Mesh(new T.PlaneGeometry(PHOTO_WIDTH, h), new T.MeshBasicMaterial({ map: texture, color: '#c8c8c8', toneMapped: false, fog: false }));
+      // Seen from the camera's slight downward tilt, a point 240 behind the fighters sits ~37 higher on screen.
+      plate.position.set(0, PHOTO_FLOOR_Y + (PHOTO_FLOOR_LINE - .5) * h, PHOTO_Z);
+      const shadows = new T.Mesh(new T.PlaneGeometry(1800, 1500), new T.ShadowMaterial({ opacity: .4 }));
+      shadows.rotation.x = -Math.PI / 2; shadows.position.set(0, 0, 330); shadows.receiveShadow = true;
+      this.scene.add(plate, shadows); floor.visible = false; set.visible = false;
+      this.scene.background = new T.Color('#17110c'); this.scene.fog = new T.Fog('#17110c', 1300, 2400);
+    }, undefined, () => {});
   }
   resize() {
     const canvas = this.renderer.domElement, w = canvas.clientWidth, h = canvas.clientHeight;
@@ -184,5 +211,5 @@ export class KitchenScene {
     position.needsUpdate = true; (r.trail.material as T.MeshBasicMaterial).opacity = count > 1 ? .16 : 0;
   }
   disposeObject(obj: T.Object3D) { obj.traverse(child => { if (child instanceof T.Mesh) { child.geometry.dispose(); for (const m of Array.isArray(child.material) ? child.material : [child.material]) { if ('map' in m) (m.map as T.Texture | null)?.dispose(); m.dispose(); } } }); }
-  dispose() { this.disposeObject(this.scene); this.renderer.dispose(); }
+  dispose() { this.disposed = true; this.disposeObject(this.scene); this.renderer.dispose(); }
 }
