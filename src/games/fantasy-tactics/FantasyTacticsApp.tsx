@@ -14,6 +14,8 @@ import { TerrainPanel } from './TerrainPanel';
 import './tactics.css';
 
 const SAVE_KEY = 'gh-arcade:fantasy-tactics:v1';
+/** Narrow phones and phones on their side both get the compact battle controls (keep in sync with tactics.css). */
+const COMPACT_BATTLE = '(max-width:760px), (orientation:landscape) and (max-height:500px)';
 function readSave() { try { const raw = localStorage.getItem(SAVE_KEY); return raw ? restore(raw) : null; } catch { return null; } }
 
 export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
@@ -41,7 +43,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const dialog = useRef<HTMLDivElement>(null), board = useRef<HTMLCanvasElement>(null), busyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlay = screen === 'title' ? (confirmNew ? 'new' : '') : gearOpen ? 'gear' : help ? 'help' : paused ? 'paused' : (!busy && ['intro', 'won', 'lost', 'ending'].includes(battle.phase)) ? battle.phase : '';
   useEffect(() => {
-    if (!mobilePanel || overlay || !window.matchMedia('(max-width:760px)').matches) return;
+    if (!mobilePanel || overlay || !window.matchMedia(COMPACT_BATTLE).matches) return;
     const panel = mobilePanel === 'unit' ? unitPanel.current : logPanel.current;
     panel?.focus({preventScroll:true});
     panel?.scrollIntoView({block:'start'});
@@ -112,7 +114,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   const line = (battle.sideQuest ? rescueDialogue : stage.dialogue)[battle.dialogue];
   const speaker = battle.roster.find(u => u.name === line.speaker);
 
-  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`} onKeyDownCapture={e=>{if(e.key!=='Escape'||overlay)return;if(pending){e.preventDefault();e.stopPropagation();setPending(null);setHover(null);}else if(mobilePanel&&window.matchMedia('(max-width:760px)').matches){e.preventDefault();e.stopPropagation();closeMobilePanel();}}}>
+  return <main className={`ft-app ft-${screen}-screen ${mobilePanel ? `ft-mobile-${mobilePanel}` : ''}`} onKeyDownCapture={e=>{if(e.key!=='Escape'||overlay)return;if(pending){e.preventDefault();e.stopPropagation();setPending(null);setHover(null);}else if(mobilePanel&&window.matchMedia(COMPACT_BATTLE).matches){e.preventDefault();e.stopPropagation();closeMobilePanel();}}}>
     <header className="ft-header"><button onClick={onExit}><ArrowLeft size={17} />게임 목록</button><span className="ft-brand">별빛 원정대</span><div>{screen === 'battle' && <button disabled={!!overlay} onClick={()=>setGearOpen(true)}>장비·가방</button>}<button onClick={() => setHelp(true)} disabled={screen === 'title' || !!overlay}>게임 방법</button>{screen === 'battle' && <button onClick={() => setPaused(true)} disabled={!!overlay} aria-label="일시 정지"><Pause size={19} /></button>}</div></header>
     {screen === 'battle' && battle.phase === 'camp' ? <CampScreen battle={battle} revision={revision} locked={!!overlay} onGear={()=>setGearOpen(true)} onUpdate={update} onSideQuest={() => { const next=battle.startSideQuest();if(next){setBattle(next);resetMode();update();} }} onDepart={() => { const next = battle.nextStage(); if (next) { setBattle(next); resetMode(); update(); } }} /> : <div className="ft-shell">
       <div className="ft-chapter"><div><span>{screen === 'title' ? '별의 등대를 찾아서' : battle.sideQuest ? '외전 · 별빛 구출 작전' : `${battle.stage>=3?'2부':'1부'} · 제${battle.stage + 1}장 · ${stage.place}`}</span><h1>{screen === 'title' ? '별빛 원정대' : battle.sideQuest ? '숲길의 작은 영웅들' : stage.name}</h1></div>{screen === 'battle' && <div className={`ft-turn ${battle.phase === 'enemy' ? 'is-enemy' : ''}`}><b>{battle.round}</b><span>번째 차례<strong>{battle.phase === 'enemy' ? '적이 움직입니다' : battle.phase === 'player' ? '아군의 차례' : '별빛 원정대'}</strong></span></div>}</div>
@@ -121,6 +123,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
           <div className="ft-map-caption"><span>{screen === 'title' ? '여울숲의 오래된 다리' : battle.objective}</span><button onClick={() => setGrid(v => !v)} aria-pressed={grid} aria-label="격자와 높이 표시"><GridFour size={18} /></button></div>
           <div className="ft-map-viewport"><BattleCanvas battle={battle} mode={screen === 'title' ? 'move' : mode} hover={pending??hover} grid={grid} revision={revision} canvasRef={board} interactive={screen === 'battle' && !overlay && !busy && battle.phase === 'player'}
             onHover={p=>{if(!pending)setHover(p);}} onCell={actAt} onCancel={() => { if(pending){setPending(null);setHover(null);return;} resetMode(); if (battle.undoMove()) update(); }} /></div>
+          <div className="ft-field-side">
           {screen === 'battle' && (pending || hover) && !overlay && !busy && battle.canAct() && <div ref={previewPanel} className="ft-action-preview" aria-label="행동 미리보기"><div role="status"><b>{pending?'실행 전 확인':'미리보기'} · {(pending??hover)!.x+1}열 {(pending??hover)!.y+1}행</b><p>{battle.preview((pending??hover)!,mode)}</p>{skill&&<small>MP {battle.skillCost(mode)} 사용 · 남은 MP {Math.max(0,actor.mp-battle.skillCost(mode))}</small>}</div>{pending&&<div className="ft-preview-buttons"><button onClick={()=>actAt(pending,true)}>확인 · {battle.at(pending)?.team==='enemy'?'공격':'이동'}</button><button onClick={()=>{setPending(null);setHover(null);}}>취소</button></div>}</div>}
           {screen === 'battle' && <div className="ft-mobile-controls" inert={!!overlay}>
             <label>동료<select aria-label="전장의 동료 선택" value={actor.id} disabled={battle.phase !== 'player' || busy} onChange={e => { const u = battle.allies.find(v => v.id === e.target.value); if (u) select(u); }}>{battle.allies.map(u => <option key={u.id} value={u.id} disabled={u.hp === 0}>{u.name}{u.hp === 0 ? ' · 쓰러짐' : u.acted ? ' · 완료' : ''}</option>)}</select></label>
@@ -137,6 +140,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
           </div>}
           {screen==='battle'&&battle.environmentEnabled&&<TerrainPanel battle={battle} mode={mode} locked={!!overlay||busy} onMode={m=>{setMode(m);setHint('');}} onTarget={actAt} onHover={setHover}/>}
           {battle.bossWarning.length>0&&<p className="ft-boss-warning" role="status">{battle.bossName} {battle.bossPhase}페이즈 · 다음 적 차례에 붉은 칸 공격! 이동하거나 보호 마법으로 대비하세요.</p>}<div className="ft-map-footer"><span><i className="ft-blue" /> 이동 가능</span><span><i className="ft-gold" /> 선택한 동료</span><span><i className="ft-red" /> 공격 범위</span><span>고지에서 공격하면 피해 증가</span></div>
+          </div>
           {screen === 'title' && <div className="ft-title-plaque"><span>별의 등대를 찾아서</span><strong>별빛 원정대</strong><p>제1장 · 여울숲의 약속</p></div>}
         </section>
         {screen === 'title' ? <aside className="ft-travel">
