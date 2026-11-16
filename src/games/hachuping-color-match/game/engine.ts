@@ -1,9 +1,5 @@
 import {
-  LOGICAL_WIDTH,
-  LOGICAL_HEIGHT,
   COLOR_PALETTE,
-  OPTION_ROW_Y,
-  OPTION_PADDING_X,
   DIFFICULTY_CONFIGS,
   DEFAULT_DIFFICULTY,
   POINTS_PER_CORRECT,
@@ -11,11 +7,16 @@ import {
   STREAK_BONUS_CAP,
   WRONG_PENALTY_SECONDS,
   WRONG_FLASH_DURATION,
+  CORRECT_PER_LEVEL,
+  LEVEL_TIME_FACTOR,
+  MIN_TIME_FACTOR,
+  OPTION_GROWTH_LEVELS,
+  STREAK_MILESTONE,
   type DifficultyLevel,
 } from "./constants";
 import { UIStore } from "./uiStore";
-import type { GameState, OptionSlot, UISnapshot } from "./types";
-import { playCorrectSound, playWrongSound, playGameOverSound } from "./sound";
+import type { GameState, OptionSlot, PlayEvent, UISnapshot } from "./types";
+import { playCorrectSound, playWrongSound, playGameOverSound, playLevelUpSound } from "./sound";
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
@@ -26,11 +27,24 @@ function shuffle<T>(items: T[]): T[] {
   return arr;
 }
 
+/** How many pots and how long to answer at a given level. */
+export function roundRules(difficulty: DifficultyLevel, level: number): { optionCount: number; answerTimeLimit: number } {
+  const config = DIFFICULTY_CONFIGS[difficulty];
+  const extra = OPTION_GROWTH_LEVELS.filter((at) => level >= at).length;
+  const optionCount = Math.min(config.maxOptionCount, config.optionCount + extra);
+  const factor = Math.max(MIN_TIME_FACTOR, LEVEL_TIME_FACTOR ** (level - 1));
+  return { optionCount, answerTimeLimit: config.answerTimeLimit * factor };
+}
+
+const MAX_EVENTS = 6;
+
 export class ColorMatchEngine {
   readonly uiStore = new UIStore();
 
   private gameState: GameState;
   private wrongFlashTimers: Map<number, number> = new Map(); // optionId -> flash timer
+  private events: PlayEvent[] = [];
+  private eventId = 0;
   private rafId: number | null = null;
   private lastTime: number | null = null;
   private paused = false;
@@ -53,25 +67,20 @@ export class ColorMatchEngine {
     this.updateUI();
   }
 
-  private buildRound(): { targetColorId: string; options: OptionSlot[]; answerTimeLimit: number } {
-    const config = DIFFICULTY_CONFIGS[this.difficulty];
-    const chosenColors = shuffle(COLOR_PALETTE).slice(0, config.optionCount);
-    const targetColorId = chosenColors[Math.floor(Math.random() * chosenColors.length)].id;
-
-    const spacing = (LOGICAL_WIDTH - 2 * OPTION_PADDING_X) / config.optionCount;
-    const positions = shuffle(chosenColors).map((color, i) => ({
-      id: i,
-      colorId: color.id,
-      x: OPTION_PADDING_X + i * spacing + spacing / 2,
-      y: OPTION_ROW_Y,
-    }));
-
-    return { targetColorId, options: positions, answerTimeLimit: config.answerTimeLimit };
+  private buildRound(level: number, previousTarget?: string): { targetColorId: string; options: OptionSlot[]; answerTimeLimit: number } {
+    const { optionCount, answerTimeLimit } = roundRules(this.difficulty, level);
+    const chosenColors = shuffle(COLOR_PALETTE).slice(0, optionCount);
+    // The same target twice in a row reads like the tap didn't register, so pick a different one when possible.
+    const candidates = chosenColors.filter((c) => c.id !== previousTarget);
+    const pool = candidates.length ? candidates : chosenColors;
+    const targetColorId = pool[Math.floor(Math.random() * pool.length)].id;
+    const options = shuffle(chosenColors).map((color, i) => ({ id: i, colorId: color.id }));
+    return { targetColorId, options, answerTimeLimit };
   }
 
   private initializeGameState(): GameState {
     const config = DIFFICULTY_CONFIGS[this.difficulty];
-    const round = this.buildRound();
+    const round = this.buildRound(1);
 
     return {
       status: "idle",
@@ -81,6 +90,8 @@ export class ColorMatchEngine {
       bestStreak: 0,
       totalCorrect: 0,
       totalWrong: 0,
+      level: 1,
+      round: 1,
       targetColorId: round.targetColorId,
       options: round.options,
       answerTimeRemaining: round.answerTimeLimit,
@@ -91,6 +102,10 @@ export class ColorMatchEngine {
     };
   }
 
+  private emit(event: Omit<PlayEvent, "id">): void {
+    this.events = [...this.events, { ...event, id: ++this.eventId }].slice(-MAX_EVENTS);
+  }
+
   startGame = (): void => {
     if (this.destroyed) return;
     this.cancelLoop();
@@ -98,6 +113,7 @@ export class ColorMatchEngine {
     this.gameState = this.initializeGameState();
     this.gameState.status = "playing";
     this.wrongFlashTimers.clear();
+    this.events = [];
     this.uiTimer = 0;
     this.lastTime = null;
     this.updateUI();
@@ -133,11 +149,12 @@ export class ColorMatchEngine {
   };
 
   private startNewRound = (): void => {
-    const round = this.buildRound();
+    const round = this.buildRound(this.gameState.level, this.gameState.targetColorId);
     this.gameState.targetColorId = round.targetColorId;
     this.gameState.options = round.options;
     this.gameState.answerTimeRemaining = round.answerTimeLimit;
     this.gameState.answerTimeLimit = round.answerTimeLimit;
+    this.gameState.round += 1;
     this.wrongFlashTimers.clear();
   };
 
@@ -148,18 +165,31 @@ export class ColorMatchEngine {
     if (!option) return;
 
     if (option.colorId === this.gameState.targetColorId) {
-      this.gameState.streak += 1;
-      this.gameState.bestStreak = Math.max(this.gameState.bestStreak, this.gameState.streak);
-      const bonus = Math.min(this.gameState.streak - 1, STREAK_BONUS_CAP) * STREAK_BONUS_PER_HIT;
-      this.gameState.score += POINTS_PER_CORRECT + bonus;
-      this.gameState.totalCorrect += 1;
-      playCorrectSound();
+      const state = this.gameState;
+      state.streak += 1;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
+      const bonus = Math.min(state.streak - 1, STREAK_BONUS_CAP) * STREAK_BONUS_PER_HIT;
+      const points = POINTS_PER_CORRECT + bonus;
+      state.score += points;
+      state.totalCorrect += 1;
+      this.emit({ kind: "correct", points, optionId });
+      if (state.streak % STREAK_MILESTONE === 0) this.emit({ kind: "streak", value: state.streak });
+      const level = 1 + Math.floor(state.totalCorrect / CORRECT_PER_LEVEL);
+      if (level > state.level) {
+        state.level = level;
+        this.emit({ kind: "level-up", value: level });
+        playLevelUpSound();
+      } else {
+        playCorrectSound();
+      }
       this.startNewRound();
     } else {
+      if (this.wrongFlashTimers.has(optionId)) return; // a second tap on the same wrong pot isn't a new mistake
       this.gameState.streak = 0;
       this.gameState.totalWrong += 1;
       this.gameState.timeRemaining -= WRONG_PENALTY_SECONDS;
       this.wrongFlashTimers.set(optionId, WRONG_FLASH_DURATION);
+      this.emit({ kind: "wrong", optionId, value: WRONG_PENALTY_SECONDS });
       playWrongSound();
       if (this.gameState.timeRemaining <= 0) {
         this.gameState.timeRemaining = 0;
@@ -169,6 +199,12 @@ export class ColorMatchEngine {
     }
 
     this.updateUI();
+  };
+
+  /** Pick the pot at a 0-based screen position (keyboard 1–6). */
+  selectOptionAt = (index: number): void => {
+    const option = this.gameState.options[index];
+    if (option) this.selectOption(option.id);
   };
 
   private gameLoop = (now: number): void => {
@@ -200,6 +236,7 @@ export class ColorMatchEngine {
     if (this.gameState.answerTimeRemaining <= 0) {
       this.gameState.streak = 0;
       this.gameState.totalWrong += 1;
+      this.emit({ kind: "timeout" });
       this.startNewRound();
     }
 
@@ -218,15 +255,24 @@ export class ColorMatchEngine {
   };
 
   private updateUI = (): void => {
+    const state = this.gameState;
     const snapshot: UISnapshot = {
-      status: this.gameState.status,
-      score: this.gameState.score,
-      timeRemaining: Math.max(0, this.gameState.timeRemaining),
-      streak: this.gameState.streak,
-      bestStreak: this.gameState.bestStreak,
-      totalCorrect: this.gameState.totalCorrect,
-      totalWrong: this.gameState.totalWrong,
-      finalScore: this.gameState.finalScore,
+      status: state.status,
+      score: state.score,
+      timeRemaining: Math.max(0, state.timeRemaining),
+      duration: DIFFICULTY_CONFIGS[this.difficulty].duration,
+      streak: state.streak,
+      bestStreak: state.bestStreak,
+      totalCorrect: state.totalCorrect,
+      totalWrong: state.totalWrong,
+      level: state.level,
+      round: state.round,
+      targetColorId: state.targetColorId,
+      options: state.options,
+      answerProgress: Math.max(0, Math.min(1, state.answerTimeRemaining / state.answerTimeLimit)),
+      wrongOptionIds: [...this.wrongFlashTimers.keys()],
+      events: this.events,
+      finalScore: state.finalScore,
       bestScore: this.bestScoreAtStart,
     };
     this.uiStore.publish(snapshot);
@@ -239,8 +285,6 @@ export class ColorMatchEngine {
   };
 
   getGameState = (): GameState => this.gameState;
-
-  getCanvasSize = () => ({ width: LOGICAL_WIDTH, height: LOGICAL_HEIGHT });
 
   private cancelLoop = (): void => {
     if (this.rafId !== null) {

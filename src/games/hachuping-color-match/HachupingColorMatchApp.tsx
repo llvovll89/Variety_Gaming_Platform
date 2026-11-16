@@ -1,132 +1,144 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
-import GameCanvas from "./components/GameCanvas";
-import HUD from "./components/HUD";
+import PlayField from "./components/PlayField";
 import StartMenu from "./components/StartMenu";
+import PauseDialog from "./components/PauseDialog";
 import GameOverWithLeaderboard from "./components/GameOverWithLeaderboard";
-import PauseButton from "../../shared/components/PauseButton";
-import PauseOverlay from "../../shared/components/PauseOverlay";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useLeaderboard } from "../../shared/hooks/useLeaderboard";
+import { gameStorageKey, safeGetItem, safeSetItem } from "../../shared/storage";
 import { emptySnapshot } from "./game/uiStore";
+import { ColorMatchEngine } from "./game/engine";
+import { setMuted as setSoundMuted } from "./game/sound";
+import { DEFAULT_DIFFICULTY, DIFFICULTY_CONFIGS, type DifficultyLevel } from "./game/constants";
 import type { GameProps } from "../../platform/types";
-import type { ColorMatchEngine } from "./game/engine";
-import type { DifficultyLevel } from "./game/constants";
+import "./color-match.css";
 
 type Screen = "menu" | "playing" | "game-over";
 
 const GAME_ID = "hachuping-color-match";
-const ACCENT_COLOR = "#22c55e";
 const FALLBACK_SNAPSHOT = emptySnapshot();
+const PREFS_KEY = gameStorageKey(GAME_ID, "prefs");
+
+interface Prefs { difficulty: DifficultyLevel; patterns: boolean; muted: boolean }
+
+function readPrefs(): Prefs {
+  try {
+    const raw = JSON.parse(safeGetItem(PREFS_KEY) ?? "{}") as Partial<Prefs>;
+    return {
+      difficulty: raw.difficulty && raw.difficulty in DIFFICULTY_CONFIGS ? raw.difficulty : DEFAULT_DIFFICULTY,
+      patterns: raw.patterns === true,
+      muted: raw.muted === true,
+    };
+  } catch {
+    return { difficulty: DEFAULT_DIFFICULTY, patterns: false, muted: false };
+  }
+}
 
 export default function HachupingColorMatchApp({ onExit }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
-  const [playKey, setPlayKey] = useState(0);
-  const [finalScore, setFinalScore] = useState<number | null>(null);
+  const [prefs, setPrefs] = useState<Prefs>(readPrefs);
   const [engine, setEngine] = useState<ColorMatchEngine | null>(null);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("normal");
+  const [finalScore, setFinalScore] = useState(0);
+  const [previousBest, setPreviousBest] = useState(0);
   const [playerRank, setPlayerRank] = useState<number | null>(null);
   const { highScore, submitScore } = useHighScore(GAME_ID);
   const { leaderboard, submitScore: submitToLeaderboard } = useLeaderboard(GAME_ID);
-
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
-  const handleStart = useCallback((selectedDifficulty: DifficultyLevel) => {
-    setDifficulty(selectedDifficulty);
-    setFinalScore(null);
+  // The engine reports game over from inside its loop; keep the latest callbacks without restarting it.
+  const finish = useRef<(score: number) => void>(() => {});
+  finish.current = (score: number) => {
+    setPreviousBest(highScore);
+    setFinalScore(score);
+    submitScore(score);
+    setPlayerRank(submitToLeaderboard(score));
+    setScreen("game-over");
+  };
+
+  useEffect(() => { setSoundMuted(prefs.muted); safeSetItem(PREFS_KEY, JSON.stringify(prefs)); }, [prefs]);
+
+  const begin = useCallback((difficulty: DifficultyLevel) => {
+    setPrefs((p) => ({ ...p, difficulty }));
     setPlayerRank(null);
+    const next = new ColorMatchEngine(highScore, (score) => finish.current(score), difficulty);
+    setEngine(next);
     setScreen("playing");
-    setPlayKey((k) => k + 1);
-  }, []);
+    next.startGame();
+  }, [highScore]);
 
-  const handleGameOver = useCallback(
-    (score: number) => {
-      setFinalScore(score);
-      submitScore(score);
-      const rank = submitToLeaderboard(score);
-      setPlayerRank(rank);
-      setScreen("game-over");
-    },
-    [submitScore, submitToLeaderboard],
-  );
-
-  const handleRestart = useCallback(() => {
-    setFinalScore(null);
-    setScreen("playing");
-    setPlayKey((k) => k + 1);
-  }, []);
-
-  const handleMainMenu = useCallback(() => {
+  const toMenu = useCallback(() => {
     setEngine(null);
     setScreen("menu");
   }, []);
 
-  const handleTogglePause = useCallback(() => {
-    if (engine?.getGameState().status === "playing") {
-      engine.pauseGame();
-    } else if (engine?.getGameState().status === "paused") {
-      engine.resumeGame();
-    }
+  const togglePause = useCallback(() => {
+    if (!engine) return;
+    const status = engine.getGameState().status;
+    if (status === "playing") engine.pauseGame();
+    else if (status === "paused") engine.resumeGame();
   }, [engine]);
 
+  // Leaving the tab or app pauses the clock; keys: 1–6 pick a pot, Esc / P pause.
   useEffect(() => {
-    if (engine && screen === "playing" && engine.getGameState().status === "idle") {
-      engine.startGame();
-    }
-  }, [engine, screen]);
+    if (!engine || screen !== "playing") return;
+    const pause = () => engine.pauseGame();
+    const onVisibility = () => { if (document.hidden) pause(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === "Escape" || e.key.toLowerCase() === "p") { e.preventDefault(); togglePause(); return; }
+      const n = Number(e.key);
+      if (Number.isInteger(n) && n >= 1 && n <= 6 && engine.getGameState().status === "playing") { e.preventDefault(); engine.selectOptionAt(n - 1); }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("blur", pause);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("blur", pause);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [engine, screen, togglePause]);
 
-  const gameActive = screen === "playing" || screen === "game-over";
-  const isPaused = snapshot.status === "paused";
+  useEffect(() => () => engine?.destroy(), [engine]);
 
   return (
-    <div className="relative h-full w-full">
-      {gameActive && (
-        <GameCanvas
-          key={playKey}
-          bestScore={highScore}
-          onGameOver={handleGameOver}
-          onReady={setEngine}
-          difficulty={difficulty}
-        />
-      )}
-      {gameActive && engine && (
-        <>
-          <HUD uiSnapshot={snapshot} />
-          {snapshot.status === "playing" && (
-            <PauseButton paused={isPaused} onClick={handleTogglePause} />
-          )}
-        </>
-      )}
+    <div className="cm-app">
       {screen === "menu" && (
         <>
-          <button
-            onClick={onExit}
-            className="absolute left-[max(0.75rem,env(safe-area-inset-left))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-sm transition hover:bg-black/60 hover:text-white sm:left-[max(1rem,env(safe-area-inset-left))] sm:top-[max(1rem,env(safe-area-inset-top))]"
-          >
-            <ArrowLeftIcon size={14} weight="bold" />
-            허브로
-          </button>
-          <StartMenu onStart={handleStart} />
+          <button className="cm-back" onClick={onExit}><ArrowLeftIcon size={14} weight="bold" /> 허브로</button>
+          <StartMenu
+            initialDifficulty={prefs.difficulty}
+            patterns={prefs.patterns}
+            bestScore={highScore}
+            onTogglePatterns={() => setPrefs((p) => ({ ...p, patterns: !p.patterns }))}
+            onStart={begin}
+          />
         </>
+      )}
+      {screen !== "menu" && engine && (
+        <PlayField
+          snapshot={snapshot}
+          patterns={prefs.patterns}
+          muted={prefs.muted}
+          onToggleMute={() => setPrefs((p) => ({ ...p, muted: !p.muted }))}
+          onPause={togglePause}
+          onSelect={engine.selectOption}
+        />
+      )}
+      {screen === "playing" && snapshot.status === "paused" && (
+        <PauseDialog score={snapshot.score} seconds={Math.ceil(snapshot.timeRemaining)} onResume={togglePause} onMainMenu={toMenu} />
       )}
       {screen === "game-over" && (
         <GameOverWithLeaderboard
-          finalScore={finalScore ?? 0}
-          bestScore={highScore}
-          accentColor={ACCENT_COLOR}
+          finalScore={finalScore}
+          previousBest={previousBest}
+          snapshot={snapshot}
           leaderboard={leaderboard}
           playerRank={playerRank}
-          onRestart={handleRestart}
-          onMainMenu={handleMainMenu}
-        />
-      )}
-      {isPaused && (
-        <PauseOverlay
-          score={snapshot.score}
-          accentColor={ACCENT_COLOR}
-          onResume={handleTogglePause}
-          onMainMenu={handleMainMenu}
+          onRestart={() => begin(prefs.difficulty)}
+          onMainMenu={toMenu}
         />
       )}
     </div>

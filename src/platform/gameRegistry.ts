@@ -196,7 +196,7 @@ export const GAMES: GameDefinition[] = [
   {
     id: "hachuping-color-match",
     title: "색깔 맞추기",
-    description: "화면에 뜬 색과 같은 색을 빠르게 찾는 반응속도 게임",
+    description: "물감 방울과 같은 색 물감 통을 고르는 30초 게임 · 5개마다 레벨 업, 무늬로도 구별 가능",
     thumbnail: '/art/hub/hachuping-color-match.jpg',
     cover: '/art/hub/hachuping-color-match-large.jpg',
     previewThumbnail: '/art/hub/hachuping-color-match-small.jpg',
