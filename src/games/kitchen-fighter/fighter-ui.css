@@ -14,3 +14,47 @@
 @media(max-width:760px){.kf-header{height:54px;padding:0 12px}.kf-back{font-size:11px}.kf-brand{font-size:16px}.kf-brand small{display:none}.kf-content{display:block;padding:15px 12px 25px}.kf-intro{margin-bottom:14px}.kf-intro h1{font-size:21px}.kf-intro p{font-size:12px}.kf-selection{display:grid;grid-template-columns:1fr;gap:21px;margin-top:20px}.kf-character-heading>input{font-size:15px}.kf-keyguide{font-size:10px;gap:8px;line-height:1.8}.kf-keyguide kbd{font-size:9px}.kf-start-row{margin-top:20px}.kf-privacy{margin-top:12px}.kf-help-grid{grid-template-columns:1fr;gap:14px}.kf-preview-label{font-size:9px;left:12%;right:12%;bottom:8px}.kf-preview-label b{font-size:14px}.kf-hud{top:9px;left:10px;right:10px;gap:58px}.kf-hud-name{margin-bottom:3px}.kf-hud-name strong{font-size:11px}.kf-hud-name span{font-size:7px}.kf-health{height:12px;border-width:1px}.kf-meter-row{font-size:7px;gap:4px;margin-top:4px}.kf-gauge{height:4px}.kf-wins i{width:7px;height:7px}.kf-timer{top:-2px}.kf-timer b{font-size:29px}.kf-timer small{font-size:6px}.kf-round-banner strong{font-size:36px}.kf-round-banner small{font-size:13px}.kf-result{padding:13px 22px}.kf-result h2{font-size:21px}.kf-result p{font-size:10px;margin-bottom:8px}.kf-result .kf-primary{padding:8px 14px;font-size:12px;margin-top:6px}.kf-secondary{padding-top:8px;font-size:10px}.kf-touch,.kf-attack-buttons button{min-width:0;min-height:48px;padding:5px;font-size:10px}.kf-direction{gap:4px}.kf-error{line-height:1.7}}
 @media(prefers-color-scheme:light){.kf-app{--surface:#e3e7e8;--panel:#d3dadd;--ink:#29343c;--muted:#52616a;--edge:#8a989f}.kf-keyguide kbd{background:#f0f2f3}.kf-touch.held,.kf-touch:active,.kf-attack-buttons button:active{background:#bcb3aa;color:#2d3335}.kf-attack-buttons .kf-super{background:#d4b6a9;color:#30373b}.kf-error{color:#904631}}
 @media(prefers-reduced-motion:reduce){.kf-app *{transition:none!important}.kf-primary:active{transform:none}}
+/* Touch controls: a cross pad for the left thumb (walk left/right, sidestep in/out), stance and attacks for the right thumb. */
+.kf-battle .kf-touch-controls{display:flex;flex-direction:row;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:14px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.kf-move-pad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,52px);gap:6px;flex:none}
+.kf-pad-in{grid-column:2;grid-row:1}.kf-pad-left{grid-column:1;grid-row:2}.kf-pad-right{grid-column:3;grid-row:2}.kf-pad-out{grid-column:2;grid-row:3}
+.kf-action-pad{display:flex;flex-direction:column;gap:6px;flex:0 1 340px;min-width:0}
+.kf-stance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.kf-battle .kf-attack-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.kf-battle .kf-attack-buttons .kf-super{grid-column:span 2}
+.kf-battle .kf-touch,.kf-battle .kf-attack-buttons button{flex:none;min-width:0;min-height:52px;padding:4px;font-size:13px;line-height:1.2;white-space:nowrap;word-break:keep-all}
+.kf-battle .kf-stance .kf-touch{min-height:44px}
+/* Keyboard letters mean nothing on a phone. */
+@media(hover:none) and (pointer:coarse){.kf-keyguide,.kf-battle .kf-touch kbd,.kf-battle .kf-attack-buttons kbd{display:none}}
+@media(max-width:760px){
+ .kf-hud-name span,.kf-meter-row{font-size:10px}.kf-timer small{font-size:10px}.kf-hud-name strong{font-size:12px}.kf-result p{font-size:12px}.kf-secondary{font-size:12px}
+ .kf-move-pad{grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,50px)}
+ .kf-battle .kf-touch,.kf-battle .kf-attack-buttons button{min-height:50px;font-size:12px}
+}
+/* Phones held sideways: the arena fills the screen and the controls float over its lower corners. */
+@media(orientation:landscape) and (max-height:500px){
+ .kf-app:has(.kf-battle) .kf-header{height:40px;padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}
+ .kf-app:has(.kf-battle) .kf-brand small{display:none}
+ .kf-content.kf-battle{position:relative;max-width:none;padding:0}
+ .kf-battle .kf-arena{border:0;border-radius:0}
+ .kf-battle .kf-arena canvas{aspect-ratio:auto;height:calc(100dvh - 40px)}
+ .kf-battle .kf-keyguide,.kf-battle .kf-help{display:none}
+ .kf-battle .kf-touch-controls{position:absolute;left:0;right:0;bottom:0;margin:0;padding:0 max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));pointer-events:none;z-index:2}
+ .kf-battle .kf-touch-controls[data-idle=true]{display:none}
+ .kf-battle .kf-touch-controls>*{pointer-events:auto}
+ .kf-move-pad{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,46px);gap:5px}
+ .kf-action-pad{flex:0 1 250px;gap:5px}
+ .kf-battle .kf-touch,.kf-battle .kf-attack-buttons button{min-height:46px;font-size:12px;background:#2d3439c4;color:#eef1f1;border-color:#8c9aa180;backdrop-filter:blur(2px)}
+ .kf-battle .kf-stance .kf-touch{min-height:40px}
+ .kf-battle .kf-attack-buttons .kf-super{background:#684b40d0}
+ .kf-hud{top:8px;left:12px;right:12px;gap:70px}.kf-hud-name span,.kf-meter-row{font-size:10px}.kf-health{height:12px}.kf-timer b{font-size:30px}.kf-timer small{font-size:10px}
+ .kf-battle .kf-touch.held,.kf-battle .kf-touch:active,.kf-battle .kf-attack-buttons button:active{background:#a34f42d9;border-color:#d5998c}
+}
+@media(max-width:360px){.kf-battle .kf-touch-controls{gap:8px}.kf-move-pad{grid-template-columns:repeat(3,46px);gap:4px}.kf-stance,.kf-battle .kf-attack-buttons{gap:4px}.kf-battle .kf-touch,.kf-battle .kf-attack-buttons button{font-size:11px;padding:2px}}
+/* Phones held upright: controls sit at the bottom edge where thumbs rest; the help folds in above them. */
+@media(max-width:760px) and (orientation:portrait){
+ .kf-content.kf-battle{display:flex;flex-direction:column;min-height:calc(100dvh - 54px);padding-bottom:max(14px,env(safe-area-inset-bottom))}
+ .kf-battle .kf-help{order:1;margin-top:14px}
+ .kf-battle .kf-touch-controls{order:2;margin-top:auto;padding-top:16px}
+}
+@media(max-width:360px){.kf-hud{gap:50px}.kf-hud-name span{display:none}.kf-hud-name strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
