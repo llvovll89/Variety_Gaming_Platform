@@ -136,3 +136,7 @@
   .ft-log-history summary{min-height:44px;padding:12px 0;font-size:14px}
   .ft-log-history li{font-size:14px}
 }
+/* Readable floor: nothing on screen below 11px, on phones included. */
+.ft-app :is(.ft-action-bottom>span,.ft-action-bottom>button,.ft-growth-actions button,.ft-chapter>div>span,.ft-command-help p,.ft-commands small,.ft-ending-party b,.ft-footer,.ft-growth article small,.ft-growth-note,.ft-map-footer,.ft-mobile-controls label,.ft-party small,.ft-party span,.ft-primary small,.ft-report,.ft-report p,.ft-report li,.ft-report summary,.ft-report-heading>span,.ft-report-heading>b,.ft-rescue-list small,.ft-save-note,.ft-stat-line,.ft-stat-line span,.ft-stat-line b,.ft-targets button,.ft-targets small,.ft-terrain-actions small,.ft-terrain-heading span,.ft-terrain-targets small,.ft-title-plaque p,.ft-title-plaque>span,.ft-travel>p,.ft-turn>span,.ft-unit-heading p,.ft-unit-heading span){font-size:11px}
+.ft-app .ft-commands button[aria-pressed=true]:before{font-size:11px}
+.ft-app .ft-meter small{font-size:11px}

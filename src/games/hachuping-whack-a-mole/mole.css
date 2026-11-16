@@ -26,3 +26,5 @@
 .mole-hit-label{position:absolute;left:50%;top:-28%;transform:translateX(-50%);color:#78420c;background:#fff2c8;padding:4px 9px;border:1px solid #e1be7c;border-radius:10px;font-size:17px;font-weight:900;pointer-events:none;box-shadow:0 3px 0 #cca15355}
 @media(prefers-reduced-motion:no-preference){.mole-hit-label{animation:mole-score-rise .45s ease-out both}@keyframes mole-score-rise{from{transform:translate(-50%,10px) scale(.8);opacity:1}to{transform:translate(-50%,-14px) scale(1.08);opacity:0}}}
 .mole-target{min-width:44px;min-height:44px}
+/* Readable floor: nothing on screen below 11px, on phones included. */
+.mole-bottom-stats,.mole-bottom-stats span,.mole-eyebrow,.mole-final-score>span,.mole-menu-footer small,.mole-menu-footer>p,.mole-menu-footer span,.mole-nav,.mole-nav .mole-record,.mole-play-nav small,.mole-result-ranking>p,.mole-result-stats span,.mole-score>small,.mole-score>span,.mole-target kbd{font-size:11px}

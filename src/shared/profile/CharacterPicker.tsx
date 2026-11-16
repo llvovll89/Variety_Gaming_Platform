@@ -73,7 +73,7 @@ export default function CharacterPicker({
         className={`flex h-17 w-17 flex-col items-center justify-center gap-0.5 rounded-2xl p-1.5 transition active:scale-95 ${uploadTileClass}`}
       >
         <PlusIcon size={18} weight="bold" />
-        <span className="text-[10px] leading-none">내 사진</span>
+        <span className="text-[11px] leading-none">내 사진</span>
       </button>
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
     </div>

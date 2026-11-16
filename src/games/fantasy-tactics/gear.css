@@ -11,3 +11,5 @@
   .ft-gear-slots{grid-template-columns:1fr}
   .ft-gear-row{align-items:flex-start}
 }
+/* Readable floor: nothing on screen below 11px, on phones included. */
+.ft-app :is(.ft-chest-list,.ft-chest-list button,.ft-chest-list small,.ft-gear-catalog small,.ft-gear-comparison,.ft-gear-row b small,.ft-gear-row p,.ft-gear-row>button,.ft-gear-slots b,.ft-gear-slots span,.ft-gear-statline,.ft-header button){font-size:11px}

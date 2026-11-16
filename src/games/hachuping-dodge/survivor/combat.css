@@ -10,3 +10,6 @@
 @media(prefers-reduced-motion:reduce){.survivor button:active:not(:disabled){transform:none}}
 @media(min-width:768px){.survivor .survivor-job-hud{top:182px}}
 .survivor .survivor-health i{background:#d19a91}.survivor .survivor-exp i{background:#a8b8d6}.survivor .survivor-stage>span{color:#ccc4d8}
+/* Readable floor: nothing on screen below 11px, on phones included. */
+.survivor :is(.survivor-stage>span,.survivor-level,.survivor-level>small,.survivor-bar-label,.survivor-bar-label span,.survivor-objective,.survivor-job-hud span,.survivor-job-hud small,.survivor-bottom>div,.survivor-bottom>span b,.survivor-bottom>small,.survivor-boss small,.survivor-upgrades small,.survivor-route small,.survivor-character-caption>span,.survivor-difficulty p),.survivor kbd,.survivor-menu-footer,.survivor-nav{font-size:11px}
+.survivor .survivor-bottom div>span>b{font-size:11px}
