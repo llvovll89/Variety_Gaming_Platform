@@ -12,3 +12,5 @@
   .ft-camp-conversation p{font-size:15px;line-height:1.75}
   .ft-camp-portraits button{min-height:44px}
 }
+/* Readable floor: nothing on screen below 11px, on phones included. */
+.ft-app :is(.ft-camp-name,.ft-camp-conversation>span,.ft-camp-heading>div>span,.ft-camp-heading>span,.ft-camp-name small,.ft-camp-next small,.ft-camp-portraits span,.ft-camp-rest,.ft-camp-route>span,.ft-camp-save){font-size:11px}
