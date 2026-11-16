@@ -4,6 +4,12 @@
  */
 
 let audioContext: AudioContext | null = null;
+let muted = false;
+
+/** Silences every sound effect until switched back on. */
+export function setMuted(next: boolean): void {
+  muted = next;
+}
 
 function getAudioContext(): AudioContext {
   if (!audioContext) {
@@ -14,6 +20,7 @@ function getAudioContext(): AudioContext {
 
 /** Play a bright ascending chime for a correct answer */
 export function playCorrectSound(): void {
+  if (muted) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -43,6 +50,7 @@ export function playCorrectSound(): void {
 
 /** Play a low buzz for a wrong answer */
 export function playWrongSound(): void {
+  if (muted) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -70,6 +78,7 @@ export function playWrongSound(): void {
 
 /** Play a sound for game over */
 export function playGameOverSound(): void {
+  if (muted) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -90,6 +99,31 @@ export function playGameOverSound(): void {
 
     osc.start(now);
     osc.stop(now + 0.5);
+  } catch {
+    // Audio context not available or permission denied
+  }
+}
+
+/** Play a quick rising three-note run when the level goes up */
+export function playLevelUpSound(): void {
+  if (muted) return;
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === "suspended") ctx.resume();
+    const now = ctx.currentTime;
+    [660, 880, 1175].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      const start = now + i * 0.07;
+      gain.gain.setValueAtTime(0.22, start);
+      gain.gain.exponentialRampToValueAtTime(0.01, start + 0.2);
+      osc.start(start);
+      osc.stop(start + 0.2);
+    });
   } catch {
     // Audio context not available or permission denied
   }

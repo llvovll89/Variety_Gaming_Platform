@@ -1,144 +1,65 @@
 import { useState } from "react";
-import type { DifficultyLevel } from "../game/constants";
+import { PlayIcon } from "@phosphor-icons/react/dist/icons/Play";
+import { COLOR_PALETTE, DIFFICULTY_CONFIGS, type DifficultyLevel } from "../game/constants";
+import { Drop } from "./Paint";
 
 interface StartMenuProps {
+  initialDifficulty: DifficultyLevel;
+  patterns: boolean;
+  bestScore: number;
+  onTogglePatterns: () => void;
   onStart: (difficulty: DifficultyLevel) => void;
 }
 
-export default function StartMenu({ onStart }: StartMenuProps) {
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>("normal");
+const LEVEL_NOTES: Record<DifficultyLevel, string> = {
+  easy: "물감 3통",
+  normal: "물감 4통",
+  hard: "물감 5통",
+};
 
-  const handleStart = () => {
-    onStart(selectedDifficulty);
-  };
+export default function StartMenu({ initialDifficulty, patterns, bestScore, onTogglePatterns, onStart }: StartMenuProps) {
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
+  const config = DIFFICULTY_CONFIGS[difficulty];
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto bg-black/40 backdrop-blur-sm pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute -top-1/2 -right-1/2 w-full h-full rounded-full blur-3xl opacity-20"
-          style={{
-            background: "radial-gradient(circle, #22c55e 0%, transparent 70%)",
-            animation: "float 8s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute -bottom-1/2 -left-1/4 w-full h-full rounded-full blur-3xl opacity-15"
-          style={{
-            background: "radial-gradient(circle, #4ade80 0%, transparent 70%)",
-            animation: "float 10s ease-in-out infinite reverse",
-          }}
-        />
-      </div>
-
-      <div
-        className="motion-safe:animate-panel-in flex flex-col items-center gap-8 rounded-3xl bg-gradient-to-br from-[#1a1f2e] to-[#0f1419] p-8 shadow-2xl ring-1 ring-white/10 w-full max-w-md sm:max-w-lg backdrop-blur-xl"
-        style={{
-          boxShadow: "0 20px 60px -12px rgba(34, 197, 94, 0.3), 0 0 40px -12px rgba(34, 197, 94, 0.2)",
-        }}
-      >
-        <div className="text-center space-y-3">
-          <div className="text-5xl drop-shadow-lg">🎨</div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">색깔 맞추기</h1>
-          <div className="h-px w-16 mx-auto bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-50" />
+    <div className="cm-sheet">
+      <div className="cm-card motion-safe:animate-panel-in">
+        <div className="cm-title">
+          <div className="cm-drops">{COLOR_PALETTE.slice(0, 6).map((c) => <Drop key={c.id} hex={c.hex} />)}</div>
+          <h1>색깔 맞추기</h1>
+          <p>가운데 물감 방울과 같은 색 물감 통을 눌러요.<br />{config.duration}초 동안 몇 개나 맞힐 수 있을까요?</p>
         </div>
 
-        <div className="space-y-2 text-center">
-          <p className="text-base font-semibold text-white/90">위에 뜬 색과 같은 색을 재빠르게 찾아보세요!</p>
-          <p className="text-sm text-white/60">
-            30초 동안 정답을 최대한 많이 맞히고 리더보드에 올라가세요
-          </p>
-        </div>
-
-        <div className="w-full space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-white/80 block">난이도 선택</label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["easy", "normal", "hard"] as const).map((level) => (
-                <button
-                  key={level}
-                  onClick={() => setSelectedDifficulty(level)}
-                  className={`relative px-4 py-3 rounded-xl font-bold text-sm transition-all duration-300 overflow-hidden group ${
-                    selectedDifficulty === level ? "text-white shadow-lg scale-105" : "text-white/70 hover:text-white"
-                  }`}
-                  style={{
-                    background:
-                      selectedDifficulty === level
-                        ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)"
-                        : "rgba(255, 255, 255, 0.05)",
-                    border:
-                      selectedDifficulty === level
-                        ? "1px solid rgba(34, 197, 94, 0.5)"
-                        : "1px solid rgba(255, 255, 255, 0.1)",
-                  }}
-                >
-                  <span className="relative z-10">
-                    {level === "easy" && "쉬움"}
-                    {level === "normal" && "보통"}
-                    {level === "hard" && "어려움"}
-                  </span>
-                  {selectedDifficulty === level && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition" />
-                  )}
-                </button>
-              ))}
-            </div>
+        <div className="cm-field" role="group" aria-labelledby="cm-level-label">
+          <p id="cm-level-label">난이도</p>
+          <div className="cm-levels">
+            {(Object.keys(DIFFICULTY_CONFIGS) as DifficultyLevel[]).map((level) => (
+              <button key={level} aria-pressed={difficulty === level} onClick={() => setDifficulty(level)}>
+                {DIFFICULTY_CONFIGS[level].name}
+                <small>{LEVEL_NOTES[level]}</small>
+              </button>
+            ))}
           </div>
-
-          <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-            <p className="text-xs font-semibold text-green-400 mb-1">
-              {selectedDifficulty === "easy" && "🟢 쉬운 난이도"}
-              {selectedDifficulty === "normal" && "🟡 보통 난이도 (추천)"}
-              {selectedDifficulty === "hard" && "🔴 어려운 난이도"}
-            </p>
-            <p className="text-xs text-white/70 leading-relaxed">
-              {selectedDifficulty === "easy" && "선택지 3개, 답할 시간도 넉넉해요."}
-              {selectedDifficulty === "normal" && "선택지 4개, 적당한 도전감으로 즐길 수 있어요."}
-              {selectedDifficulty === "hard" && "선택지 5개, 아주 빠르게 골라야 해요!"}
-            </p>
-          </div>
+          <button className="cm-toggle" role="switch" aria-checked={patterns} onClick={onTogglePatterns}>
+            <span>
+              무늬로도 구별하기
+              <small>색마다 다른 무늬가 생겨요. 비슷한 색이 헷갈릴 때 좋아요.</small>
+            </span>
+            <i className="cm-switch" aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="w-full space-y-2">
-          <p className="text-xs font-bold text-white/70 uppercase tracking-wider">💡 팁</p>
-          <ul className="space-y-1 text-xs text-white/60">
-            <li className="flex gap-2">
-              <span className="text-green-400 flex-shrink-0">▪</span>
-              <span>정답을 맞히면 10점, 연속으로 맞힐수록 보너스 점수가 붙어요</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400 flex-shrink-0">▪</span>
-              <span>틀리거나 시간 안에 못 고르면 남은 시간이 줄어들어요</span>
-            </li>
-            <li className="flex gap-2">
-              <span className="text-green-400 flex-shrink-0">▪</span>
-              <span>높은 점수는 자동으로 리더보드에 저장됩니다</span>
-            </li>
-          </ul>
-        </div>
+        <ul className="cm-rules">
+          <li><b>맞히면 10점</b>, 연속으로 맞힐수록 보너스가 붙어요.</li>
+          <li><b>5개 맞힐 때마다 레벨 업!</b> 고를 시간이 짧아지고 물감 통이 늘어나요.</li>
+          <li>틀리면 남은 시간이 1.5초 줄어요. 키보드는 숫자 1~6으로 고를 수 있어요.</li>
+        </ul>
 
-        <button
-          onClick={handleStart}
-          className="w-full mt-4 px-8 py-4 rounded-xl font-bold text-lg text-white transition-all duration-300 active:scale-95 hover:shadow-xl relative overflow-hidden group"
-          style={{
-            background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
-            boxShadow: "0 8px 20px rgba(34, 197, 94, 0.3)",
-          }}
-        >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            게임 시작
-            <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
+        <button className="cm-primary" onClick={() => onStart(difficulty)}>
+          <PlayIcon size={18} weight="fill" /> 시작하기
         </button>
+        {bestScore > 0 && <p className="cm-best">내 최고 기록 <b className="cm-num">{bestScore}</b>점</p>}
       </div>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translate(0px, 0px); }
-          50% { transform: translate(30px, -30px); }
-        }
-      `}</style>
     </div>
   );
 }
