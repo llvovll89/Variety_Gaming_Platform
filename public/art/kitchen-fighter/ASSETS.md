@@ -2,6 +2,8 @@
 
 Created with the built-in ImageGen tool. Runtime uses local files only.
 
+In use: `kitchen-realistic.jpg` is the arena backdrop (`scene.ts`, `photoStage`), and `fighters-realistic-cutout.webp` is the "실사 셰프" photo preset on the setup screen (`KitchenFighterApp.tsx`, `pickChef`).
+
 - `kitchen-realistic.jpg`: photorealistic kitchen background.
 - `fighters-realistic-cutout.webp`: transparent default fighter atlas; left male, right female. Alpha verified (corner and center background alpha = 0).
 - `fighters-realistic.webp`: original generated atlas retained as the cutout edit reference.
