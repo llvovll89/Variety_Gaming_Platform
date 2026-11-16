@@ -11,7 +11,7 @@ export const CHARACTERS: Character[] = [
 
 export const GAME_CHARACTER_IMAGES: Record<string, string> = {
   "hachuping-slither": "/art/snake-avatar.svg",
-  "hachuping-jump": "/art/jump/blue-bird.png",
+  "hachuping-jump": "/art/jump/blue-bird.webp",
   "hachuping-balloon": "/art/star-avatar.svg",
 };
 

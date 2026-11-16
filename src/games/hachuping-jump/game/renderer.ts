@@ -151,7 +151,7 @@ export function renderJump(c: CanvasRenderingContext2D, t: LetterboxTransform, o
   if (rewards.shieldTime > 0) { c.save(); c.globalAlpha = rewards.shieldTime < 1.5 ? .55 + Math.sin(distance * .14) * .25 : 1; oval(c, x, y, 29, 29, '#bdf8ff88'); c.strokeStyle = '#fff'; c.lineWidth = 2.5; c.stroke(); oval(c, x - 12, y - 16, 7, 3, '#fff'); c.restore(); }
   if (!reducedMotion && flapFx > .01) { c.strokeStyle = `rgba(255,255,255,${flapFx * .6})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 20 + (1 - flapFx) * 16, 0, Math.PI * 2); c.stroke(); }
   c.save(); c.translate(x, y); c.rotate(player.rotation);
-  const defaultBird = !image || image.src.endsWith('/art/jump/blue-bird.png');
+  const defaultBird = !image || image.src.endsWith('/art/jump/blue-bird.webp');
   if(defaultBird && image?.complete && image.naturalWidth > 0){
     // The body stays over the unchanged 14px collision circle; tail and feathers are decorative.
     c.scale(1, reducedMotion ? 1 : 1 + flapFx * .035);
