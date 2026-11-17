@@ -3,21 +3,25 @@ import type { RunRewards } from './types';
 
 const TIER_NAMES = { 1: '브론즈', 2: '실버', 3: '골드' } as const;
 
+/** Whether a run earned anything worth showing (so a result screen can skip the section). */
+export function hasRewards(rewards: RunRewards | null | undefined): rewards is RunRewards {
+  return !!rewards && (rewards.unlocked.length > 0 || !!rewards.daily?.justCompleted || (rewards.streak.extendedToday && rewards.streak.days > 1));
+}
+
 /**
  * What a run earned, under the score on a result screen. Same data, two voices:
  * kids get big stickers and stamps with no numbers to fall short of; everyone else gets a compact
  * line of badges. Nothing earned shows nothing (no "you missed it" message).
  */
 export function RewardStrip({ rewards, audience }: { rewards: RunRewards | null | undefined; audience: Audience }) {
-  if (!rewards) return null;
+  if (!hasRewards(rewards)) return null;
   const { unlocked, daily, streak } = rewards;
   const dailyDone = daily?.justCompleted;
   const streakNews = streak.extendedToday && streak.days > 1;
-  if (!unlocked.length && !dailyDone && !streakNews) return null;
 
   if (audience === 'kids') {
     return (
-      <div className="kit-rewards kit-rewards-kids" role="status">
+      <div className="kit-rewards kit-rewards-kids">
         {unlocked.length > 0 && <div className="kit-sticker">
           <b>{unlocked.length > 1 ? `새 스티커 ${unlocked.length}개를 받았어요!` : '새 스티커를 받았어요!'}</b>
           {/* All new stickers in one row, so the replay button stays in view. */}
@@ -31,7 +35,7 @@ export function RewardStrip({ rewards, audience }: { rewards: RunRewards | null 
     );
   }
   return (
-    <ul className="kit-rewards kit-rewards-badges" role="status" aria-label="이번 판에서 얻은 것">
+    <ul className="kit-rewards kit-rewards-badges" aria-label="이번 판에서 얻은 것">
       {unlocked.map(a => (
         <li key={a.id} data-tier={a.tier}><b>업적 달성 · {a.title}</b><small>{TIER_NAMES[a.tier]} · {a.description}</small></li>
       ))}

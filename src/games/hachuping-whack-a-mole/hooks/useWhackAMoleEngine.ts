@@ -4,7 +4,7 @@ import { MoleScene, type TargetPoint } from '../game/renderer';
 import { MOLE_KEYS, type DifficultyLevel } from '../game/constants';
 
 export function useWhackAMoleEngine(canvasRef: RefObject<HTMLCanvasElement | null>, bestScore: number,
-  onGameOver: (score: number) => void, onReady: (engine: WhackAMoleEngine) => void, difficulty: DifficultyLevel) {
+  onGameOver: (score: number, state: import('../game/types').GameState) => void, onReady: (engine: WhackAMoleEngine) => void, difficulty: DifficultyLevel) {
   const [targets,setTargets]=useState<TargetPoint[]>([]);
   const [error,setError]=useState(false);
   useEffect(()=> {

@@ -56,13 +56,16 @@ test('the hub only offers challenges a game can actually complete, plus this wee
 });
 
 test('a game card shows the best and earned count only after the game was played', async () => {
-  const P = await loadBundle(`export {cardProgress} from './src/platform/meta/ProfileSheet.tsx';`);
+  const P = await loadBundle(`export {cardProgress, visibleAchievements} from './src/platform/meta/ProfileSheet.tsx';`);
   const meta = (games, achievements = {}) => ({ v: 1, importedLegacy: {}, days: {}, games, achievements, daily: {} });
   const rec = o => ({ runs: 1, wins: 0, playMs: 0, lastPlayed: 0, best: {}, totals: {}, peaks: {}, progress: {}, dailyDone: 0, ...o });
   const defs = [{ id: 'a', tier: 1 }, { id: 'b', tier: 1 }];
-  const kids = { id: 'mole', genres: ['키즈'], meta: { scoreUnit: '점', achievements: defs } };
+  const kids = { id: 'mole', genres: ['키즈'], meta: { reportsRuns: true, scoreUnit: '점', achievements: defs } };
   const maze = { id: 'maze', genres: ['캐주얼'], meta: { scoreOrder: 'low', scoreUnit: '초', achievements: defs } };
   assert.equal(P.cardProgress(kids, meta({})), null);
   assert.deepEqual(P.cardProgress(kids, meta({ mole: rec({ best: { 'default|easy': 300, 'default|hard': 1200 } }) }, { 'mole/a': 1 })), { best: '최고 1,200점', earned: '스티커 1/2' });
-  assert.deepEqual(P.cardProgress(maze, meta({ maze: rec({ best: { 'default|easy': 80, 'default|hard': 65 } }) })), { best: '최고 65초', earned: '업적 0/2' }, 'fastest time for lower-is-better games');
+  assert.deepEqual(P.cardProgress(maze, meta({ maze: rec({ best: { 'default|easy': 80, 'default|hard': 65 } }) })), { best: '최고 65초', earned: null }, 'fastest time; no locked total for a game that cannot earn it yet');
+  assert.deepEqual(P.cardProgress(maze, meta({ maze: rec({}) }, { 'maze/a': 1 })).earned, '업적 1개');
+  assert.deepEqual(P.visibleAchievements(maze, meta({}, { 'maze/b': 1 })).map(a => a.id), ['b'], 'only what its old records already earned');
+  assert.equal(P.visibleAchievements(kids, meta({})).length, 2, 'a reporting game shows every goal');
 });

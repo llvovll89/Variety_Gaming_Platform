@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PauseIcon } from '@phosphor-icons/react/dist/icons/Pause';
 import { SpeakerHighIcon } from '@phosphor-icons/react/dist/icons/SpeakerHigh';
 import { SpeakerSlashIcon } from '@phosphor-icons/react/dist/icons/SpeakerSlash';
@@ -56,19 +56,16 @@ function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,lega
   const s=useUISnapshot(engine?.uiStore??null,FALLBACK);
   const records=useRecords();
   const [rewards,setRewards]=useState<RunRewards|null>(null);
-  const reportedFor=useRef(-1);
   const start=useCallback(()=>{setEngine(null);setRank(null);setRewards(null);setPlayKey(k=>k+1);setScreen('playing');},[]);
-  const finish=useCallback((score:number)=>{submitScore(score);setRank(submitRanking(score));setScreen('game-over');},[submitScore,submitRanking]);
+  // The engine calls this once per run; the arcade records come back with the result screen.
+  const finish=useCallback((score:number,g:import('./game/types').GameState)=>{
+    submitScore(score);setRank(submitRanking(score));
+    setRewards(records.reportRun({difficulty,score,durationMs:GAME_TOTAL_TIME*1000,outcome:'complete',
+      stats:{hits:g.totalMolesHit,combo:g.bestCombo,accuracy:g.attempts?Math.round(g.totalMolesHit/g.attempts*100):0}}));
+    setScreen('game-over');
+  },[submitScore,submitRanking,records,difficulty]);
   const menu=useCallback(()=>{engine?.destroy();setEngine(null);setScreen('menu');},[engine]);
   useEffect(()=>{if(engine&&screen==='playing'&&engine.getGameState().status==='idle')engine.startGame();},[engine,screen]);
-  // Tell the arcade how the run went (bests, achievements, today's challenge), once per run.
-  useEffect(()=>{
-    if(screen!=='game-over'||!engine||reportedFor.current===playKey) return;
-    reportedFor.current=playKey;
-    const g=engine.getGameState();
-    setRewards(records.reportRun({difficulty,score:g.finalScore??g.score,durationMs:GAME_TOTAL_TIME*1000,outcome:'complete',
-      stats:{hits:g.totalMolesHit,combo:g.bestCombo,accuracy:g.attempts?Math.round(g.totalMolesHit/g.attempts*100):0}}));
-  },[screen,engine,playKey,records,difficulty]);
   // Looking away, Escape or P pauses; Escape on the pause dialog resumes.
   useAutoPause({active:!!engine&&screen==='playing'&&(s.status==='ready'||s.status==='playing'),onPause:()=>engine?.pauseGame()});
   return <div className="mole-game">

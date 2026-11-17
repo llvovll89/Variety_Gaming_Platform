@@ -27,7 +27,8 @@ function PlayFacts({ game }: { game: GameDefinition }) {
 function CardProgress({ game, meta }: { game: GameDefinition; meta: ReturnType<typeof useMeta> }) {
   const progress = cardProgress(game, meta);
   if (!progress) return null;
-  return <span className="hub-game-progress">{progress.best && <span>{progress.best}</span>}<span>{progress.earned}</span></span>;
+  if (!progress.best && !progress.earned) return null;
+  return <span className="hub-game-progress">{progress.best && <span>{progress.best}</span>}{progress.earned && <span>{progress.earned}</span>}</span>;
 }
 
 type Theme = "system" | "light" | "dark";

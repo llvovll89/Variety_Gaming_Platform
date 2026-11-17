@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { GameDialog } from '../../shared/kit/GameDialog';
 import { audienceOf, type GameDefinition } from '../types';
 import { achievementKey, ruleProgress } from './achievements';
+import { currentStreak, localDateKey } from './daily';
 import { bestOf } from './records';
 import { useMeta } from './store';
 import type { GameRecord, MetaState } from './types';
@@ -13,17 +14,28 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'records', label: '기록' },
 ];
 
-/** "3/6 업적" or "스티커 2/6" for a game card; null for a game never played. */
-export function cardProgress(game: GameDefinition, meta: MetaState): { best: string | null; earned: string } | null {
+/**
+ * Achievements a player can see for a game. A game that does not report its runs yet can only
+ * earn what its old records prove, so only those already earned are shown, never a locked promise.
+ */
+export function visibleAchievements(game: GameDefinition, meta: MetaState) {
+  const defs = game.meta?.achievements ?? [];
+  return game.meta?.reportsRuns ? defs : defs.filter(a => meta.achievements[achievementKey(game.id, a.id)]);
+}
+
+/** "업적 3/6" or "스티커 2/6" for a game card; null for a game never played. */
+export function cardProgress(game: GameDefinition, meta: MetaState): { best: string | null; earned: string | null } | null {
   const record = game.meta && meta.games[game.id];
   const defs = game.meta?.achievements ?? [];
   const earned = defs.filter(a => meta.achievements[achievementKey(game.id, a.id)]).length;
   if (!record && !earned) return null;
   const best = record ? bestOf(record, game.meta?.scoreOrder ?? 'high') : null;
   const unit = game.meta?.scoreUnit ?? '';
+  const noun = audienceOf(game) === 'kids' ? '스티커' : '업적';
   return {
     best: best === null ? null : `최고 ${best.toLocaleString()}${unit}`,
-    earned: audienceOf(game) === 'kids' ? `스티커 ${earned}/${defs.length}` : `업적 ${earned}/${defs.length}`,
+    // Out of the total only where every one can be earned; otherwise just what was earned.
+    earned: game.meta?.reportsRuns ? `${noun} ${earned}/${defs.length}` : earned ? `${noun} ${earned}개` : null,
   };
 }
 
@@ -37,8 +49,9 @@ function playMsBy(meta: MetaState, games: readonly GameDefinition[], audience: '
 export function ProfileSheet({ games, name, onClose }: { games: readonly GameDefinition[]; name: string; onClose: () => void }) {
   const meta = useMeta();
   const titleId = useId();
-  const kidsGames = games.filter(g => audienceOf(g) === 'kids' && g.meta?.achievements.length);
-  const otherGames = games.filter(g => audienceOf(g) === 'general' && g.meta?.achievements.length);
+  const kidsGames = games.filter(g => audienceOf(g) === 'kids' && visibleAchievements(g, meta).length);
+  const otherGames = games.filter(g => audienceOf(g) === 'general' && visibleAchievements(g, meta).length);
+  const streak = currentStreak(meta.days, localDateKey());
   // Open on whatever the player plays most.
   const [tab, setTab] = useState<Tab>(() => playMsBy(meta, games, 'general') > playMsBy(meta, games, 'kids') ? 'achievements' : 'stickers');
   const played = games.filter(g => meta.games[g.id]);
@@ -49,7 +62,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
       <p className="kit-eyebrow">내 기록</p>
       <h2 id={titleId} className="kit-title">{name || '플레이어'}</h2>
       <dl className="kit-stats">
-        <div><dt>연속</dt><dd>{meta.days.streak}일</dd></div>
+        <div><dt>연속</dt><dd>{streak}일</dd></div>
         <div><dt>최장 연속</dt><dd>{meta.days.bestStreak}일</dd></div>
         <div><dt>즐긴 시간</dt><dd>{minutes(totalMs)}</dd></div>
       </dl>
@@ -60,11 +73,12 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
         {tab === 'stickers' && kidsGames.map(game => (
           <section key={game.id}>
             <h3>{game.title}</h3>
-            <ul className="hub-sticker-book">{game.meta!.achievements.map(a => {
+            <ul className="hub-sticker-book">{visibleAchievements(game, meta).map(a => {
               const got = !!meta.achievements[achievementKey(game.id, a.id)];
-              return <li key={a.id} data-got={got} title={got ? a.kids?.title ?? a.title : a.description}>
+              const caption = got ? a.kids?.title ?? a.title : a.hidden ? '숨겨진 스티커' : a.description;
+              return <li key={a.id} data-got={got} title={caption}>
                 <span aria-hidden="true">{got ? a.kids?.sticker ?? '⭐' : '?'}</span>
-                <small>{got ? a.kids?.title ?? a.title : a.description}</small>
+                <small>{caption}</small>
               </li>;
             })}</ul>
           </section>
@@ -72,7 +86,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
         {tab === 'achievements' && otherGames.map(game => (
           <section key={game.id}>
             <h3>{game.title}</h3>
-            <ul className="hub-achievements">{game.meta!.achievements.map(a => {
+            <ul className="hub-achievements">{visibleAchievements(game, meta).map(a => {
               const got = meta.achievements[achievementKey(game.id, a.id)];
               const progress = got ? null : ruleProgress(a.rule, meta.games[game.id], game.meta?.scoreOrder);
               const hidden = a.hidden && !got;

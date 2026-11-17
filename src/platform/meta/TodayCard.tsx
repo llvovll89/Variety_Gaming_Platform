@@ -1,7 +1,8 @@
 import { CheckCircleIcon, PlayIcon } from '@phosphor-icons/react';
 import { audienceOf, type GameDefinition } from '../types';
 import { PLAY_INFO } from '../playExperience';
-import { dailyChallenge, daysBetween, featuredDailies, localDateKey } from './daily';
+import { currentStreak, dailyChallenge, featuredDailies, localDateKey } from './daily';
+import { settingsStore } from '../../shared/kit/settings';
 import { useMeta } from './store';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
@@ -31,8 +32,7 @@ export function TodayCard({ games, onSelect, today = localDateKey() }: { games: 
   const done = picks.filter(p => p.done).length;
   const week = weekOf(today);
   const played = new Set(meta.days.recent);
-  const alive = meta.days.last !== null && daysBetween(meta.days.last, today) <= 1;
-  const streak = alive ? meta.days.streak : 0;
+  const streak = currentStreak(meta.days, today);
 
   return (
     <section className="hub-today" aria-labelledby="today-title">
@@ -43,7 +43,11 @@ export function TodayCard({ games, onSelect, today = localDateKey() }: { games: 
       <ol className="hub-today-list">
         {picks.map(({ game, challenge, done: finished }) => (
           <li key={game.id}>
-            <button type="button" onClick={() => onSelect(game.id)} aria-label={`${game.title}: ${challenge.label}${finished ? ' (완료)' : ''}`}>
+            <button type="button" onClick={() => {
+              // A challenge set on one difficulty opens the game on it (games read the saved choice).
+              if (challenge.difficulty) settingsStore.setGame(game.id, { extra: { difficulty: challenge.difficulty } });
+              onSelect(game.id);
+            }} aria-label={`${game.title}: ${challenge.label}${finished ? ' (완료)' : ''}`}>
               <img src={game.previewThumbnail ?? game.thumbnail} alt="" width={64} height={36} loading="lazy" />
               <span><small>{game.title}</small><strong>{challenge.label}</strong></span>
               {finished ? <CheckCircleIcon className="hub-today-done" size={22} weight="fill" aria-hidden="true" /> : <PlayIcon size={16} weight="fill" aria-hidden="true" />}
