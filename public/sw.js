@@ -3,9 +3,10 @@
  * start again without a connection. Pages always try the network first, so a new deploy is
  * picked up on the next visit; hashed build files never change, so they are served from cache.
  */
-// v2: drops shells poisoned by v1, which stored any navigated file (a .txt licence, an image) as the app.
-const VERSION = 'v2';
-const SHELL = `gh-shell-${VERSION}`;
+const VERSION = 'v1';
+// The shell has its own version: v2 drops shells poisoned by v1, which stored any navigated file
+// (a .txt licence, an image) as the app, while the build and media caches stay for offline play.
+const SHELL = 'gh-shell-v2';
 const BUILD = `gh-build-${VERSION}`;
 const MEDIA = `gh-media-${VERSION}`;
 const LIMITS = { [BUILD]: 160, [MEDIA]: 220 };
