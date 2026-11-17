@@ -1,0 +1,142 @@
+import { emptyRecord } from './records';
+import type { DailyChallenge, DailyTemplate, MetaState, RunReport } from './types';
+
+/**
+ * Today's challenges and the play streak. Everything is decided by the local date, so everyone gets
+ * the same challenge on the same day without a server.
+ */
+
+/** YYYY-MM-DD in local time. toISOString would be UTC and roll the day over at 9am in Korea. */
+export function localDateKey(date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Whole days from one date key to another. */
+export function daysBetween(from: string, to: string): number {
+  const utc = (key: string) => { const [y, m, d] = key.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  return Math.round((utc(to) - utc(from)) / 86_400_000);
+}
+
+/** FNV-1a: a small, stable 32-bit hash of a string. */
+export function hashSeed(text: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
+}
+
+/** Seeded random numbers in [0, 1). */
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const pick = <T>(rng: () => number, items: readonly T[]): T => items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
+
+/** The day's challenge for one game, or null if the game has none. */
+export function dailyChallenge(date: string, gameId: string, templates: readonly DailyTemplate[] | undefined): DailyChallenge | null {
+  if (!templates?.length) return null;
+  const seed = hashSeed(`${date}:${gameId}`);
+  const rng = mulberry32(seed);
+  const template = pick(rng, templates);
+  const [min, max] = template.range;
+  const steps = Math.max(0, Math.floor((max - min) / template.step));
+  const goal = min + template.step * Math.floor(rng() * (steps + 1));
+  const difficulty = template.difficulty?.length ? pick(rng, template.difficulty) : undefined;
+  return {
+    id: `${date}:${gameId}:${template.id}`,
+    date,
+    gameId,
+    label: template.label.replace('{n}', goal.toLocaleString()).replace('{difficulty}', difficulty?.label ?? ''),
+    stat: template.stat,
+    goal,
+    compare: template.compare ?? 'atLeast',
+    mode: template.mode,
+    difficulty: difficulty?.id,
+    seed,
+    seeded: template.seeded === true,
+  };
+}
+
+export interface DailyCandidate { id: string; audience: 'kids' | 'general'; minutes: number }
+
+/** The hub's three picks for the day: one kids game, one short game and one long game. */
+export function featuredDailies(date: string, candidates: readonly DailyCandidate[]): string[] {
+  const rng = mulberry32(hashSeed(`featured:${date}`));
+  const chosen: string[] = [];
+  const groups = [
+    candidates.filter(c => c.audience === 'kids'),
+    candidates.filter(c => c.audience === 'general' && c.minutes <= 5),
+    candidates.filter(c => c.audience === 'general' && c.minutes > 5),
+  ];
+  for (const group of groups) {
+    const open = group.filter(c => !chosen.includes(c.id));
+    if (open.length) chosen.push(pick(rng, open).id);
+  }
+  return chosen;
+}
+
+const DAILY_KEEP_DAYS = 14;
+
+/** Whether this run counts for the challenge: same mode and difficulty, and the goal reached. */
+export function meetsChallenge(challenge: DailyChallenge, run: RunReport): { matches: boolean; value: number | null; done: boolean } {
+  if (run.outcome === 'quit') return { matches: false, value: null, done: false };
+  if (challenge.mode !== undefined && run.mode !== challenge.mode) return { matches: false, value: null, done: false };
+  if (challenge.difficulty !== undefined && run.difficulty !== challenge.difficulty) return { matches: false, value: null, done: false };
+  const value = challenge.stat === 'score' ? run.score : run.stats?.[challenge.stat];
+  if (typeof value !== 'number' || !Number.isFinite(value)) return { matches: true, value: null, done: false };
+  return { matches: true, value, done: challenge.compare === 'atMost' ? value <= challenge.goal : value >= challenge.goal };
+}
+
+/** Records a run against today's challenge. Old days are dropped. */
+export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: RunReport): { state: MetaState; result?: { id: string; label: string; completed: boolean; justCompleted: boolean } } {
+  const check = meetsChallenge(challenge, run);
+  if (!check.matches) return { state };
+  const today = state.daily[challenge.date] ?? {};
+  const before = today[challenge.gameId];
+  const better = check.value !== null && (before === undefined || (challenge.compare === 'atMost' ? check.value < before.best : check.value > before.best));
+  const done = (before?.done ?? false) || check.done;
+  const justCompleted = done && !before?.done;
+  const entry = { done, best: better ? check.value! : before?.best ?? (check.value ?? 0) };
+  const daily: MetaState['daily'] = {};
+  for (const date of Object.keys(state.daily).sort().slice(-(DAILY_KEEP_DAYS - 1))) if (date !== challenge.date) daily[date] = state.daily[date];
+  daily[challenge.date] = { ...today, [challenge.gameId]: entry };
+  let games = state.games;
+  if (justCompleted) {
+    // Completed challenges are counted forever (for achievements), even after the day is dropped.
+    const record = games[challenge.gameId] ?? emptyRecord();
+    games = { ...games, [challenge.gameId]: { ...record, totals: { ...record.totals, daily: (record.totals.daily ?? 0) + 1 } } };
+  }
+  return { state: { ...state, daily, games }, result: { id: challenge.id, label: challenge.label, completed: done, justCompleted } };
+}
+
+const STREAK_MIN_MS = 20_000;
+const RECENT_DAYS = 35;
+
+/**
+ * The play streak. A day counts after one real run (20 seconds or more, or a finished one), so
+ * opening a game and leaving at once does not keep a streak alive.
+ */
+export function addStreakDay(state: MetaState, today: string, run: RunReport): { state: MetaState; streak: { days: number; extendedToday: boolean } } {
+  const counts = run.durationMs >= STREAK_MIN_MS || run.outcome === 'win' || run.outcome === 'complete';
+  const days = state.days;
+  if (!counts || days.last === today) return { state, streak: { days: days.last && daysBetween(days.last, today) <= 1 ? days.streak : 0, extendedToday: false } };
+  const streak = days.last && daysBetween(days.last, today) === 1 ? days.streak + 1 : 1;
+  const next = {
+    first: days.first ?? today,
+    last: today,
+    streak,
+    bestStreak: Math.max(days.bestStreak, streak),
+    recent: [...days.recent.filter(d => d !== today), today].slice(-RECENT_DAYS),
+  };
+  return { state: { ...state, days: next }, streak: { days: streak, extendedToday: true } };
+}
