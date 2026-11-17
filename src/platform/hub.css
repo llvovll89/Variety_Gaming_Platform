@@ -105,3 +105,4 @@
 .hub-play-facts{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:11px;line-height:1.65;color:var(--muted);margin-top:3px}.hub-play-facts>span{display:inline-block}.hub-play-facts>span:first-child{font-weight:700;color:var(--text)}.hub-feature-info>.hub-play-facts{margin-top:16px}
 @media(max-width:767px){.hub-start{grid-template-columns:1fr;gap:22px;padding:20px;margin-bottom:20px}.hub-continue{padding:0 0 20px;border-right:0;border-bottom:1px solid var(--line)}.hub-start h2{font-size:19px}.hub-time-choices{gap:6px}.hub-time-choices button{padding:8px 10px}.hub-quick-pick{align-items:flex-start;flex-direction:column;gap:14px}.hub-play-facts{font-size:11px}}
 .hub-settings{--kit-surface:var(--surface);--kit-ink:var(--text);--kit-muted:var(--muted);--kit-line:var(--line);--kit-accent:var(--accent);--kit-on-accent:var(--accent-ink);--kit-radius:8px;--kit-backdrop:#0007}
+.hub-settings .kit-btn-primary{color:var(--accent-ink);font-weight:700}

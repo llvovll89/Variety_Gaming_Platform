@@ -25,7 +25,7 @@ export const kitCss = `@layer kit{
 :where(.kit-dialog[open]){animation:kit-in .18s ease-out}
 @keyframes kit-in{from{opacity:0;transform:translateY(8px) scale(.98)}}
 :where(.kit-eyebrow){margin:0;font-size:.8125rem;font-weight:700;color:${muted}}
-:where(.kit-title){margin:2px 0 0;font-size:1.375rem;line-height:1.3}
+:where(.kit-title){margin:2px 0 0;font-size:1.375rem;font-weight:800;line-height:1.3}
 :where(.kit-summary){margin:6px 0 0;color:${muted}}
 :where(.kit-actions){display:grid;gap:10px;margin-top:20px}
 :where(.kit-btn){box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:calc(${radius} * .65);font:inherit;font-weight:700;cursor:pointer;text-decoration:none}
