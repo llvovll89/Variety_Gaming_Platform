@@ -11,7 +11,7 @@ export class WhackAMoleEngine {
   private lastTime: number | null = null;
   private resumeStatus: 'ready' | 'playing' = 'playing';
   private uiTimer = 0;
-  constructor(private bestScore: number, private onGameOver: (score: number) => void, private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY) {
+  constructor(private bestScore: number, private onGameOver: (score: number, state: GameState) => void, private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY) {
     this.gameState = this.initialState(); this.publish();
   }
   private duration(active: boolean): number {
@@ -41,7 +41,7 @@ export class WhackAMoleEngine {
     if (this.gameState.gameOver) return;
     this.destroy(); this.gameState.status = 'game-over'; this.gameState.gameOver = true;
     this.gameState.finalScore = this.gameState.score;
-    playGameOver(); this.publish(); this.onGameOver(this.gameState.score);
+    playGameOver(); this.publish(); this.onGameOver(this.gameState.score, this.gameState);
   };
   hitMole = (id: number): boolean => {
     const s = this.gameState;

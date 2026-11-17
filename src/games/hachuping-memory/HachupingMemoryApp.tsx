@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useId, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { useRecords } from "../../platform/meta/api";
+import { hasRewards, RewardStrip } from "../../platform/meta/RewardStrip";
+import type { RunRewards } from "../../platform/meta/types";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
@@ -49,11 +52,28 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
   useEffect(() => () => engine?.destroy(), [engine]);
-  useEffect(() => { if (snapshot.status === 'game-over') submitScore(snapshot.score); }, [snapshot.status, snapshot.score, submitScore]);
+  // Time actually spent playing: pauses and hidden tabs do not count as play time.
+  const played = useRef({ ms: 0, since: 0 });
+  useEffect(() => {
+    const clock = played.current;
+    if (snapshot.status === "playing") { clock.since = performance.now(); return; }
+    if (clock.since) { clock.ms += performance.now() - clock.since; clock.since = 0; }
+  }, [snapshot.status]);
+  const records = useRecords();
+  const [rewards, setRewards] = useState<RunRewards | null>(null);
+  const reported = useRef<MemoryGameEngine | null>(null);
+  useEffect(() => {
+    if (snapshot.status !== 'game-over' || !engine || reported.current === engine) return;
+    reported.current = engine; // once per run, also under StrictMode
+    submitScore(snapshot.score);
+    setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'complete', stats: { stage: snapshot.gameState.stage } }));
+  }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records]);
 
   const handleStart = useCallback(() => {
     engine?.destroy();
     const newEngine = new MemoryGameEngine(highScore);
+    played.current = { ms: 0, since: 0 };
+    setRewards(null);
     setEngine(newEngine);
     setScreen("playing");
     newEngine.startGame();
@@ -158,6 +178,7 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
           headline="이번 한 판 완료!"
           score={{ value: snapshot.score, unit: "점", previousBest }}
           stats={[{ label: "최고 기록", value: `${Math.max(highScore, snapshot.score)}점` }, { label: "도달 단계", value: `${snapshot.gameState.stage}단계` }]}
+          rewards={hasRewards(rewards) ? <RewardStrip rewards={rewards} audience="kids" /> : undefined}
           primary={{ label: "다시 시작", onClick: handleStart }}
           secondary={[{ label: "처음 화면으로", onClick: handleMainMenu }]}
         />

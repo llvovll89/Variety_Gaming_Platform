@@ -3,7 +3,7 @@ import { useWhackAMoleEngine } from '../hooks/useWhackAMoleEngine';
 import { MOLE_KEYS, type DifficultyLevel } from '../game/constants';
 import type { WhackAMoleEngine } from '../game/engine';
 export default function GameCanvas({bestScore,onGameOver,onReady,difficulty,engine,activeMoles,onBack}: {
-  bestScore:number; onGameOver:(score:number)=>void; onReady:(engine:WhackAMoleEngine)=>void;
+  bestScore:number; onGameOver:(score:number,state:import('../game/types').GameState)=>void; onReady:(engine:WhackAMoleEngine)=>void;
   difficulty:DifficultyLevel; engine:WhackAMoleEngine|null; activeMoles:number[]; onBack:()=>void;
 }) {
   const canvas=useRef<HTMLCanvasElement>(null);

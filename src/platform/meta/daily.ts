@@ -123,6 +123,13 @@ export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: Ru
   return { state: { ...state, daily, games }, result: { id: challenge.id, label: challenge.label, completed: done, justCompleted } };
 }
 
+/** The streak as of today: a streak whose last day was before yesterday has lapsed. */
+export function currentStreak(days: MetaState['days'], today: string): number {
+  if (!days.last) return 0;
+  const gap = daysBetween(days.last, today);
+  return gap <= 1 ? days.streak : 0;
+}
+
 const STREAK_MIN_MS = 20_000;
 const RECENT_DAYS = 35;
 

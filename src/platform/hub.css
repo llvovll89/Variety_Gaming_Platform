@@ -106,3 +106,59 @@
 .hub-play-facts{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:11px;line-height:1.65;color:var(--muted);margin-top:3px}.hub-play-facts>span{display:inline-block}.hub-play-facts>span:first-child{font-weight:700;color:var(--text)}.hub-feature-info>.hub-play-facts{margin-top:16px}
 @media(max-width:767px){.hub-start{grid-template-columns:1fr;gap:22px;padding:20px;margin-bottom:20px}.hub-continue{padding:0 0 20px;border-right:0;border-bottom:1px solid var(--line)}.hub-start h2{font-size:19px}.hub-time-choices{gap:6px}.hub-time-choices button{padding:8px 10px}.hub-quick-pick{align-items:flex-start;flex-direction:column;gap:14px}.hub-play-facts{font-size:11px}}
 .hub-settings{--kit-surface:var(--surface);--kit-ink:var(--text);--kit-muted:var(--muted);--kit-line:var(--line);--kit-accent:var(--accent);--kit-on-accent:var(--accent-ink);--kit-radius:8px;--kit-backdrop:#0007}
+/* Today's challenges and this week's stamps. */
+.hub-today{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px;align-items:start;margin-top:16px;padding:24px;border-radius:6px;background:var(--surface)}
+.hub-today-head{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hub-today-head h2{display:flex;gap:10px;align-items:baseline}
+.hub-today-head h2>span{font-size:14px;font-weight:400;color:var(--muted)}
+.hub-today-head p{color:var(--muted);font-size:13px}
+.hub-today-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.hub-today-list button:not(.kit-btn){display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--page);text-align:left}
+.hub-today-list button:hover{border-color:var(--accent)}
+.hub-today-list img{width:64px;height:36px;flex-shrink:0;border-radius:4px;object-fit:cover;background:var(--skeleton)}
+.hub-today-list button>span{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.hub-today-list small{color:var(--muted);font-size:11px}
+.hub-today-list strong{font-size:13px;font-weight:600;line-height:1.4}
+.hub-today-list svg{flex-shrink:0;color:var(--muted)}
+.hub-today-list .hub-today-done{color:var(--accent)}
+.hub-today-week{grid-row:2;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:8px}
+.hub-today-week ol{display:flex;gap:6px;margin:0;padding:0;list-style:none}
+.hub-today-week li{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hub-today-week li>span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px dashed var(--line);color:var(--accent-ink);font-size:13px}
+.hub-today-week li[data-on=true]>span{border:0;background:var(--accent)}
+.hub-today-week li[data-today=true]>span{outline:2px solid var(--accent);outline-offset:2px}
+.hub-today-week small{color:var(--muted);font-size:11px}
+.hub-today-week p{color:var(--muted);font-size:12px}
+@media(max-width:1023px){.hub-today{grid-template-columns:1fr}.hub-today-week{grid-row:auto;grid-column:auto}.hub-today-list{grid-template-columns:1fr}}
+@media(max-width:767px){.hub-today{padding:18px}}
+/* Profile: sticker book, achievements, records. */
+.hub-profile{--kit-dialog-width:640px}
+.hub-me{border-radius:6px;padding:4px 8px 4px 4px;background:none}
+.hub-me:hover{background:var(--surface-hover)}
+.hub-profile-tabs{display:flex;gap:4px;margin:20px 0 0;border-bottom:1px solid var(--line)}
+.hub-profile-tabs button{min-height:44px;padding:0 16px;margin-bottom:-1px;border-bottom:2px solid transparent!important;font-weight:600;color:var(--muted)!important}
+.hub-profile-tabs button[aria-selected=true]{border-bottom-color:var(--accent)!important;color:var(--text)!important}
+.hub-profile-panel{display:grid;gap:20px;margin-top:16px;max-height:min(52vh,460px);overflow:auto}
+.hub-profile-panel h3{margin:0 0 8px;font-size:14px}
+.hub-sticker-book{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.hub-sticker-book li{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:6px;background:var(--page);text-align:center}
+.hub-sticker-book li>span{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--surface);font-size:26px}
+.hub-sticker-book li[data-got=false]>span{border:1px dashed var(--line);color:var(--muted);font-size:16px;font-weight:700}
+.hub-sticker-book small{font-size:11px;line-height:1.35;color:var(--muted)}
+.hub-achievements{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.hub-achievements li{display:grid;gap:2px;padding:8px 12px;border-left:4px solid var(--line);border-radius:4px;background:var(--page)}
+.hub-achievements li[data-got=true][data-tier="1"]{border-left-color:#b87333}
+.hub-achievements li[data-got=true][data-tier="2"]{border-left-color:#9aa4b1}
+.hub-achievements li[data-got=true][data-tier="3"]{border-left-color:#d4a017}
+.hub-achievements li[data-got=false] b{color:var(--muted)}
+.hub-achievements small{font-size:12px;color:var(--muted)}
+.hub-achievements progress{width:100%;height:6px;border:0;border-radius:3px;background:var(--line);overflow:hidden;-webkit-appearance:none;appearance:none}
+.hub-achievements progress::-webkit-progress-bar{background:var(--line)}
+.hub-achievements progress::-webkit-progress-value{background:var(--accent)}
+.hub-achievements progress::-moz-progress-bar{background:var(--accent)}
+.hub-records{width:100%;border-collapse:collapse;font-size:13px}
+.hub-records th,.hub-records td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+.hub-records th[scope=row],.hub-records thead th:first-child{text-align:left;font-weight:600}
+.hub-records thead th{color:var(--muted);font-weight:500}
+.hub-game-progress{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.hub-game-progress>span{padding:2px 8px;border-radius:999px;background:var(--surface-hover);color:var(--text);font-size:11px;font-weight:600}

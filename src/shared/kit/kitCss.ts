@@ -65,6 +65,19 @@ export const kitCss = `@layer kit{
 :where(.kit-setting input[type=range]){width:min(50%,180px);accent-color:${accent}}
 :where(.kit-setting input[type=checkbox]){width:22px;height:22px;accent-color:${accent}}
 :where(.kit-setting select){min-height:36px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${surface};color:inherit;font:inherit}
+:where(.kit-rewards){display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none;text-align:left}
+:where(.kit-sticker){display:grid;gap:8px;margin:0;padding:12px;border-radius:calc(${radius} * .7);background:${tint};text-align:center}
+:where(.kit-sticker-row){display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0;padding:0;list-style:none}
+:where(.kit-sticker-row li){display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;font-size:.75rem;line-height:1.3}
+:where(.kit-sticker-art){display:grid;place-items:center;width:48px;height:48px;flex-shrink:0;border-radius:50%;background:${surface};font-size:28px;box-shadow:0 3px 0 ${line};animation:kit-sticker .5s cubic-bezier(.3,1.6,.5,1) both}
+:where(.kit-sticker small),:where(.kit-rewards-badges small){color:${muted}}
+:where(.kit-section)>:where(.kit-rewards){margin-top:0}
+:where(.kit-stamp){margin:0;font-weight:700;text-align:center}
+@keyframes kit-sticker{from{transform:scale(.3) rotate(-20deg);opacity:0}}
+:where(.kit-rewards-badges li){display:flex;flex-direction:column;padding:8px 12px;border-left:4px solid ${accent};border-radius:6px;background:${tint}}
+:where(.kit-rewards-badges li[data-tier="3"]){border-left-color:#d4a017}
+:where(.kit-rewards-badges li[data-tier="2"]){border-left-color:#9aa4b1}
+:where(.kit-rewards-badges li[data-tier="1"]){border-left-color:#b87333}
 :root[data-kit-motion=reduce] :where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}
 :where(.kit-motion-reduce) :where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){:where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}}
