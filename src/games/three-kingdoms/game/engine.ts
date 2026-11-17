@@ -716,6 +716,16 @@ export class GameEngine {
     return result.status === 'saved';
   }
 
+  /**
+   * Get ready to leave: true when nothing would be lost. A month still playing out is settled at
+   * once (the engine saves when it lands), and a finished campaign has nothing left to save.
+   */
+  saveForExit(): boolean {
+    if (this.state.phase !== "player") this.skipPlayback();
+    if (this.state.phase !== "player") return true;
+    return this.save();
+  }
+
   /** Replace the board with a restored save. */
   adopt(state: GameState): void {
     this.battleScene = null;
