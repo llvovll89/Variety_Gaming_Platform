@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { Profile } from "../shared/profile/useProfile";
+import type { GameMeta } from "./meta/types";
 
 export interface GameProps {
   onExit: () => void;
@@ -26,6 +27,8 @@ export interface GameDefinition {
   releaseStatus?: "available" | "coming-soon";
   /** Who the game is mainly for; decides how rewards are shown. Defaults from the 키즈 genre. */
   audience?: Audience;
+  /** Records, achievements and daily challenges the game takes part in (data only). */
+  meta?: GameMeta;
   disabled?: boolean;
   Component: ComponentType<GameProps>;
 }

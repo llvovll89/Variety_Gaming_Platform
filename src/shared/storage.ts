@@ -13,10 +13,13 @@ export function safeGetItem(key: string): string | null {
   }
 }
 
-export function safeSetItem(key: string, value: string): void {
+/** False when the browser refused the write (private mode, storage full, disabled). */
+export function safeSetItem(key: string, value: string): boolean {
   try {
     localStorage.setItem(key, value);
+    return true;
   } catch {
-    // private mode / storage full / disabled — silently ignore, persistence is a nice-to-have
+    // persistence is a nice-to-have; callers that care check the result
+    return false;
   }
 }
