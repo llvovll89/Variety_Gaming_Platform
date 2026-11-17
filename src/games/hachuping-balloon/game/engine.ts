@@ -205,8 +205,9 @@ export class BalloonEngine {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.spawnTimer = this.spawnInterval * randRange(SPAWN_INTERVAL_JITTER_MIN, SPAWN_INTERVAL_JITTER_MAX);
-      const widthMultiplier = Math.min(3, Math.max(1, this.transform.viewportWidth / this.transform.scale / 420));
-      const count = Math.ceil(randInt(1, this.balloonsPerWave) * widthMultiplier);
+      // The same number of balloons on every screen: a wide desktop spreads them out but never offers
+      // more to pop, so scores stay comparable across phones, tablets and rotated screens.
+      const count = randInt(1, this.balloonsPerWave);
       for (let i = 0; i < count; i++) this.balloons.push(spawnBalloon(this.riseSpeed, this.transform.viewportWidth / this.transform.scale));
     }
   }
