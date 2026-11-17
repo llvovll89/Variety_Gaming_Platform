@@ -133,3 +133,15 @@ test('leaving is never blocked by a finished campaign or a month still playing o
     state.phase='ai';assert.equal(engine.saveForExit(),true);assert.equal(skipped,1,'the running month is settled before saving');
   }finally{delete globalThis.localStorage;}
 });
+
+test('a won or lost campaign leaves no save for the hub to resume',()=>{
+  const engine=Object.create(GameEngine.prototype), state=createGameState('caocao');
+  Object.assign(engine,{state,saveStatus:{status:'idle',savedAt:null,turn:null},playback:null,battleScene:null,fx:[]});
+  engine.publish=()=>{};const store=new Map();
+  globalThis.localStorage={setItem:(k,v)=>store.set(k,v),getItem:k=>store.get(k)??null};
+  try{
+    assert.equal(engine.save(),true);assert.ok(store.get('arcade:three-kingdoms:save'));
+    state.result='defeat';state.phase='ended';engine.save();
+    assert.equal(store.get('arcade:three-kingdoms:save'),'');
+  }finally{delete globalThis.localStorage;}
+});

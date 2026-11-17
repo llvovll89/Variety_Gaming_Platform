@@ -24,6 +24,8 @@ interface Envelope {
 export type SaveWriteResult = { status: 'saved'; savedAt: number } | { status: 'failed' | 'skipped' };
 
 export function saveGame(state: GameState): SaveWriteResult {
+  // A finished campaign leaves no save, or the hub would offer to replay its last turn.
+  if (state.phase === "ended") { clearSave(); return { status: 'skipped' }; }
   if (state.phase !== "player") return { status: 'skipped' };
   try {
     const envelope: Envelope = { version: VERSION, savedAt: Date.now(), state };
