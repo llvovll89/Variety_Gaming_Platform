@@ -65,3 +65,16 @@ export function simulateBattle(attacker: BattleTroop, defender: BattleTroop, ran
   return { winner, turns, logs, attackerRemaining: a.soldiers, defenderRemaining: d.soldiers,
     experienceReward: Math.floor(destroyed * 0.1) };
 }
+
+/**
+ * Soldiers each side keeps after a battle. NPC garrisons are shared by every player, so they
+ * always stand at full strength: a player's win must not leave the next player nothing to fight.
+ */
+export function troopsAfterBattle(
+  attacker: { id: string; isNpc: boolean }, defender: { id: string; isNpc: boolean }, result: Pick<BattleResult, "attackerRemaining" | "defenderRemaining">,
+): { id: string; currentTroops: number }[] {
+  return [
+    { troop: attacker, currentTroops: result.attackerRemaining },
+    { troop: defender, currentTroops: result.defenderRemaining },
+  ].filter(entry => !entry.troop.isNpc).map(entry => ({ id: entry.troop.id, currentTroops: entry.currentTroops }));
+}

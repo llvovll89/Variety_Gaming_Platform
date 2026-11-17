@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aggregateStats, simulateBattle, type BattleTroop } from "../lib/battleEngine";
+import { aggregateStats, simulateBattle, troopsAfterBattle, type BattleTroop } from "../lib/battleEngine";
 import { gainExperience } from "../lib/progression";
 
 const troop = (id: string, soldiers = 1000, leadership = 100, strength = 100, intelligence = 0): BattleTroop => ({
@@ -61,4 +61,10 @@ test("잘못된 병력, 스탯, 편성, RNG 거부", () => {
 test("다중 레벨업 및 100레벨 상한", () => {
   assert.deepEqual(gainExperience(1, 90, 220), { level: 3, experience: 10, levelsGained: 2 });
   assert.deepEqual(gainExperience(99, 9890, 100), { level: 100, experience: 0, levelsGained: 1 });
+});
+test("NPC 수비대는 누가 이겨도 병력이 줄지 않는다", () => {
+  const result = { attackerRemaining: 400, defenderRemaining: 0 };
+  assert.deepEqual(troopsAfterBattle({ id: "p", isNpc: false }, { id: "npc", isNpc: true }, result), [{ id: "p", currentTroops: 400 }]);
+  assert.deepEqual(troopsAfterBattle({ id: "p", isNpc: false }, { id: "q", isNpc: false }, result),
+    [{ id: "p", currentTroops: 400 }, { id: "q", currentTroops: 0 }]);
 });

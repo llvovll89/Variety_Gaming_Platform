@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "./db";
-import { simulateBattle, type BattleTroop } from "./battleEngine";
+import { simulateBattle, troopsAfterBattle, type BattleTroop } from "./battleEngine";
 import { gainExperience } from "./progression";
 import { syncResources } from "./resources";
 
@@ -82,8 +82,8 @@ export async function executeBattle(userId: string, input: BattleCommand) {
             heroRewards.push({ heroId: entry.heroId, experience: reward, level: growth.level });
           }
         }
-        for (const troop of [attacker, defender].sort((a, b) => a.id.localeCompare(b.id)))
-          await tx.troop.update({ where: { id: troop.id }, data: { currentTroops: troop.id === attacker.id ? result.attackerRemaining : result.defenderRemaining } });
+        for (const update of troopsAfterBattle(attacker, defender, result).sort((a, b) => a.id.localeCompare(b.id)))
+          await tx.troop.update({ where: { id: update.id }, data: { currentTroops: update.currentTroops } });
         const persisted = { ...result, experienceReward: winningTroop?.userId ? result.experienceReward : 0,
           goldReward, rewardUserId: winningTroop?.userId ?? null, heroRewards,
           mode: defender.isNpc ? "PVE" : "PVP", rulesVersion: 1 };
