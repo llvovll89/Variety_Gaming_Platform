@@ -24,8 +24,16 @@ export interface GameDefinition {
   tags: readonly string[];
   featuredText?: string;
   releaseStatus?: "available" | "coming-soon";
+  /** Who the game is mainly for; decides how rewards are shown. Defaults from the 키즈 genre. */
+  audience?: Audience;
   disabled?: boolean;
   Component: ComponentType<GameProps>;
 }
 
 export type GameGenre = "전략" | "액션" | "캐주얼" | "키즈";
+export type Audience = "kids" | "general";
+
+/** Kids games show stickers and gentle wording; the rest show achievements and numbers. */
+export function audienceOf(game: Pick<GameDefinition, "audience" | "genres">): Audience {
+  return game.audience ?? (game.genres.includes("키즈") ? "kids" : "general");
+}

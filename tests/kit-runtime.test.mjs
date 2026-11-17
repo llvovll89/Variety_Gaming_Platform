@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadBundle } from './bundle.mjs';
 
-const { scheduleRecipe, shouldPauseForKey, createGameSound, haptic, settingsStore } = await loadBundle(`
+const { scheduleRecipe, shouldPauseForKey, createGameSound, haptic, settingsStore, audienceOf } = await loadBundle(`
+  export {audienceOf} from './src/platform/types.ts';
   export {scheduleRecipe, createGameSound} from './src/shared/kit/sound.ts';
   export {shouldPauseForKey} from './src/shared/kit/useAutoPause.ts';
   export {haptic} from './src/shared/kit/haptics.ts';
@@ -46,4 +47,10 @@ test('sound and vibration are silent where the browser cannot play them, and fol
     haptic(40);
     assert.deepEqual(calls, [20]);
   } finally { delete globalThis.localStorage; settingsStore.resetForTests(); }
+});
+
+test('kids games are found from their genre unless a game says otherwise', () => {
+  assert.equal(audienceOf({ genres: ['키즈', '캐주얼'] }), 'kids');
+  assert.equal(audienceOf({ genres: ['액션'] }), 'general');
+  assert.equal(audienceOf({ genres: ['액션'], audience: 'kids' }), 'kids');
 });

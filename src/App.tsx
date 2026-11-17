@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlaySession } from "./platform/PlaySession";
 import Hub from "./platform/Hub";
 import { GAMES, getGameById } from "./platform/gameRegistry";
@@ -8,7 +8,9 @@ import { recordRecentGame } from "./platform/hubCatalog";
 import GameErrorBoundary from "./platform/GameErrorBoundary";
 import { ExitGuardSlot } from "./platform/exitGuard";
 import { KitStyles } from "./shared/kit/KitStyles";
+import { KitGameContext } from "./shared/kit/context";
 import { documentTitle, gameIdFromPath, gamePath, isPlayable } from "./platform/route";
+import { audienceOf } from "./platform/types";
 
 type Intent = "start" | "resume";
 const GAME_STATE = (id: string) => ({ arcade: "game", id });
@@ -23,6 +25,7 @@ export default function App() {
   const exitGuard = useRef<(() => void) | null>(null);
   const registerExitGuard = useCallback((guard: (() => void) | null) => { exitGuard.current = guard; }, []);
   const activeGame = activeGameId ? getGameById(activeGameId) : undefined;
+  const kitGame = useMemo(() => activeGame ? { gameId: activeGame.id, audience: audienceOf(activeGame) } : null, [activeGame]);
   const profile = useProfile();
 
   // Keep one hub entry directly under every game entry, so "back" from a game always lands on the hub.
@@ -92,9 +95,11 @@ export default function App() {
         <GameErrorBoundary key={activeGame.id} title={activeGame.title} onExit={exitGame}>
           <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
             <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: exitGame }}>
-              <ExitGuardSlot.Provider value={registerExitGuard}>
-                <Component key={activeGame.id} onExit={exitGame} profile={gameProfile} launchIntent={launchIntent} />
-              </ExitGuardSlot.Provider>
+              <KitGameContext.Provider value={kitGame}>
+                <ExitGuardSlot.Provider value={registerExitGuard}>
+                  <Component key={activeGame.id} onExit={exitGame} profile={gameProfile} launchIntent={launchIntent} />
+                </ExitGuardSlot.Provider>
+              </KitGameContext.Provider>
             </PlaySession.Provider>
           </Suspense>
         </GameErrorBoundary>

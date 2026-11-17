@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react';
 
-export type Audience = 'kids' | 'general';
+import type { Audience } from '../../platform/types';
+
+export type { Audience };
 /** The running game, for kit pieces that need it (per-game sound and settings). Set by the shell. */
 export interface KitGame { gameId: string; audience: Audience }
 export const KitGameContext = createContext<KitGame | null>(null);
