@@ -51,3 +51,28 @@ test('shipped files stay small enough for phones (convert large art to WebP/JPEG
   const oversized = walk('public').filter(file => statSync(file).size > LIMIT);
   assert.deepEqual(oversized, [], 'each file in public/ must be 1MB or smaller');
 });
+
+test('the service worker keeps only HTML app pages as the offline shell', async () => {
+  const source = readFileSync('public/sw.js', 'utf8');
+  const stored = new Map();
+  const listeners = {};
+  const cache = { put: async (key, res) => { stored.set(typeof key === 'string' ? key : key.url, res); }, keys: async () => [], delete: async () => {} };
+  const self = { location: { origin: 'https://gh.test' }, addEventListener: (type, fn) => { listeners[type] = fn; }, clients: { claim: async () => {} }, skipWaiting: () => {} };
+  const caches = { open: async () => cache, keys: async () => [], delete: async () => {}, match: async key => stored.get(key) };
+  const respond = type => ({ ok: true, type: 'basic', headers: new Map([['content-type', type]]), clone() { return this; } });
+  let next;
+  vm.runInNewContext(source, { self, caches, fetch: async () => next, URL, Response: { error: () => 'error' } });
+  const navigate = async (path, type) => {
+    next = respond(type);
+    let responded = null;
+    listeners.fetch({ request: { method: 'GET', mode: 'navigate', url: `https://gh.test${path}`, headers: { has: () => false } }, respondWith: p => { responded = p; }, waitUntil() {} });
+    if (responded) await responded;
+    return responded !== null;
+  };
+  assert.equal(await navigate('/fonts/OFL-pretendard.txt', 'text/plain'), false, 'non-app navigations go straight to the network');
+  assert.equal(stored.has('/'), false);
+  await navigate('/play/whatever', 'image/png');
+  assert.equal(stored.has('/'), false, 'a non-HTML response never becomes the shell');
+  await navigate('/play/whatever', 'text/html; charset=utf-8');
+  assert.equal(stored.get('/').headers.get('content-type'), 'text/html; charset=utf-8');
+});
