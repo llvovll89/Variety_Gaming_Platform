@@ -157,3 +157,20 @@ test('a photo too big for storage never takes the names and weapons down with it
     assert.equal(readCharacters('나')[0].photo, big, 'old inline photos still load');
   } finally { delete globalThis.localStorage; }
 });
+
+test('moving an old inline photo never drops it, and a refused photo never brings back the old one', () => {
+  const store = new Map(); let quota = Infinity;
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, removeItem: k => store.delete(k), setItem: (k, v) => { if (v.length > quota) throw new Error('QuotaExceededError'); store.set(k, String(v)); } };
+  try {
+    const old = 'data:image/png;base64,' + 'B'.repeat(3000), next = 'data:image/png;base64,' + 'C'.repeat(5000);
+    store.set(CHARACTERS_KEY, JSON.stringify([{ name: '옛 저장', weapon: 'spatula', photo: old, photoVersion: 2 }, {}]));
+    const chars = readCharacters('나');
+    saveCharacterSettings(chars);
+    assert.equal(readCharacters('나')[0].photo, old, 'kept inline until its own key holds it');
+    assert.equal(savePhoto(0, old), true); saveCharacterSettings(chars);
+    assert.ok(!store.get(CHARACTERS_KEY).includes('base64'), 'moved out once stored separately');
+    quota = 4000;
+    assert.equal(savePhoto(0, next), false);
+    assert.equal(readCharacters('나')[0].photo, '', 'the replaced photo does not come back');
+  } finally { delete globalThis.localStorage; }
+});

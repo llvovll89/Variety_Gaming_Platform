@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Camera, Pause, SpeakerHigh, SpeakerSlash, Play } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
 import { Fight, WEAPONS, type Move, type Weapon } from './engine';
+import { safeGetItem } from '../../shared/storage';
 import { photoKey, readCharacters, saveCharacterSettings, savePhoto, type Character } from './characters';
 import { KitchenScene, type Portrait } from './scene';
 import { FightAudio } from './audio';
@@ -50,12 +51,9 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   // Photos are written only when they change, and a refused one is reported instead of vanishing on reload.
   const [photo0, photo1] = [characters[0].photo, characters[1].photo];
   useEffect(() => {
-    const refused = [photo0, photo1].some((photo, i) => {
-      let stored: string | null = null;
-      try { stored = localStorage.getItem(photoKey(i)); } catch { /* treated as not stored */ }
-      return (stored ?? '') !== photo && !savePhoto(i, photo);
-    });
-    setPhotoWarning(refused);
+    // map, not some: a refused 1P photo must not stop 2P's photo from being written.
+    const results = [photo0, photo1].map((photo, i) => (safeGetItem(photoKey(i)) ?? '') === photo || savePhoto(i, photo));
+    setPhotoWarning(results.includes(false));
   }, [photo0, photo1]);
   useEffect(() => { const a = new FightAudio(); audio.current = a; return () => { a.dispose(); audio.current = null; }; }, []);
   function pause(value: boolean) { pauseRef.current = value; setPaused(value); keys.current.clear(); touch.current.clear(); }
@@ -125,7 +123,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
       const el = document.createElement('canvas'), scale = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight));
       el.width = Math.max(1, Math.round(img.naturalWidth * scale)); el.height = Math.max(1, Math.round(img.naturalHeight * scale));
       const c = el.getContext('2d'); if (!c) throw new Error('canvas'); c.drawImage(img, 0, 0, el.width, el.height);
-      update(index, { photo: el.toDataURL(file.type === 'image/png' || file.type === 'image/webp' ? 'image/webp' : 'image/jpeg', .92), zoom: 1, x: 0, y: 0 });
+      update(index, { photo: el.toDataURL(file.type === 'image/png' || file.type === 'image/webp' ? 'image/png' : 'image/jpeg', .92), zoom: 1, x: 0, y: 0 });
     } catch { setError('사진을 읽을 수 없습니다. JPG, PNG 또는 WebP로 다시 선택해 주세요.'); }
     finally { URL.revokeObjectURL(url); setLoading(null); }
   }

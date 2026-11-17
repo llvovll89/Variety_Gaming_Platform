@@ -36,7 +36,14 @@ export function readCharacters(name: string): [Character, Character] {
 
 /** Everything but the photos: small, so it is safe to write on every slider tick. */
 export function saveCharacterSettings(characters: readonly Character[]): void {
-  safeSetItem(CHARACTERS_KEY, JSON.stringify(characters.map(({ photo: _photo, ...rest }) => ({ ...rest, photoVersion: 2 }))));
+  let previous: unknown = null;
+  try { previous = JSON.parse(safeGetItem(CHARACTERS_KEY) || 'null'); } catch { /* rewritten below */ }
+  safeSetItem(CHARACTERS_KEY, JSON.stringify(characters.map(({ photo, ...rest }, i) => {
+    // An older save's inline photo stays put until its own key holds it, so moving it can never lose it.
+    const inline = Array.isArray(previous) ? (previous[i] as { photo?: unknown } | null)?.photo : undefined;
+    const legacy = !!photo && inline === photo && !safeGetItem(photoKey(i));
+    return legacy ? { ...rest, photo, photoVersion: 2 } : { ...rest, photoVersion: 2 };
+  })));
 }
 
 /** False when the browser refused the photo (usually storage full), so the caller can say so. */
@@ -46,6 +53,8 @@ export function savePhoto(index: number, photo: string): boolean {
     else localStorage.removeItem(photoKey(index));
     return true;
   } catch {
+    // Drop the older photo too, so a reload shows no photo rather than the one the player replaced.
+    try { localStorage.removeItem(photoKey(index)); } catch { /* storage unavailable */ }
     return false;
   }
 }
