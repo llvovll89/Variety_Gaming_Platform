@@ -57,7 +57,10 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
   };
   useEffect(() => {
     if (screen !== 'battle') return;
-    try { localStorage.setItem(SAVE_KEY, serialize(battle)); setSaved(restore(serialize(battle))); setStorageMessage('원정이 자동 저장됩니다.'); }
+    // Check that the state reads back before it replaces the last good save.
+    const raw = serialize(battle), readable = restore(raw);
+    if (!readable) { setStorageMessage('지금 상태는 저장하지 못해 마지막 저장본을 그대로 두었어요.'); return; }
+    try { localStorage.setItem(SAVE_KEY, raw); setSaved(readable); setStorageMessage('원정이 자동 저장됩니다.'); }
     catch { setStorageMessage('저장 공간을 사용할 수 없어요. 이 화면에서 계속 플레이할 수 있어요.'); }
   }, [battle, revision, screen]);
   useEffect(() => {

@@ -72,6 +72,9 @@ export default function App() {
   }, []);
 
   const exitGame = useCallback(() => {
+    // A second exit (a double click, or a save finishing after the first) would step back past the hub.
+    if (!activeRef.current) return;
+    activeRef.current = null;
     exitGuard.current = null;
     setActiveGameId(null);
     if ((window.history.state as { arcade?: string } | null)?.arcade === "game") window.history.back();

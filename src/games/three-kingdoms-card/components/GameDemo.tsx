@@ -62,6 +62,7 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
   const conflictRef = useRef(false);
   const dirty = useRef(false);
   const mounted = useRef(true);
+  const exiting = useRef(false);
   const [conflict, setConflict] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -126,9 +127,17 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
     if (shouldWrite) void write(next);
   }
   async function exit() {
-    if (!current.current) { onExit?.(); return; }
-    if (await write(current.current)) { onExit?.(); return; }
-    if (window.confirm("현재 진행을 저장하지 못했습니다. 필요한 기록을 먼저 백업하세요. 저장하지 않고 허브로 돌아갈까요?")) onExit?.();
+    // Pressing leave twice must not start a second save, whose late failure would ask on the hub.
+    if (exiting.current) return;
+    exiting.current = true;
+    try {
+      if (!current.current) { onExit?.(); return; }
+      if (await write(current.current)) { onExit?.(); return; }
+      if (!mounted.current) return;
+      if (window.confirm("현재 진행을 저장하지 못했습니다. 필요한 기록을 먼저 백업하세요. 저장하지 않고 허브로 돌아갈까요?")) onExit?.();
+    } finally {
+      exiting.current = false;
+    }
   }
   // Browser back runs the same save-then-leave routine as the hub button.
   useExitGuard(onExit ? () => void exit() : null);

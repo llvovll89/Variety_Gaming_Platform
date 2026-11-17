@@ -4,7 +4,9 @@
  * picked up on the next visit; hashed build files never change, so they are served from cache.
  */
 const VERSION = 'v1';
-const SHELL = `gh-shell-${VERSION}`;
+// The shell has its own version: v2 drops shells poisoned by v1, which stored any navigated file
+// (a .txt licence, an image) as the app, while the build and media caches stay for offline play.
+const SHELL = 'gh-shell-v2';
 const BUILD = `gh-build-${VERSION}`;
 const MEDIA = `gh-media-${VERSION}`;
 const LIMITS = { [BUILD]: 160, [MEDIA]: 220 };
@@ -34,11 +36,20 @@ async function store(name, request, response) {
   if (LIMITS[name]) await trim(name);
 }
 
+/** Only these paths are the app; any other navigation (a licence file, an image in a new tab) is left to the network. */
+function isAppPage(pathname) {
+  return pathname === '/' || pathname === '/index.html' || pathname.startsWith('/play/');
+}
+
+function isHtml(response) {
+  return (response.headers.get('content-type') ?? '').includes('text/html');
+}
+
 /** Every page (/ and /play/<id>) is the same app shell. */
 async function page(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) await store(SHELL, '/', response.clone());
+    if (response.ok && isHtml(response)) await store(SHELL, '/', response.clone());
     return response;
   } catch {
     return (await caches.match('/', { cacheName: SHELL })) ?? Response.error();
@@ -66,7 +77,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET' || request.headers.has('range')) return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (request.mode === 'navigate') { event.respondWith(page(request)); return; }
+  if (request.mode === 'navigate') {
+    if (isAppPage(url.pathname)) event.respondWith(page(request));
+    return;
+  }
   if (url.pathname.startsWith('/assets/')) { event.respondWith(cacheFirst(BUILD, request)); return; }
   if (/^\/(art|fonts|icons)\//.test(url.pathname) || /\.(svg|webmanifest)$/.test(url.pathname)) {
     event.respondWith(staleWhileRevalidate(event, MEDIA));

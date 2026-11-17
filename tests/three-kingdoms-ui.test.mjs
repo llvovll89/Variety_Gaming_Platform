@@ -119,3 +119,29 @@ test('engine publishes save failure and clears it after retry, preserving the la
     state.phase='ai';const previous=published;assert.equal(engine.save(),false);assert.equal(published,previous);
   }finally{delete globalThis.localStorage;}
 });
+
+test('leaving is never blocked by a finished campaign or a month still playing out',()=>{
+  const engine=Object.create(GameEngine.prototype), state=createGameState('caocao');
+  Object.assign(engine,{state,saveStatus:{status:'idle',savedAt:null,turn:null},playback:null,battleScene:null,fx:[]});
+  engine.publish=()=>{};let blocked=false;
+  globalThis.localStorage={setItem:()=>{if(blocked)throw new Error('disabled');}};
+  try{
+    assert.equal(engine.saveForExit(),true,'player phase saves and leaves');
+    blocked=true;assert.equal(engine.saveForExit(),false,'a failed save keeps the player here');
+    state.phase='ended';assert.equal(engine.saveForExit(),true,'the result screen always lets the player go');
+    let skipped=0;engine.skipPlayback=()=>{skipped++;state.phase='player';};blocked=false;
+    state.phase='ai';assert.equal(engine.saveForExit(),true);assert.equal(skipped,1,'the running month is settled before saving');
+  }finally{delete globalThis.localStorage;}
+});
+
+test('a won or lost campaign leaves no save for the hub to resume',()=>{
+  const engine=Object.create(GameEngine.prototype), state=createGameState('caocao');
+  Object.assign(engine,{state,saveStatus:{status:'idle',savedAt:null,turn:null},playback:null,battleScene:null,fx:[]});
+  engine.publish=()=>{};const store=new Map();
+  globalThis.localStorage={setItem:(k,v)=>store.set(k,v),getItem:k=>store.get(k)??null};
+  try{
+    assert.equal(engine.save(),true);assert.ok(store.get('arcade:three-kingdoms:save'));
+    state.result='defeat';state.phase='ended';engine.save();
+    assert.equal(store.get('arcade:three-kingdoms:save'),'');
+  }finally{delete globalThis.localStorage;}
+});

@@ -2,8 +2,9 @@ import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Camera, Pause, SpeakerHigh, SpeakerSlash, Play } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
-import { safeGetItem, safeSetItem } from '../../shared/storage';
 import { Fight, WEAPONS, type Move, type Weapon } from './engine';
+import { safeGetItem } from '../../shared/storage';
+import { photoKey, readCharacters, saveCharacterSettings, savePhoto, type Character } from './characters';
 import { KitchenScene, type Portrait } from './scene';
 import { FightAudio } from './audio';
 import { movementInput } from './controls';
@@ -11,26 +12,6 @@ import './fighter-ui.css';
 
 // Two photographed chefs on a transparent sheet (see public/art/kitchen-fighter/ASSETS.md).
 const CHEF_ATLAS = '/art/kitchen-fighter/fighters-realistic-cutout.webp';
-type Character = { name: string; weapon: Weapon; photo: string; zoom: number; x: number; y: number };
-const key = 'arcade:kitchen-fighter:characters';
-function readCharacters(name: string): [Character, Character] {
-  const defaults: [Character, Character] = [
-    { name: name || '주걱 고수', weapon: 'spatula', photo: '', zoom: 1, x: 0, y: 0 },
-    { name: '동네 챔피언', weapon: 'swatter', photo: '', zoom: 1, x: 0, y: 0 },
-  ];
-  try {
-    const saved = JSON.parse(safeGetItem(key) || 'null');
-    if (Array.isArray(saved) && saved.length === 2) return defaults.map((d, i) => {
-      const s = saved[i]; if (!s || typeof s !== 'object') return d;
-      return { name: typeof s.name === 'string' ? s.name.slice(0, 14) : d.name,
-        weapon: Object.hasOwn(WEAPONS, s.weapon) ? s.weapon : d.weapon,
-        photo: typeof s.photo === 'string' && s.photo.startsWith('data:image/') ? s.photo : '',
-        zoom: typeof s.zoom === 'number' && s.photoVersion === 2 ? Math.max(.5, Math.min(2, s.zoom)) : 1,
-        x: typeof s.x === 'number' && s.photoVersion === 2 ? Math.max(-2, Math.min(2, s.x)) : 0, y: typeof s.y === 'number' && s.photoVersion === 2 ? Math.max(-2, Math.min(2, s.y)) : 0 };
-    }) as [Character, Character];
-  } catch { /* Invalid old saves fall back to the default fighters. */ }
-  return defaults;
-}
 const attacks: Record<string, [number, Move]> = {
   KeyJ: [0, 'jab'], KeyK: [0, 'heavy'], KeyL: [0, 'low'], KeyU: [0, 'skill'], KeyI: [0, 'ultimate'],
   Digit1: [1, 'jab'], Digit2: [1, 'heavy'], Digit3: [1, 'low'], Digit4: [1, 'skill'], Digit5: [1, 'ultimate'],
@@ -44,20 +25,36 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   const [difficulty, setDifficulty] = useState<'easy' | 'normal'>('normal');
   const [screen, setScreen] = useState<'setup' | 'battle'>('setup');
   const [paused, setPaused] = useState(false); const pauseRef = useRef(false);
-  const [muted, setMuted] = useState(false); const [error, setError] = useState('');
+  const [muted, setMuted] = useState(false); const [error, setError] = useState(''); const [photoWarning, setPhotoWarning] = useState(false);
   const [renderReady, setRenderReady] = useState(false), [renderError, setRenderError] = useState('');
   const [loading, setLoading] = useState<number | null>(null);
   const [activeControls, setActiveControls] = useState<string[]>([]);
   const [hud, setHud] = useState({ hp: [100, 100], gauge: [0, 0], wins: [0, 0], time: 60, phase: 'ready', round: 1, winner: null as number | null });
   const canvas = useRef<HTMLCanvasElement>(null), fight = useRef(new Fight('cpu', ['spatula', 'swatter']));
+  const photoSources = useRef<[string, string]>(['', '']), photoImages = useRef<[HTMLImageElement | null, HTMLImageElement | null]>([null, null]);
   const portraits = useRef<[Portrait, Portrait]>([{ image: null, zoom: 1, x: 0, y: 0 }, { image: null, zoom: 1, x: 0, y: 0 }]);
   const keys = useRef(new Set<string>()), touch = useRef(new Set<string>()), audio = useRef<FightAudio | null>(null);
   const direction = useRef<{ time: number; forward: boolean } | null>(null);
   useEffect(() => {
-    safeSetItem(key, JSON.stringify(characters.map(ch => ({ ...ch, photoVersion: 2 }))));
-    portraits.current = characters.map(ch => { const image = ch.photo ? new Image() : null; if (image) image.src = ch.photo; return { image, zoom: ch.zoom, x: ch.x, y: ch.y }; }) as [Portrait, Portrait];
+    saveCharacterSettings(characters);
+    // Keep the decoded image while only the crop changes: a fresh Image hides the fighter until it decodes
+    // and makes the scene upload the texture again, which flickered on every slider tick.
+    portraits.current = characters.map((ch, i) => {
+      if (photoSources.current[i] !== ch.photo) {
+        photoSources.current[i] = ch.photo;
+        photoImages.current[i] = ch.photo ? Object.assign(new Image(), { src: ch.photo }) : null;
+      }
+      return { image: photoImages.current[i], zoom: ch.zoom, x: ch.x, y: ch.y };
+    }) as [Portrait, Portrait];
     if (screen === 'setup') fight.current = new Fight(mode, characters.map(ch => ch.weapon) as [Weapon, Weapon], difficulty);
   }, [characters, mode, difficulty, screen]);
+  // Photos are written only when they change, and a refused one is reported instead of vanishing on reload.
+  const [photo0, photo1] = [characters[0].photo, characters[1].photo];
+  useEffect(() => {
+    // map, not some: a refused 1P photo must not stop 2P's photo from being written.
+    const results = [photo0, photo1].map((photo, i) => (safeGetItem(photoKey(i)) ?? '') === photo || savePhoto(i, photo));
+    setPhotoWarning(results.includes(false));
+  }, [photo0, photo1]);
   useEffect(() => { const a = new FightAudio(); audio.current = a; return () => { a.dispose(); audio.current = null; }; }, []);
   function pause(value: boolean) { pauseRef.current = value; setPaused(value); keys.current.clear(); touch.current.clear(); }
   function perform(index: number, move: Move) {
@@ -182,6 +179,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
           {ch.photo && <div className="kf-photo-adjust"><label>크기<input type="range" min=".5" max="2" step=".05" value={ch.zoom} onChange={e => update(i, { zoom: Number(e.target.value) })} /></label><label>좌우<input type="range" min="-2" max="2" step=".05" value={ch.x} onChange={e => update(i, { x: Number(e.target.value) })} /></label><label>상하<input type="range" min="-2" max="2" step=".05" value={ch.y} onChange={e => update(i, { y: Number(e.target.value) })} /></label><button onClick={() => update(i, { photo: '', zoom: 1, x: 0, y: 0 })}>사진 지우기</button></div>}
         </section>)}</div>
         {error && <p className="kf-error" role="alert">{error}</p>}
+        {photoWarning && <p className="kf-error" role="status">사진이 커서 브라우저에 저장하지 못했어요. 이번 게임에서는 그대로 쓰이지만, 새로고침하면 사라집니다.</p>}
         <div className="kf-start-row"><div className="kf-mode"><button aria-pressed={mode === 'cpu'} className={mode === 'cpu' ? 'selected' : ''} onClick={() => setMode('cpu')}>혼자 · CPU 대전</button><button aria-pressed={mode === 'local'} className={mode === 'local' ? 'selected' : ''} onClick={() => setMode('local')}>둘이 · 같은 키보드</button></div>{mode === 'cpu' && <select aria-label="CPU 난이도" value={difficulty} onChange={e => setDifficulty(e.target.value as 'easy' | 'normal')}><option value="easy">CPU 쉬움</option><option value="normal">CPU 보통</option></select>}<button className="kf-primary kf-start" disabled={loading !== null || !renderReady} onClick={start}>한 판 붙기 <Play weight="fill" /></button></div>
         <p className="kf-privacy">사진 전체를 자르지 않고 사용합니다. 전신 사진이나 배경이 투명한 PNG를 넣으면 더 자연스럽습니다. 사진은 이 브라우저에만 저장됩니다.</p>
       </> : <div className="kf-touch-controls" data-idle={paused || hud.phase === 'matchover'}><div className="kf-move-pad" role="group" aria-label="이동">{holdButton('KeyQ', '안쪽', 'Q', 'kf-pad-in')}{holdButton('KeyA', '왼쪽', 'A', 'kf-pad-left')}{holdButton('KeyD', '오른쪽', 'D', 'kf-pad-right')}{holdButton('KeyE', '바깥쪽', 'E', 'kf-pad-out')}</div><div className="kf-action-pad"><div className="kf-stance" role="group" aria-label="자세">{holdButton('KeyW', '점프', 'W')}{holdButton('ShiftLeft', '가드', 'Shift')}{holdButton('KeyS', '앉기', 'S')}</div><div className="kf-attack-buttons" role="group" aria-label="공격">{moveLabels.map(([move, label, letter]) => <button key={move} className={move === 'ultimate' ? 'kf-super' : ''} disabled={paused || hud.phase !== 'fight' || (move === 'ultimate' && hud.gauge[0] < 100)} onClick={e => { if (e.detail === 0) perform(0, move); }} onPointerDown={e => { e.preventDefault(); perform(0, move); }}><kbd>{letter}</kbd>{label}</button>)}</div></div></div>}
