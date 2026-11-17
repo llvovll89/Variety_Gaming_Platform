@@ -18,6 +18,8 @@ const kit = await loadBundle(`
   export {DifficultyPicker} from './src/shared/kit/DifficultyPicker.tsx';
   export {NextGameActions} from './src/shared/kit/nextGame.tsx';
   export {PlaySession} from './src/platform/PlaySession.tsx';
+  export {SettingsPanel} from './src/shared/kit/SettingsPanel.tsx';
+  export {KitGameContext} from './src/shared/kit/context.ts';
 `);
 const { createElement: h, renderToStaticMarkup: render } = kit;
 
@@ -88,4 +90,16 @@ test('platform files never style a game by its class names', () => {
     const source = readFileSync(file, 'utf8');
     for (const prefix of GAME_PREFIXES) assert.ok(!source.includes(`.${prefix}`), `${file} mentions .${prefix}`);
   }
+});
+
+test('settings show sound everywhere, the running game only in a game, and the rest outside a pause', () => {
+  const full = render(h(kit.SettingsPanel));
+  for (const label of ['소리', '전체 음량', '움직임 줄이기', '진동', '힌트']) assert.ok(full.includes(label), label);
+  assert.ok(!full.includes('이 게임 소리'));
+  const compact = render(h(kit.SettingsPanel, { compact: true, gameId: 'mole', gameTitle: '두더지 잡기' }));
+  assert.ok(compact.includes('두더지 잡기 소리') && compact.includes('두더지 잡기 음량'));
+  assert.ok(!compact.includes('움직임 줄이기'));
+  const pause = render(h(kit.KitGameContext.Provider, { value: { gameId: 'mole', audience: 'kids' } }, h(kit.PauseDialog, { onResume() {}, onQuit() {} })));
+  assert.ok(pause.includes('이 게임 소리'), 'a pause screen inside a game offers its sound settings');
+  assert.ok(!render(h(kit.PauseDialog, { onResume() {}, onQuit() {} })).includes('설정'), 'outside a game there is nothing to set');
 });

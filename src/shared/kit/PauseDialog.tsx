@@ -1,6 +1,8 @@
 import { useId, type ReactNode } from 'react';
 import { GameDialog } from './GameDialog';
 import { primaryClass, secondaryClass, type ButtonClasses } from './buttons';
+import { useKitGame } from './context';
+import { SettingsPanel } from './SettingsPanel';
 
 export interface PauseDialogProps {
   onResume: () => void;
@@ -12,15 +14,18 @@ export interface PauseDialogProps {
   title?: string;
   /** One line about the run so far, e.g. "남은 시간 12초 · 340점". */
   summary?: ReactNode;
-  /** Extra rows under the buttons, e.g. sound settings. */
+  /** Extra rows under the buttons. */
   children?: ReactNode;
+  /** Sound settings for this game under the buttons. Defaults to true. */
+  showSettings?: boolean;
   className?: string;
   buttons?: ButtonClasses;
 }
 
 /** Pausing the run. Escape resumes, like the resume button. */
-export function PauseDialog({ onResume, onQuit, quitLabel = '메뉴로', onRestart, onHelp, title = '잠깐 멈췄어요', summary, children, className, buttons }: PauseDialogProps) {
+export function PauseDialog({ onResume, onQuit, quitLabel = '메뉴로', onRestart, onHelp, title = '잠깐 멈췄어요', summary, children, showSettings = true, className, buttons }: PauseDialogProps) {
   const titleId = useId();
+  const game = useKitGame();
   return (
     <GameDialog labelledBy={titleId} onClose={onResume} className={className}>
       <h2 id={titleId} className="kit-title">{title}</h2>
@@ -32,6 +37,7 @@ export function PauseDialog({ onResume, onQuit, quitLabel = '메뉴로', onResta
         <button type="button" className={secondaryClass(buttons)} onClick={onQuit}>{quitLabel}</button>
       </div>
       {children}
+      {showSettings && game && <div className="kit-section"><SettingsPanel compact gameId={game.gameId} /></div>}
     </GameDialog>
   );
 }

@@ -7,6 +7,7 @@ import { DEFAULT_CHARACTER_ID, GAME_CHARACTER_IMAGES } from "./shared/profile/ch
 import { recordRecentGame } from "./platform/hubCatalog";
 import GameErrorBoundary from "./platform/GameErrorBoundary";
 import { ExitGuardSlot } from "./platform/exitGuard";
+import { KitStyles } from "./shared/kit/KitStyles";
 import { documentTitle, gameIdFromPath, gamePath, isPlayable } from "./platform/route";
 
 type Intent = "start" | "resume";
@@ -87,6 +88,7 @@ export default function App() {
     const gameProfile = { ...profile, defaultCharacterImage, characterImage: profile.characterId === DEFAULT_CHARACTER_ID ? defaultCharacterImage : profile.characterImage };
     return (
       <div className="relative h-full w-full">
+        <KitStyles />
         <GameErrorBoundary key={activeGame.id} title={activeGame.title} onExit={exitGame}>
           <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
             <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: exitGame }}>
@@ -102,6 +104,7 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full">
+      <KitStyles />
       <Hub games={GAMES} onSelect={selectGame} profile={{ name: profile.name, characterImage: profile.characterImage }} />
     </div>
   );
