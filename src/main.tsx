@@ -2,6 +2,10 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
+import { settingsStore } from "./shared/kit/settings";
+
+// Read the arcade settings once at startup, so a saved "reduce motion" applies before any dialog opens.
+settingsStore.get();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

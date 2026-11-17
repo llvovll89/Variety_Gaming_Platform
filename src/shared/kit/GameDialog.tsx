@@ -1,8 +1,11 @@
-import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react';
+import { useLayoutEffect, useRef, type MouseEvent, type ReactNode, type RefObject } from 'react';
 
 let openDialogs = 0;
 /** True while any kit dialog is open; useAutoPause stays quiet then. */
 export function isKitDialogOpen() { return openDialogs > 0; }
+
+/** Put this attribute on the control that should get focus when the dialog opens. */
+export const AUTOFOCUS = { 'data-kit-autofocus': '' } as const;
 
 export interface GameDialogProps {
   /** Defaults to true: mounting the dialog opens it. */
@@ -15,13 +18,20 @@ export interface GameDialogProps {
   /** False swallows Escape, for screens where the player must pick an action. */
   dismissible?: boolean;
   closeOnBackdrop?: boolean;
-  /** Focused when the dialog opens; otherwise the browser picks [autofocus] or the first control. */
+  /** Focused when the dialog opens; otherwise the [data-kit-autofocus] control, else the browser's pick. */
   initialFocus?: RefObject<HTMLElement | null>;
   /** Give focus back to whatever had it before the dialog opened. Defaults to true. */
   returnFocus?: boolean;
   /** Extra classes, so a game keeps its own dialog styles. */
   className?: string;
   children: ReactNode;
+}
+
+/** A click outside the dialog box itself; clicks on its padding still land on the dialog element. */
+function outsideBox(event: MouseEvent<HTMLDialogElement>): boolean {
+  if (event.target !== event.currentTarget) return false;
+  const box = event.currentTarget.getBoundingClientRect();
+  return event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
 }
 
 /**
@@ -31,27 +41,38 @@ export interface GameDialogProps {
  */
 export function GameDialog({ open = true, label, labelledBy, describedBy, onClose, dismissible = true, closeOnBackdrop = false, initialFocus, returnFocus = true, className, children }: GameDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  const returnFocusRef = useRef(returnFocus);
-  returnFocusRef.current = returnFocus;
+  const latest = useRef({ onClose, dismissible, returnFocus });
+  latest.current = { onClose, dismissible, returnFocus };
 
   useLayoutEffect(() => {
     const dialog = ref.current;
     if (!open || !dialog) return;
     const root = dialog.getRootNode() as Document | ShadowRoot;
     const previous = root.activeElement as HTMLElement | null;
-    if (!dialog.open) {
+    const show = () => {
+      if (dialog.open) return;
       try { dialog.showModal(); } catch { dialog.setAttribute('open', ''); }
-    }
+    };
+    show();
     openDialogs++;
-    initialFocus?.current?.focus();
+    // React focuses autoFocus children before this effect opens the dialog, so focus here instead.
+    (initialFocus?.current ?? dialog.querySelector<HTMLElement>('[data-kit-autofocus]'))?.focus();
+    // The browser may close the dialog itself (Chrome closes it on a second Escape without a click
+    // in between, even when cancel is prevented). Keep React's state and the dialog in step.
+    let closing = false;
+    const onNativeClose = () => {
+      if (closing) return;
+      if (latest.current.dismissible) latest.current.onClose();
+      else show();
+    };
+    dialog.addEventListener('close', onNativeClose);
     return () => {
+      closing = true;
+      dialog.removeEventListener('close', onNativeClose);
       openDialogs = Math.max(0, openDialogs - 1);
       if (dialog.open) dialog.close();
-      if (returnFocusRef.current && previous?.isConnected) previous.focus({ preventScroll: true });
+      if (latest.current.returnFocus && previous?.isConnected) previous.focus({ preventScroll: true });
     };
-    // initialFocus is read once on open, like the browser's own autofocus.
   }, [open]);
 
   if (!open) return null;
@@ -62,8 +83,8 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
       aria-label={label}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
-      onCancel={event => { event.preventDefault(); if (dismissible) onCloseRef.current(); }}
-      onClick={closeOnBackdrop ? event => { if (event.target === event.currentTarget) onCloseRef.current(); } : undefined}
+      onCancel={event => { event.preventDefault(); if (dismissible) latest.current.onClose(); }}
+      onClick={closeOnBackdrop ? event => { if (outsideBox(event)) latest.current.onClose(); } : undefined}
     >
       {children}
     </dialog>

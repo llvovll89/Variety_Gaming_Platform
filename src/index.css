@@ -1,3 +1,5 @@
+/* The game kit layer comes first, below Tailwind's layers, so utilities and game styles override it. */
+@layer kit;
 @import "tailwindcss";
 @import "./pretendard.css";
 

@@ -9,14 +9,16 @@ export interface AutoPauseOptions {
   blur?: boolean;
   /** Pause when the tab is hidden. Defaults to true. */
   visibility?: boolean;
-  /** Keys that pause. Defaults to Escape and P; pass [] to turn keys off. */
+  /** Keys that pause, by KeyboardEvent.key or .code. Defaults to Escape and the P key; [] turns keys off. */
   keys?: readonly string[];
 }
 
-const DEFAULT_KEYS = ['Escape', 'p', 'P'] as const;
+// KeyP by physical key: with a Korean keyboard layout the P key reports key 'ㅔ'.
+const DEFAULT_KEYS = ['Escape', 'KeyP'] as const;
 
 interface KeyLike {
   key: string;
+  code?: string;
   repeat?: boolean;
   altKey?: boolean;
   ctrlKey?: boolean;
@@ -39,7 +41,7 @@ function isTextField(target: EventTarget | null | undefined): boolean {
  */
 export function shouldPauseForKey(event: KeyLike, keys: readonly string[] = DEFAULT_KEYS, dialogOpen = isKitDialogOpen()): boolean {
   if (dialogOpen || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return false;
-  if (!keys.includes(event.key)) return false;
+  if (!keys.includes(event.key) && !(event.code && keys.includes(event.code))) return false;
   return !isTextField(event.composedPath?.()[0] ?? event.target);
 }
 

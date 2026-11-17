@@ -39,7 +39,7 @@ export function ResultPanel({ titleId, eyebrow, headline, score, stats, records,
   );
   const actions = <>
     <div className="kit-actions">
-      <button type="button" autoFocus className={primaryClass(buttons)} onClick={primary.onClick}>{primary.icon}{primary.label}</button>
+      <button type="button" data-kit-autofocus="" className={primaryClass(buttons)} onClick={primary.onClick}>{primary.icon}{primary.label}</button>
       {secondary.map(action => <button key={action.label} type="button" className={secondaryClass(buttons)} onClick={action.onClick}>{action.icon}{action.label}</button>)}
     </div>
     {showNext && <NextGameActions />}

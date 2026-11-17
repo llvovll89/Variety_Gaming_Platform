@@ -103,3 +103,12 @@ test('settings show sound everywhere, the running game only in a game, and the r
   assert.ok(pause.includes('이 게임 소리'), 'a pause screen inside a game offers its sound settings');
   assert.ok(!render(h(kit.PauseDialog, { onResume() {}, onQuit() {} })).includes('설정'), 'outside a game there is nothing to set');
 });
+
+test('dialogs focus their main action once open, and the kit layer sits below Tailwind and game styles', () => {
+  // React focuses autoFocus before the dialog is shown, so kit dialogs mark the control instead.
+  const pause = render(h(kit.PauseDialog, { onResume() {}, onQuit() {} }));
+  assert.match(pause, /<button type="button" data-kit-autofocus="" class="kit-btn kit-btn-primary">계속하기/);
+  assert.ok(!/autofocus=""/i.test(pause.replace(/data-kit-autofocus/g, '')), 'no React autoFocus inside kit dialogs');
+  const css = readFileSync('src/index.css', 'utf8');
+  assert.ok(css.indexOf('@layer kit;') >= 0 && css.indexOf('@layer kit;') < css.indexOf('@import "tailwindcss"'));
+});

@@ -20,10 +20,11 @@ test('a recipe becomes voices at the right times, pitch and level', () => {
 });
 
 test('Escape and P pause, but not while typing, holding a key, using shortcuts or inside a dialog', () => {
-  const key = (k, extra = {}) => ({ key: k, target: { tagName: 'CANVAS' }, ...extra });
+  const key = (k, extra = {}) => ({ key: k, code: k === 'p' ? 'KeyP' : undefined, target: { tagName: 'CANVAS' }, ...extra });
   assert.equal(shouldPauseForKey(key('Escape'), undefined, false), true);
   assert.equal(shouldPauseForKey(key('p'), undefined, false), true);
   assert.equal(shouldPauseForKey(key('x'), undefined, false), false);
+  assert.equal(shouldPauseForKey({ key: 'ㅔ', code: 'KeyP' }, undefined, false), true, 'P with a Korean keyboard layout');
   assert.equal(shouldPauseForKey(key('p', { target: { tagName: 'INPUT' } }), undefined, false), false);
   assert.equal(shouldPauseForKey(key('p', { composedPath: () => [{ tagName: 'TEXTAREA' }] }), undefined, false), false, 'a field inside a shadow root');
   assert.equal(shouldPauseForKey(key('Escape', { repeat: true }), undefined, false), false);

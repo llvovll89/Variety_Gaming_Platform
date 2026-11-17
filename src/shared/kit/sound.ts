@@ -111,6 +111,7 @@ function playVoice(g: Graph, out: GainNode, voice: Voice) {
   }
   const source = g.ctx.createBufferSource();
   source.buffer = g.noise;
+  source.loop = true; // the buffer holds one second; longer noise keeps going
   let node: AudioNode = source;
   if (voice.filter) {
     const filter = g.ctx.createBiquadFilter();

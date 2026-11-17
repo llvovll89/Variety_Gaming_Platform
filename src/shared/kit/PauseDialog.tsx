@@ -31,7 +31,7 @@ export function PauseDialog({ onResume, onQuit, quitLabel = '메뉴로', onResta
       <h2 id={titleId} className="kit-title">{title}</h2>
       {summary && <p className="kit-summary">{summary}</p>}
       <div className="kit-actions">
-        <button type="button" autoFocus className={primaryClass(buttons)} onClick={onResume}>계속하기</button>
+        <button type="button" data-kit-autofocus="" className={primaryClass(buttons)} onClick={onResume}>계속하기</button>
         {onRestart && <button type="button" className={secondaryClass(buttons)} onClick={onRestart}>처음부터</button>}
         {onHelp && <button type="button" className={secondaryClass(buttons)} onClick={onHelp}>게임 방법</button>}
         <button type="button" className={secondaryClass(buttons)} onClick={onQuit}>{quitLabel}</button>

@@ -35,7 +35,7 @@ export function HelpDialog({ pages, onClose, firstRunKey, className, buttons }: 
       <div className="kit-pager">
         {index > 0 ? <button type="button" className={secondaryClass(buttons)} onClick={() => setIndex(index - 1)}>이전</button> : <span />}
         {pages.length > 1 && <span className="kit-pager-dots" aria-hidden="true">{pages.map((p, i) => <i key={p.title} aria-current={i === index} />)}</span>}
-        <button type="button" autoFocus className={primaryClass(buttons)} onClick={last ? close : () => setIndex(index + 1)}>{last ? '시작하기' : '다음'}</button>
+        <button type="button" data-kit-autofocus="" className={primaryClass(buttons)} onClick={last ? close : () => setIndex(index + 1)}>{last ? '시작하기' : '다음'}</button>
       </div>
     </GameDialog>
   );
