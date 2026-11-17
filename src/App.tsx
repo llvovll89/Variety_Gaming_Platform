@@ -11,6 +11,7 @@ import { KitStyles } from "./shared/kit/KitStyles";
 import { KitGameContext } from "./shared/kit/context";
 import { documentTitle, gameIdFromPath, gamePath, isPlayable } from "./platform/route";
 import { audienceOf } from "./platform/types";
+import { createRecordsApi } from "./platform/meta/api";
 
 type Intent = "start" | "resume";
 const GAME_STATE = (id: string) => ({ arcade: "game", id });
@@ -25,6 +26,7 @@ export default function App() {
   const exitGuard = useRef<(() => void) | null>(null);
   const registerExitGuard = useCallback((guard: (() => void) | null) => { exitGuard.current = guard; }, []);
   const activeGame = activeGameId ? getGameById(activeGameId) : undefined;
+  const records = useMemo(() => activeGame ? createRecordsApi(activeGame.id, activeGame.meta) : undefined, [activeGame]);
   const kitGame = useMemo(() => activeGame ? { gameId: activeGame.id, audience: audienceOf(activeGame) } : null, [activeGame]);
   const profile = useProfile();
 
@@ -94,7 +96,7 @@ export default function App() {
         <KitStyles />
         <GameErrorBoundary key={activeGame.id} title={activeGame.title} onExit={exitGame}>
           <Suspense fallback={<div className="flex h-full items-center justify-center text-sm" role="status">게임을 준비하고 있습니다…</div>}>
-            <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: exitGame }}>
+            <PlaySession.Provider value={{ games: GAMES, gameId: activeGame.id, selectGame, exit: exitGame, records }}>
               <KitGameContext.Provider value={kitGame}>
                 <ExitGuardSlot.Provider value={registerExitGuard}>
                   <Component key={activeGame.id} onExit={exitGame} profile={gameProfile} launchIntent={launchIntent} />
