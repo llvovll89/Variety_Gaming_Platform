@@ -28,3 +28,6 @@
 .mole-target{min-width:44px;min-height:44px}
 /* Readable floor: nothing on screen below 11px, on phones included. */
 .mole-bottom-stats,.mole-bottom-stats span,.mole-eyebrow,.mole-final-score>span,.mole-menu-footer small,.mole-menu-footer>p,.mole-menu-footer span,.mole-nav,.mole-nav .mole-record,.mole-play-nav small,.mole-result-ranking>p,.mole-result-stats span,.mole-score>small,.mole-score>span,.mole-target kbd{font-size:11px}
+/* Game kit theme: kit pieces (settings rows, dialogs) take the mole palette. */
+.mole-game{--kit-surface:#f0f5ed;--kit-ink:#183e35;--kit-muted:#557368;--kit-line:#b6cbb9;--kit-accent:#264f3c;--kit-on-accent:#fff;--kit-radius:24px}
+.mole-pause-panel .kit-settings{margin-top:22px;padding-top:16px;border-top:1px solid #ccdacb;text-align:left;font-size:13px}

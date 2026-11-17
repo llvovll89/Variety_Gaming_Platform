@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import GameOverScreen from '../../shared/components/GameOverScreen';
+import { useCallback, useEffect, useId, useState, type CSSProperties } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
-import PauseOverlay from "../../shared/components/PauseOverlay";
+import { GameDialog } from "../../shared/kit/GameDialog";
+import { PauseDialog } from "../../shared/kit/PauseDialog";
+import { ResultPanel } from "../../shared/kit/ResultPanel";
+import { useAutoPause } from "../../shared/kit/useAutoPause";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
 import { MemoryGameEngine } from "./game/engine";
@@ -14,7 +16,17 @@ import type { GameProps } from "../../platform/types";
 type Screen = "menu" | "playing";
 
 const GAME_ID = "hachuping-memory";
-const ACCENT_COLOR = "#ff6fa5";
+/** Game kit theme: the pink of the board and menu, so pause and result screens match the game. */
+const KIT_THEME = {
+  "--kit-surface": "#fff5f9",
+  "--kit-ink": "#4a1d33",
+  "--kit-muted": "#8a5470",
+  "--kit-line": "#f3c2d8",
+  "--kit-accent": "#cc2f70",
+  "--kit-on-accent": "#fff",
+  "--kit-radius": "28px",
+  "--kit-backdrop": "#4a1d3366",
+} as CSSProperties;
 const FALLBACK_SNAPSHOT = emptySnapshot({
   stage: 1,
   sequence: [],
@@ -33,11 +45,11 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
   const [engine, setEngine] = useState<MemoryGameEngine | null>(null);
   const { highScore, previousBest, submitScore } = useHighScore(GAME_ID, ['hachuping-memory-highscore']);
-  const resultDialog = useRef<HTMLDialogElement>(null);
+  const resultTitle = useId();
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
   useEffect(() => () => engine?.destroy(), [engine]);
-  useEffect(() => { if (snapshot.status === 'game-over') { submitScore(snapshot.score); resultDialog.current?.showModal(); } }, [snapshot.status, snapshot.score, submitScore]);
+  useEffect(() => { if (snapshot.status === 'game-over') submitScore(snapshot.score); }, [snapshot.status, snapshot.score, submitScore]);
 
   const handleStart = useCallback(() => {
     engine?.destroy();
@@ -57,6 +69,10 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
   }, [engine]);
 
   const gameActive = screen === "playing";
+  // Escape, P or looking away pauses (the game had no keyboard pause before).
+  // togglePause would resume if two triggers (blur + hidden tab) arrive together, so only pause a running game.
+  const pauseIfPlaying = useCallback(() => { if (engine?.uiStore.getSnapshot().status === "playing") engine.togglePause(); }, [engine]);
+  useAutoPause({ active: gameActive && snapshot.status === "playing", onPause: pauseIfPlaying });
   const isPaused = snapshot.status === "paused";
 
   return (
@@ -69,6 +85,7 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
         height: "100%",
         width: "100%",
         position: "relative",
+        ...KIT_THEME,
         boxSizing: "border-box",
         padding: "12px",
         paddingTop: "max(12px, env(safe-area-inset-top))",
@@ -125,16 +142,26 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
         </>
       )}
       {isPaused && (
-        <PauseOverlay
-          score={snapshot.score}
-          accentColor={ACCENT_COLOR}
+        <PauseDialog
+          title="잠깐 쉬어 가요"
+          summary={`지금까지 ${snapshot.score}점`}
           onResume={handleTogglePause}
-          onMainMenu={handleMainMenu}
+          onQuit={handleMainMenu}
+          quitLabel="처음 화면으로"
+          showSettings={false}
         />
       )}
-      {snapshot.status === 'game-over' && <dialog ref={resultDialog} aria-label="기억력 게임 결과" onCancel={e => { e.preventDefault(); handleMainMenu(); }} style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', maxWidth: 'none', maxHeight: 'none', border: 0, padding: 0, background: 'transparent' }}>
-        <GameOverScreen finalScore={snapshot.score} bestScore={highScore} previousBest={previousBest} accentColor={ACCENT_COLOR} onRestart={handleStart} onMainMenu={handleMainMenu}/>
-      </dialog>}
+      {snapshot.status === 'game-over' && <GameDialog labelledBy={resultTitle} onClose={handleMainMenu}>
+        <ResultPanel
+          titleId={resultTitle}
+          eyebrow="동물 친구 기억력"
+          headline="이번 한 판 완료!"
+          score={{ value: snapshot.score, unit: "점", previousBest }}
+          stats={[{ label: "최고 기록", value: `${Math.max(highScore, snapshot.score)}점` }, { label: "도달 단계", value: `${snapshot.gameState.stage}단계` }]}
+          primary={{ label: "다시 시작", onClick: handleStart }}
+          secondary={[{ label: "처음 화면으로", onClick: handleMainMenu }]}
+        />
+      </GameDialog>}
     </div>
   );
 }

@@ -110,5 +110,6 @@ test('dialogs focus their main action once open, and the kit layer sits below Ta
   assert.match(pause, /<button type="button" data-kit-autofocus="" class="kit-btn kit-btn-primary">계속하기/);
   assert.ok(!/autofocus=""/i.test(pause.replace(/data-kit-autofocus/g, '')), 'no React autoFocus inside kit dialogs');
   const css = readFileSync('src/index.css', 'utf8');
-  assert.ok(css.indexOf('@layer kit;') >= 0 && css.indexOf('@layer kit;') < css.indexOf('@import "tailwindcss"'));
+  const order = css.indexOf('@layer theme, base, kit, components, utilities;');
+  assert.ok(order >= 0 && order < css.indexOf('@import "tailwindcss"'), 'kit is declared between Tailwind base and utilities');
 });

@@ -61,7 +61,9 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
     // in between, even when cancel is prevented). Keep React's state and the dialog in step.
     let closing = false;
     const onNativeClose = () => {
-      if (closing) return;
+      // The close event is queued: one from an earlier close (StrictMode re-runs this effect) can
+      // arrive after the dialog was opened again, and must not close the open one.
+      if (closing || dialog.open) return;
       if (latest.current.dismissible) latest.current.onClose();
       else show();
     };
@@ -83,6 +85,8 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
       aria-label={label}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
+      // A held-down Escape repeats; only a fresh press may close (stops pause, then instant resume).
+      onKeyDown={event => { if (event.key === 'Escape' && event.repeat) event.preventDefault(); }}
       onCancel={event => { event.preventDefault(); if (dismissible) latest.current.onClose(); }}
       onClick={closeOnBackdrop ? event => { if (outsideBox(event)) latest.current.onClose(); } : undefined}
     >

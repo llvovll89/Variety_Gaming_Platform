@@ -1,5 +1,6 @@
-/* The game kit layer comes first, below Tailwind's layers, so utilities and game styles override it. */
-@layer kit;
+/* The game kit layer sits above Tailwind's reset (base) and below its utilities: the kit beats the
+   reset, while utilities and unlayered game styles still override the kit. */
+@layer theme, base, kit, components, utilities;
 @import "tailwindcss";
 @import "./pretendard.css";
 

@@ -21,16 +21,11 @@ export function useWhackAMoleEngine(canvasRef: RefObject<HTMLCanvasElement | nul
       if(e.repeat || e.altKey || e.ctrlKey || e.metaKey || (e.target instanceof HTMLElement && ['INPUT','TEXTAREA'].includes(e.target.tagName))) return;
       const id=MOLE_KEYS.indexOf(e.key.toLowerCase());
       if(id>=0) {e.preventDefault(); engine.hitMole(id);}
-      if(e.key==='Escape' && ['ready','playing','paused'].includes(engine.getGameState().status)) {
-        e.preventDefault();
-        if(engine.getGameState().status==='paused') engine.resumeGame(); else engine.pauseGame();
-      }
     };
-    const visibility=()=> {if(document.hidden) engine.pauseGame();};
-    const blur=()=>engine.pauseGame();
-    window.addEventListener('keydown',key); window.addEventListener('blur',blur); document.addEventListener('visibilitychange',visibility);
+    // Pausing (Escape, P, looking away) is handled by the kit's useAutoPause in the app.
+    window.addEventListener('keydown',key);
     onReady(engine);
-    return ()=> {observer.disconnect(); cancelAnimationFrame(frame); view.dispose(); engine.destroy(); window.removeEventListener('keydown',key); window.removeEventListener('blur',blur); document.removeEventListener('visibilitychange',visibility);};
+    return ()=> {observer.disconnect(); cancelAnimationFrame(frame); view.dispose(); engine.destroy(); window.removeEventListener('keydown',key);};
     // A keyed canvas owns one session, including its initial score and callbacks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
