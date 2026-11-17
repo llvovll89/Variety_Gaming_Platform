@@ -1,14 +1,19 @@
-import { useState } from "react";
 import { PlayIcon } from "@phosphor-icons/react/dist/icons/Play";
 import { COLOR_PALETTE, DIFFICULTY_CONFIGS, type DifficultyLevel } from "../game/constants";
 import { Drop } from "./Paint";
 
 interface StartMenuProps {
-  initialDifficulty: DifficultyLevel;
+  difficulty: DifficultyLevel;
+  onDifficultyChange: (difficulty: DifficultyLevel) => void;
+  /** Focus the selected level on mount (after a difficulty change remounted the menu). */
+  focusDifficulty: boolean;
   patterns: boolean;
+  /** Best score on the selected difficulty. */
   bestScore: number;
+  /** Best score from before records were split by difficulty. */
+  legacyBest: number;
   onTogglePatterns: () => void;
-  onStart: (difficulty: DifficultyLevel) => void;
+  onStart: () => void;
 }
 
 const LEVEL_NOTES: Record<DifficultyLevel, string> = {
@@ -17,8 +22,7 @@ const LEVEL_NOTES: Record<DifficultyLevel, string> = {
   hard: "물감 5통",
 };
 
-export default function StartMenu({ initialDifficulty, patterns, bestScore, onTogglePatterns, onStart }: StartMenuProps) {
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>(initialDifficulty);
+export default function StartMenu({ difficulty, onDifficultyChange, focusDifficulty, patterns, bestScore, legacyBest, onTogglePatterns, onStart }: StartMenuProps) {
   const config = DIFFICULTY_CONFIGS[difficulty];
 
   return (
@@ -34,7 +38,7 @@ export default function StartMenu({ initialDifficulty, patterns, bestScore, onTo
           <p id="cm-level-label">난이도</p>
           <div className="cm-levels">
             {(Object.keys(DIFFICULTY_CONFIGS) as DifficultyLevel[]).map((level) => (
-              <button key={level} aria-pressed={difficulty === level} onClick={() => setDifficulty(level)}>
+              <button key={level} aria-pressed={difficulty === level} autoFocus={focusDifficulty && difficulty === level} onClick={() => onDifficultyChange(level)}>
                 {DIFFICULTY_CONFIGS[level].name}
                 <small>{LEVEL_NOTES[level]}</small>
               </button>
@@ -55,10 +59,11 @@ export default function StartMenu({ initialDifficulty, patterns, bestScore, onTo
           <li>틀리면 남은 시간이 1.5초 줄어요. 키보드는 숫자 1~6으로 고를 수 있어요.</li>
         </ul>
 
-        <button className="cm-primary" onClick={() => onStart(difficulty)}>
+        <button className="cm-primary" onClick={onStart}>
           <PlayIcon size={18} weight="fill" /> 시작하기
         </button>
-        {bestScore > 0 && <p className="cm-best">내 최고 기록 <b className="cm-num">{bestScore}</b>점</p>}
+        {bestScore > 0 && <p className="cm-best">{config.name} 최고 기록 <b className="cm-num">{bestScore}</b>점</p>}
+        {legacyBest > 0 && <p className="cm-best">난이도 구분 전 기록 <b className="cm-num">{legacyBest}</b>점</p>}
       </div>
     </div>
   );

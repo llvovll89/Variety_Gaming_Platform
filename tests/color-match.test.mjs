@@ -109,3 +109,14 @@ test('nothing counts while paused',()=>withEngine('normal',({e,state,step})=>{
   e.selectOption(right(e));step(5);
   assert.equal(JSON.stringify(state()),before);
 }));
+
+test('the menu shows the best score of the selected difficulty, apart from older shared records', async () => {
+  const ui = await build({stdin:{contents:`export {createElement} from 'react'; export {renderToStaticMarkup} from 'react-dom/server'; export {default as StartMenu} from './src/games/hachuping-color-match/components/StartMenu.tsx';`,resolveDir:process.cwd()},bundle:true,write:false,format:'cjs',platform:'node',jsx:'automatic'});
+  const {default:Module}=await import('node:module');const {fileURLToPath}=await import('node:url');
+  const bundled=new Module(fileURLToPath(import.meta.url));bundled.filename=fileURLToPath(import.meta.url);bundled.paths=Module._nodeModulePaths(process.cwd());
+  bundled._compile(ui.outputFiles[0].text,bundled.filename);
+  const {createElement,renderToStaticMarkup,StartMenu}=bundled.exports;
+  const html=renderToStaticMarkup(createElement(StartMenu,{difficulty:'hard',onDifficultyChange(){},focusDifficulty:false,patterns:false,bestScore:120,legacyBest:300,onTogglePatterns(){},onStart(){}}));
+  assert.match(html,new RegExp(`${DIFFICULTY_CONFIGS.hard.name} 최고 기록 <b class="cm-num">120</b>`));
+  assert.match(html,/난이도 구분 전 기록 <b class="cm-num">300<\/b>/);
+});
