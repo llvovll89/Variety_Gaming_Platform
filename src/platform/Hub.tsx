@@ -8,6 +8,8 @@ import { savedProgressLabel } from "./savedProgress";
 import { GameDialog } from "../shared/kit/GameDialog";
 import { SettingsPanel } from "../shared/kit/SettingsPanel";
 import { TodayCard } from "./meta/TodayCard";
+import { cardProgress, ProfileSheet } from "./meta/ProfileSheet";
+import { useMeta } from "./meta/store";
 import "./hub.css";
 
 interface HubProps {
@@ -19,6 +21,13 @@ function PlayFacts({ game }: { game: GameDefinition }) {
   const info = PLAY_INFO[game.id];
   if (!info) return null;
   return <span className="hub-play-facts"><span>{info.duration}</span><span>{info.controls}</span><span>{info.experience}</span><span>{info.save}</span></span>;
+}
+
+/** This player's best and achievements on a game card, once they have played it. */
+function CardProgress({ game, meta }: { game: GameDefinition; meta: ReturnType<typeof useMeta> }) {
+  const progress = cardProgress(game, meta);
+  if (!progress) return null;
+  return <span className="hub-game-progress">{progress.best && <span>{progress.best}</span>}<span>{progress.earned}</span></span>;
 }
 
 type Theme = "system" | "light" | "dark";
@@ -49,6 +58,8 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<"전체" | GameGenre>("전체");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const meta = useMeta();
   const [theme, setTheme] = useState<Theme>(() => {
     const value = safeGetItem(THEME_KEY);
     return value === "light" || value === "dark" ? value : "system";
@@ -102,7 +113,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
       <div className="hub-account">
         <button type="button" className="hub-theme" onClick={() => setSettingsOpen(true)} aria-label="설정" title="설정"><GearSixIcon size={20} /></button>
         <button type="button" className="hub-theme" onClick={cycleTheme} aria-label={`화면 테마: ${THEME_NAMES[theme]}. ${THEME_NAMES[NEXT_THEME[theme]]}으로 변경`} title={`화면 테마: ${THEME_NAMES[theme]}`}><ThemeIcon size={20} /></button>
-        <span className="hub-me"><img src={profile.characterImage} alt="" width={32} height={32} /><span>{profile.name || "플레이어"}</span></span>
+        <button type="button" className="hub-me" onClick={() => setProfileOpen(true)} aria-label={`${profile.name || "플레이어"}: 내 기록 보기`}><img src={profile.characterImage} alt="" width={32} height={32} /><span>{profile.name || "플레이어"}</span></button>
       </div>
     </header>
     <main className="hub-main">
@@ -160,7 +171,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-genres" role="group" aria-label="장르">{HUB_GENRES.map(item => <button key={item} type="button" aria-pressed={genre === item} onClick={() => setGenre(item)}>{item}<small>{filterHubGames(games, "", item).length}</small></button>)}</div>
         <p className="sr-only" role="status">게임 {playable.length}개</p>
         {playable.length > 0 ? <div className="hub-game-grid">{playable.map(game => <button key={game.id} type="button" className="hub-game" onClick={() => onSelect(game.id)} aria-label={`${game.title} 시작하기`}>
-          <Cover game={game} /><span className="hub-game-caption"><span className="hub-game-genre">{game.genres.join(" / ")}</span><strong>{game.title}</strong><span className="hub-game-description">{game.description}</span><PlayFacts game={game} /><span className="hub-game-launch">시작하기<ArrowUpRightIcon size={17} /></span></span>
+          <Cover game={game} /><span className="hub-game-caption"><span className="hub-game-genre">{game.genres.join(" / ")}</span><strong>{game.title}</strong><span className="hub-game-description">{game.description}</span><PlayFacts game={game} /><CardProgress game={game} meta={meta} /><span className="hub-game-launch">시작하기<ArrowUpRightIcon size={17} /></span></span>
         </button>)}</div> : <div className="hub-empty"><MagnifyingGlassIcon size={36} /><h3>검색 결과가 없어요</h3><p>{query ? `‘${query}’에 맞는 ${genre === "전체" ? "" : `${genre} `}게임을 찾지 못했어요.` : `${genre} 게임이 아직 없어요.`}<br />검색어를 바꾸거나 다른 장르를 선택해 주세요.</p><button type="button" onClick={clearFilters}>검색 초기화</button></div>}
       </section>
 
@@ -168,6 +179,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-soon-grid">{upcoming.map(game => <article key={game.id} className="hub-soon"><Cover game={game} /><div><span className="hub-soon-status">준비 중</span><h3>{game.title}</h3><p>{game.description}</p></div></article>)}</div>
       </section>}
     </main>
+    {profileOpen && <ProfileSheet games={playableAll} name={profile.name} onClose={() => setProfileOpen(false)} />}
     {settingsOpen && <GameDialog label="설정" onClose={() => setSettingsOpen(false)} closeOnBackdrop className="hub-settings">
       <h2 className="kit-title">설정</h2>
       <p className="kit-summary">모든 게임에 함께 적용돼요.</p>

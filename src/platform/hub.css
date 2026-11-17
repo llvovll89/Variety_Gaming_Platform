@@ -131,3 +131,34 @@
 .hub-today-week p{color:var(--muted);font-size:12px}
 @media(max-width:1023px){.hub-today{grid-template-columns:1fr}.hub-today-week{grid-row:auto;grid-column:auto}.hub-today-list{grid-template-columns:1fr}}
 @media(max-width:767px){.hub-today{padding:18px}}
+/* Profile: sticker book, achievements, records. */
+.hub-profile{--kit-dialog-width:640px}
+.hub-me{border-radius:6px;padding:4px 8px 4px 4px;background:none}
+.hub-me:hover{background:var(--surface-hover)}
+.hub-profile-tabs{display:flex;gap:4px;margin:20px 0 0;border-bottom:1px solid var(--line)}
+.hub-profile-tabs button{min-height:44px;padding:0 16px;margin-bottom:-1px;border-bottom:2px solid transparent!important;font-weight:600;color:var(--muted)!important}
+.hub-profile-tabs button[aria-selected=true]{border-bottom-color:var(--accent)!important;color:var(--text)!important}
+.hub-profile-panel{display:grid;gap:20px;margin-top:16px;max-height:min(52vh,460px);overflow:auto}
+.hub-profile-panel h3{margin:0 0 8px;font-size:14px}
+.hub-sticker-book{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin:0;padding:0;list-style:none}
+.hub-sticker-book li{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border-radius:6px;background:var(--page);text-align:center}
+.hub-sticker-book li>span{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--surface);font-size:26px}
+.hub-sticker-book li[data-got=false]>span{border:1px dashed var(--line);color:var(--muted);font-size:16px;font-weight:700}
+.hub-sticker-book small{font-size:11px;line-height:1.35;color:var(--muted)}
+.hub-achievements{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.hub-achievements li{display:grid;gap:2px;padding:8px 12px;border-left:4px solid var(--line);border-radius:4px;background:var(--page)}
+.hub-achievements li[data-got=true][data-tier="1"]{border-left-color:#b87333}
+.hub-achievements li[data-got=true][data-tier="2"]{border-left-color:#9aa4b1}
+.hub-achievements li[data-got=true][data-tier="3"]{border-left-color:#d4a017}
+.hub-achievements li[data-got=false] b{color:var(--muted)}
+.hub-achievements small{font-size:12px;color:var(--muted)}
+.hub-achievements progress{width:100%;height:6px;border:0;border-radius:3px;background:var(--line);overflow:hidden;-webkit-appearance:none;appearance:none}
+.hub-achievements progress::-webkit-progress-bar{background:var(--line)}
+.hub-achievements progress::-webkit-progress-value{background:var(--accent)}
+.hub-achievements progress::-moz-progress-bar{background:var(--accent)}
+.hub-records{width:100%;border-collapse:collapse;font-size:13px}
+.hub-records th,.hub-records td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+.hub-records th[scope=row],.hub-records thead th:first-child{text-align:left;font-weight:600}
+.hub-records thead th{color:var(--muted);font-weight:500}
+.hub-game-progress{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.hub-game-progress>span{padding:2px 8px;border-radius:999px;background:var(--surface-hover);color:var(--text);font-size:11px;font-weight:600}
