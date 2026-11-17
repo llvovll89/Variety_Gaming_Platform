@@ -43,7 +43,7 @@ test('old records come in once, read-only, and unlock what they already earned',
     assert.deepEqual(s.games['ghost-movers'].progress, { cleared: 2, stars: 5 }, 'out-of-range levels ignored');
     assert.deepEqual(s.games['ten-seconds'].progress, { cleared: 2, stars: 4 });
     assert.equal(s.games['fantasy-tactics']?.progress.chapter, undefined, 'a broken save is skipped, not fatal');
-    assert.ok(s.achievements['hachuping-whack-a-mole/hard400'] && s.achievements['hachuping-dodge/nightmare'] && s.achievements['night-train/win1']);
+    assert.ok(s.achievements['hachuping-whack-a-mole/hard700'] === undefined && s.achievements['hachuping-whack-a-mole/first'] === undefined && s.achievements['hachuping-dodge/nightmare'] && s.achievements['hachuping-dodge/nightmare'] && s.achievements['night-train/win1']);
     assert.ok(s.achievements['hachuping-jump/best500']);
     for (const [key, value] of Object.entries(OLD)) assert.equal(store.get(key), value, `${key} untouched`);
     const runsBefore = s.games['night-train'].runs;

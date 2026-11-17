@@ -49,13 +49,13 @@ export const meta: GameMeta = {
       }
     },
     {
-      "id": "normal300",
-      "title": "보통 300점",
-      "description": "보통에서 300점",
+      "id": "normal500",
+      "title": "보통 500점",
+      "description": "보통에서 500점",
       "tier": 2,
       "rule": {
         "kind": "best",
-        "atLeast": 300,
+        "atLeast": 500,
         "difficulty": "normal"
       },
       "kids": {
@@ -64,13 +64,13 @@ export const meta: GameMeta = {
       }
     },
     {
-      "id": "hard400",
-      "title": "어려움 400점",
-      "description": "어려움에서 400점",
+      "id": "hard700",
+      "title": "어려움 700점",
+      "description": "어려움에서 700점",
       "tier": 2,
       "rule": {
         "kind": "best",
-        "atLeast": 400,
+        "atLeast": 700,
         "difficulty": "hard"
       },
       "kids": {
@@ -99,8 +99,8 @@ export const meta: GameMeta = {
       "label": "{difficulty}에서 {n}점 넘기",
       "stat": "score",
       "range": [
-        150,
-        350
+        300,
+        600
       ],
       "step": 50,
       "difficulty": [

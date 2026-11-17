@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PauseIcon } from '@phosphor-icons/react/dist/icons/Pause';
 import { SpeakerHighIcon } from '@phosphor-icons/react/dist/icons/SpeakerHigh';
 import { SpeakerSlashIcon } from '@phosphor-icons/react/dist/icons/SpeakerSlash';
@@ -18,7 +18,10 @@ import { useLeaderboard } from '../../shared/hooks/useLeaderboard';
 import { emptySnapshot } from './game/uiStore';
 import type { GameProps } from '../../platform/types';
 import type { WhackAMoleEngine } from './game/engine';
-import { DIFFICULTY_CONFIGS, type DifficultyLevel } from './game/constants';
+import { DIFFICULTY_CONFIGS, GAME_TOTAL_TIME, type DifficultyLevel } from './game/constants';
+import { useRecords } from '../../platform/meta/api';
+import { RewardStrip } from '../../platform/meta/RewardStrip';
+import type { RunRewards } from '../../platform/meta/types';
 import './mole.css';
 const FALLBACK=emptySnapshot();
 const ID='hachuping-whack-a-mole';
@@ -51,10 +54,21 @@ function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,lega
   const {highScore,previousBest,submitScore}=useHighScore(`${ID}:${difficulty}`);
   const {leaderboard,submitScore:submitRanking}=useLeaderboard(`${ID}:${difficulty}`);
   const s=useUISnapshot(engine?.uiStore??null,FALLBACK);
-  const start=useCallback(()=>{setEngine(null);setRank(null);setPlayKey(k=>k+1);setScreen('playing');},[]);
+  const records=useRecords();
+  const [rewards,setRewards]=useState<RunRewards|null>(null);
+  const reportedFor=useRef(-1);
+  const start=useCallback(()=>{setEngine(null);setRank(null);setRewards(null);setPlayKey(k=>k+1);setScreen('playing');},[]);
   const finish=useCallback((score:number)=>{submitScore(score);setRank(submitRanking(score));setScreen('game-over');},[submitScore,submitRanking]);
   const menu=useCallback(()=>{engine?.destroy();setEngine(null);setScreen('menu');},[engine]);
   useEffect(()=>{if(engine&&screen==='playing'&&engine.getGameState().status==='idle')engine.startGame();},[engine,screen]);
+  // Tell the arcade how the run went (bests, achievements, today's challenge), once per run.
+  useEffect(()=>{
+    if(screen!=='game-over'||!engine||reportedFor.current===playKey) return;
+    reportedFor.current=playKey;
+    const g=engine.getGameState();
+    setRewards(records.reportRun({difficulty,score:g.finalScore??g.score,durationMs:GAME_TOTAL_TIME*1000,outcome:'complete',
+      stats:{hits:g.totalMolesHit,combo:g.bestCombo,accuracy:g.attempts?Math.round(g.totalMolesHit/g.attempts*100):0}}));
+  },[screen,engine,playKey,records,difficulty]);
   // Looking away, Escape or P pauses; Escape on the pause dialog resumes.
   useAutoPause({active:!!engine&&screen==='playing'&&(s.status==='ready'||s.status==='playing'),onPause:()=>engine?.pauseGame()});
   return <div className="mole-game">
@@ -64,7 +78,7 @@ function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,lega
       <HUD uiSnapshot={s}/>
       {s.status==='ready'&&<div className="mole-countdown" role="status"><span>손가락 준비!</span><strong key={Math.ceil(s.countdown)}>{Math.max(1,Math.ceil(s.countdown))}</strong><p>두더지가 올라오면 톡!</p></div>}
       {s.status==='paused'&&<GameDialog label="일시정지" onClose={()=>engine?.resumeGame()} className="mole-dialog"><div className="mole-pause-panel"><PauseIcon size={36} weight="fill"/><h2>잠깐, 숨 고르기.</h2><p>남은 시간 {Math.ceil(s.timeRemaining)}초 · 현재 {s.score}점</p><button {...AUTOFOCUS} className="mole-primary" onClick={()=>engine?.resumeGame()}><PlayIcon size={19} weight="fill"/> 계속하기</button><button className="mole-quiet" onClick={menu}><ArrowLeftIcon size={18}/> 메뉴로 돌아가기</button><SettingsPanel compact gameId={ID} gameTitle="두더지 잡기"/></div></GameDialog>}
-      {screen==='game-over'&&<GameOverWithLeaderboard difficulty={difficulty} previousBest={previousBest} finalScore={s.finalScore??s.score} bestScore={highScore} leaderboard={leaderboard} playerRank={rank} onRestart={start} onMainMenu={menu} snapshot={s}/>}
+      {screen==='game-over'&&<GameOverWithLeaderboard difficulty={difficulty} previousBest={previousBest} finalScore={s.finalScore??s.score} bestScore={highScore} leaderboard={leaderboard} playerRank={rank} onRestart={start} onMainMenu={menu} snapshot={s} rewards={<RewardStrip rewards={rewards} audience="kids"/>}/>}
     </>}
   </div>;
 }
