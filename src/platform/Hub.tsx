@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRightIcon, ArrowUpRightIcon, CaretLeftIcon, CaretRightIcon, DesktopIcon, GameControllerIcon, MagnifyingGlassIcon, MoonIcon, PlayIcon, SunIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowRightIcon, ArrowUpRightIcon, CaretLeftIcon, CaretRightIcon, DesktopIcon, GameControllerIcon, GearSixIcon, MagnifyingGlassIcon, MoonIcon, PlayIcon, SunIcon, XIcon } from "@phosphor-icons/react";
 import type { GameDefinition, GameGenre } from "./types";
 import { availableGames, comingSoonGames, filterHubGames, HUB_GENRES, readRecentGameIds } from "./hubCatalog";
 import { safeGetItem, safeSetItem } from "../shared/storage";
 import { PLAY_INFO, TIME_CHOICES, gamesForTime, type TimeChoice } from "./playExperience";
 import { savedProgressLabel } from "./savedProgress";
+import { GameDialog } from "../shared/kit/GameDialog";
+import { SettingsPanel } from "../shared/kit/SettingsPanel";
 import "./hub.css";
 
 interface HubProps {
@@ -45,6 +47,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
   const [savesLoading, setSavesLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<"전체" | GameGenre>("전체");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     const value = safeGetItem(THEME_KEY);
     return value === "light" || value === "dark" ? value : "system";
@@ -96,6 +99,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
       <span className="hub-logo">GH ARCADE</span>
       <button type="button" className="hub-find" onClick={jumpToSearch}><MagnifyingGlassIcon size={18} /><span>게임 찾기</span></button>
       <div className="hub-account">
+        <button type="button" className="hub-theme" onClick={() => setSettingsOpen(true)} aria-label="설정" title="설정"><GearSixIcon size={20} /></button>
         <button type="button" className="hub-theme" onClick={cycleTheme} aria-label={`화면 테마: ${THEME_NAMES[theme]}. ${THEME_NAMES[NEXT_THEME[theme]]}으로 변경`} title={`화면 테마: ${THEME_NAMES[theme]}`}><ThemeIcon size={20} /></button>
         <span className="hub-me"><img src={profile.characterImage} alt="" width={32} height={32} /><span>{profile.name || "플레이어"}</span></span>
       </div>
@@ -162,6 +166,12 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-soon-grid">{upcoming.map(game => <article key={game.id} className="hub-soon"><Cover game={game} /><div><span className="hub-soon-status">준비 중</span><h3>{game.title}</h3><p>{game.description}</p></div></article>)}</div>
       </section>}
     </main>
+    {settingsOpen && <GameDialog label="설정" onClose={() => setSettingsOpen(false)} closeOnBackdrop className="hub-settings">
+      <h2 className="kit-title">설정</h2>
+      <p className="kit-summary">모든 게임에 함께 적용돼요.</p>
+      <SettingsPanel />
+      <div className="kit-actions"><button type="button" className="kit-btn kit-btn-primary" onClick={() => setSettingsOpen(false)}>닫기</button></div>
+    </GameDialog>}
     <footer className="hub-foot"><span className="hub-logo">GH ARCADE</span><p>지금 할 수 있는 게임 {playableAll.length}개{upcoming.length > 0 && `, 준비 중인 게임 ${upcoming.length}개`}</p><button type="button" onClick={jumpToSearch}>게임 찾기<ArrowRightIcon size={16} /></button></footer>
   </div>;
 }
