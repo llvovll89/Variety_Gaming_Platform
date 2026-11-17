@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
-const result = await build({ stdin: { contents: 'export * from "./src/games/kitchen-fighter/engine.ts"; export * from "./src/games/kitchen-fighter/controls.ts"; export * from "./src/games/kitchen-fighter/pose.ts";', resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
-const { Fight, movementInput, photoSize, fighterPose, WEAPON_LENGTH, WEAPONS, MOVES } = await import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'));
+const result = await build({ stdin: { contents: 'export * from "./src/games/kitchen-fighter/engine.ts"; export * from "./src/games/kitchen-fighter/controls.ts"; export * from "./src/games/kitchen-fighter/pose.ts"; export * from "./src/games/kitchen-fighter/characters.ts";', resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
+const { Fight, movementInput, photoSize, fighterPose, WEAPON_LENGTH, WEAPONS, MOVES, readCharacters, saveCharacterSettings, savePhoto, CHARACTERS_KEY, photoKey } = await import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'));
 function battle(weapon = 'spatula') { const f = new Fight('local', [weapon, 'spatula']); f.phase = 'fight'; f.fighters[0].x = 450; f.fighters[1].x = 575; return f; }
 function advance(f, seconds) { for (let t = 0; t < seconds; t += .01) f.step(.01); }
 test('startup, recovery and one hit per attack prevent instant or repeated damage', () => {
@@ -135,4 +135,25 @@ test('tapped sidestep bursts sideways faster than walking and dodges a straight 
 test('knockback slides the target over several frames instead of teleporting', () => {
   const f = battle(); f.attack(0, 'jab'); advance(f, .11); const x = f.fighters[1].x; advance(f, .1);
   assert.ok(f.fighters[1].x > x); assert.ok(f.fighters[1].x - x < 25);
+});
+
+test('a photo too big for storage never takes the names and weapons down with it', () => {
+  const store = new Map(); let quota = Infinity;
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, removeItem: k => store.delete(k), setItem: (k, v) => { if (v.length > quota) throw new Error('QuotaExceededError'); store.set(k, String(v)); } };
+  try {
+    const big = 'data:image/png;base64,' + 'A'.repeat(5000);
+    const chars = readCharacters('나');
+    chars[0] = { ...chars[0], name: '새 이름', weapon: 'swatter', photo: big, zoom: 1.5 };
+    quota = 1000;
+    saveCharacterSettings(chars);
+    assert.equal(savePhoto(0, big), false, 'a refused photo is reported');
+    assert.ok(!store.get(CHARACTERS_KEY).includes('base64'), 'settings never carry the photo');
+    const back = readCharacters('나');
+    assert.equal(back[0].name, '새 이름'); assert.equal(back[0].weapon, 'swatter'); assert.equal(back[0].zoom, 1.5); assert.equal(back[0].photo, '');
+    quota = Infinity;
+    assert.equal(savePhoto(0, big), true); assert.equal(readCharacters('나')[0].photo, big);
+    assert.equal(savePhoto(0, ''), true); assert.equal(store.has(photoKey(0)), false);
+    store.set(CHARACTERS_KEY, JSON.stringify([{ name: '옛 저장', weapon: 'spatula', photo: big, photoVersion: 2 }, {}]));
+    assert.equal(readCharacters('나')[0].photo, big, 'old inline photos still load');
+  } finally { delete globalThis.localStorage; }
 });
