@@ -53,3 +53,11 @@ test('balloons that leave the sky are removed and survivors keep rising',()=>{
  assert.deepEqual(advanceBalloons([a,b],.1),[b]);assert.ok(b.y<400);
 });
 
+test('every screen width gets the same number of balloons to pop',()=>{
+ const counts=[[390,844],[1200,760],[2560,900]].map(([w,h])=>{
+  const e=engine();e.resize(w,h,1);let spawned=0;const realRandom=Math.random;Math.random=()=>0.99;
+  try{for(let i=0;i<20;i++){e.balloons=[];e.spawnTimer=0;e.stepWorld(0.001);spawned+=e.balloons.length;}}finally{Math.random=realRandom;}
+  return spawned;
+ });
+ assert.ok(counts[0]>0);assert.deepEqual(counts,[counts[0],counts[0],counts[0]]);
+});

@@ -8,12 +8,14 @@ interface GameOverProps {
   previousBest: number;
   snapshot: UISnapshot;
   leaderboard: LeaderboardEntry[];
+  /** Records are kept per difficulty, so the board says whose they are. */
+  difficultyName: string;
   playerRank: number | null; // rank if entered top 10, null otherwise
   onRestart: () => void;
   onMainMenu: () => void;
 }
 
-export default function GameOverWithLeaderboard({ finalScore, previousBest, snapshot, leaderboard, playerRank, onRestart, onMainMenu }: GameOverProps) {
+export default function GameOverWithLeaderboard({ finalScore, previousBest, snapshot, leaderboard, difficultyName, playerRank, onRestart, onMainMenu }: GameOverProps) {
   const tries = snapshot.totalCorrect + snapshot.totalWrong;
   const accuracy = tries ? Math.round((snapshot.totalCorrect / tries) * 100) : 0;
   return (
@@ -23,7 +25,7 @@ export default function GameOverWithLeaderboard({ finalScore, previousBest, snap
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--cm-muted)" }}>시간 끝!</p>
           <h2 id="cm-result-title" className="cm-num" style={{ margin: "2px 0 0", fontSize: 56, lineHeight: 1.1 }}>{finalScore}<span style={{ fontSize: 22, marginLeft: 4 }}>점</span></h2>
           <ScoreFeedback score={finalScore} previousBest={previousBest} unit="점" />
-          {playerRank && <p style={{ margin: "4px 0 0", fontSize: 14, fontWeight: 800, color: "var(--cm-ok)" }}>이 기기 기록 {playerRank}위에 올랐어요</p>}
+          {playerRank && <p style={{ margin: "4px 0 0", fontSize: 14, fontWeight: 800, color: "var(--cm-ok)" }}>{difficultyName} 기록 {playerRank}위에 올랐어요</p>}
         </div>
 
         <dl style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, margin: "20px 0", textAlign: "center" }}>
@@ -38,8 +40,8 @@ export default function GameOverWithLeaderboard({ finalScore, previousBest, snap
 
         {leaderboard.length > 0 && (
           <section aria-labelledby="cm-board-title" style={{ marginBottom: 20 }}>
-            <h3 id="cm-board-title" style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 800 }}>이 기기 TOP {Math.min(10, leaderboard.length)}</h3>
-            <ol tabIndex={0} aria-label="이 기기 순위" style={{ listStyle: "none", margin: 0, padding: 4, maxHeight: 176, overflowY: "auto", border: "1px solid var(--cm-line)", borderRadius: 16 }}>
+            <h3 id="cm-board-title" style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 800 }}>이 기기 {difficultyName} TOP {Math.min(10, leaderboard.length)}</h3>
+            <ol tabIndex={0} aria-label={`이 기기 ${difficultyName} 순위`} style={{ listStyle: "none", margin: 0, padding: 4, maxHeight: 176, overflowY: "auto", border: "1px solid var(--cm-line)", borderRadius: 16 }}>
               {leaderboard.map((entry, i) => {
                 const mine = playerRank === i + 1;
                 return (

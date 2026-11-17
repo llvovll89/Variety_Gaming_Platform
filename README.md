@@ -46,7 +46,6 @@
 - **기타**: zod (저장 데이터 검증), Phosphor Icons, Pretendard
 - **테스트**: Node 내장 테스트 러너 (`node --test`)
 - **배포**: Vercel
-- **삼국 영지 서버(apps/three-kingdoms-web)**: Next.js App Router, Prisma, Supabase(Postgres) — 아직 작업 중
 
 ## 폴더 구조
 
@@ -56,8 +55,6 @@ src/
   games/           게임별 폴더. 각자 game/ (엔진·규칙) + components/ (React UI) + hooks/
   shared/          공통 컴포넌트(일시정지, 게임오버), 하이스코어, 프로필·캐릭터, localStorage 래퍼
 tests/             게임별 로직 테스트
-apps/
-  three-kingdoms-web/   삼국 영지를 서버 기반으로 옮기는 Next.js 프로젝트
 ```
 
 새 게임을 추가할 때는 `src/games/`에 폴더를 만들고 `gameRegistry.ts`에 한 줄만 추가하면 허브에 나타납니다.
@@ -106,5 +103,3 @@ npm run dev       # 개발 서버
 npm test          # 테스트
 npm run build     # 타입 체크 + 빌드
 ```
-
-삼국 영지 서버 쪽은 `apps/three-kingdoms-web/README.md`를 참고해 주세요.

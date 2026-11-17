@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import PlayField from "./components/PlayField";
 import StartMenu from "./components/StartMenu";
@@ -6,7 +6,7 @@ import PauseDialog from "./components/PauseDialog";
 import GameOverWithLeaderboard from "./components/GameOverWithLeaderboard";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
-import { useLeaderboard } from "../../shared/hooks/useLeaderboard";
+import { useLeaderboard, type LeaderboardEntry } from "../../shared/hooks/useLeaderboard";
 import { gameStorageKey, safeGetItem, safeSetItem } from "../../shared/storage";
 import { emptySnapshot } from "./game/uiStore";
 import { ColorMatchEngine } from "./game/engine";
@@ -37,36 +37,55 @@ function readPrefs(): Prefs {
 }
 
 export default function HachupingColorMatchApp({ onExit }: GameProps) {
-  const [screen, setScreen] = useState<Screen>("menu");
   const [prefs, setPrefs] = useState<Prefs>(readPrefs);
+  // Records from before they were split by difficulty; kept apart because their difficulty is unknown.
+  const { highScore: legacyBest } = useHighScore(GAME_ID);
+  const { leaderboard: legacyLeaderboard } = useLeaderboard(GAME_ID);
+  // The menu remounts with the new difficulty, so it puts keyboard focus back on the chosen level.
+  const [focusDifficulty, setFocusDifficulty] = useState(false);
+  const choose: SessionProps["chooseDifficulty"] = (difficulty) => { setFocusDifficulty(true); setPrefs((p) => ({ ...p, difficulty })); };
+  // Only that one remount: a later return to the menu (after a game) must not pull focus.
+  useEffect(() => { if (focusDifficulty) setFocusDifficulty(false); }, [focusDifficulty]);
+  useEffect(() => { setSoundMuted(prefs.muted); safeSetItem(PREFS_KEY, JSON.stringify(prefs)); }, [prefs]);
+  // Score hooks load on mount, so each difficulty gets its own session (and its own best and TOP 10).
+  return <DifficultySession key={prefs.difficulty} prefs={prefs} setPrefs={setPrefs} chooseDifficulty={choose} focusDifficulty={focusDifficulty} legacyBest={legacyBest} legacyLeaderboard={legacyLeaderboard} onExit={onExit} />;
+}
+
+interface SessionProps extends Pick<GameProps, "onExit"> {
+  prefs: Prefs;
+  setPrefs: Dispatch<SetStateAction<Prefs>>;
+  chooseDifficulty: (difficulty: DifficultyLevel) => void;
+  focusDifficulty: boolean;
+  legacyBest: number;
+  legacyLeaderboard: LeaderboardEntry[];
+}
+
+function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDifficulty, legacyBest, legacyLeaderboard }: SessionProps) {
+  const [screen, setScreen] = useState<Screen>("menu");
   const [engine, setEngine] = useState<ColorMatchEngine | null>(null);
   const [finalScore, setFinalScore] = useState(0);
-  const [previousBest, setPreviousBest] = useState(0);
   const [playerRank, setPlayerRank] = useState<number | null>(null);
-  const { highScore, submitScore } = useHighScore(GAME_ID);
-  const { leaderboard, submitScore: submitToLeaderboard } = useLeaderboard(GAME_ID);
+  const recordId = `${GAME_ID}:${prefs.difficulty}`;
+  const { highScore, previousBest, submitScore } = useHighScore(recordId);
+  const { leaderboard, submitScore: submitToLeaderboard } = useLeaderboard(recordId);
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
   // The engine reports game over from inside its loop; keep the latest callbacks without restarting it.
   const finish = useRef<(score: number) => void>(() => {});
   finish.current = (score: number) => {
-    setPreviousBest(highScore);
     setFinalScore(score);
     submitScore(score);
     setPlayerRank(submitToLeaderboard(score));
     setScreen("game-over");
   };
 
-  useEffect(() => { setSoundMuted(prefs.muted); safeSetItem(PREFS_KEY, JSON.stringify(prefs)); }, [prefs]);
-
-  const begin = useCallback((difficulty: DifficultyLevel) => {
-    setPrefs((p) => ({ ...p, difficulty }));
+  const begin = useCallback(() => {
     setPlayerRank(null);
-    const next = new ColorMatchEngine(highScore, (score) => finish.current(score), difficulty);
+    const next = new ColorMatchEngine(highScore, (score) => finish.current(score), prefs.difficulty);
     setEngine(next);
     setScreen("playing");
     next.startGame();
-  }, [highScore]);
+  }, [highScore, prefs.difficulty]);
 
   const toMenu = useCallback(() => {
     setEngine(null);
@@ -109,9 +128,13 @@ export default function HachupingColorMatchApp({ onExit }: GameProps) {
         <>
           <button className="cm-back" onClick={onExit}><ArrowLeftIcon size={14} weight="bold" /> 허브로</button>
           <StartMenu
-            initialDifficulty={prefs.difficulty}
+            difficulty={prefs.difficulty}
+            onDifficultyChange={chooseDifficulty}
+            focusDifficulty={focusDifficulty}
             patterns={prefs.patterns}
             bestScore={highScore}
+            legacyBest={legacyBest}
+            legacyLeaderboard={legacyLeaderboard}
             onTogglePatterns={() => setPrefs((p) => ({ ...p, patterns: !p.patterns }))}
             onStart={begin}
           />
@@ -136,8 +159,9 @@ export default function HachupingColorMatchApp({ onExit }: GameProps) {
           previousBest={previousBest}
           snapshot={snapshot}
           leaderboard={leaderboard}
+          difficultyName={DIFFICULTY_CONFIGS[prefs.difficulty].name}
           playerRank={playerRank}
-          onRestart={() => begin(prefs.difficulty)}
+          onRestart={begin}
           onMainMenu={toMenu}
         />
       )}
