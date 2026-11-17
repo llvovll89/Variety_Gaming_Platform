@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { PlaySession } from '../playSessionContext';
 import { evaluate, unlockManual } from './achievements';
 import { addDailyRun, addStreakDay, dailyChallenge, localDateKey } from './daily';
-import { addProgress, addRun, bestOf } from './records';
+import { addProgress, addRun, bestOf, mergeLegacy } from './records';
 import { metaStore } from './store';
 import type { DailyChallenge, GameMeta, RunReport, RunRewards, UnlockedAchievement } from './types';
 
@@ -89,4 +89,24 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
 /** The records API for the running game (a no-op outside the arcade shell). */
 export function useRecords(): RecordsApi {
   return useContext(PlaySession)?.records ?? offlineRecords;
+}
+
+/**
+ * Brings in each game's records from before the arcade-wide store, once per adapter version.
+ * Achievements those records already earn unlock quietly. Old keys are only read.
+ */
+export function importLegacyRecords(games: readonly { id: string; meta?: GameMeta }[], get: (key: string) => string | null, now = Date.now()): void {
+  metaStore.update(state => {
+    let next = state;
+    for (const game of games) {
+      const legacy = game.meta?.legacy;
+      if (!legacy || (next.importedLegacy[game.id] ?? 0) >= legacy.version) continue;
+      let found;
+      try { found = legacy.read(get); } catch { found = {}; } // a broken old value is skipped, not fatal
+      const order = game.meta?.scoreOrder ?? 'high';
+      next = mergeLegacy(next, game.id, found, legacy.version, order);
+      next = evaluate(next, game.id, game.meta?.achievements ?? [], order, now).state;
+    }
+    return next;
+  });
 }

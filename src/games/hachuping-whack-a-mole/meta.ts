@@ -128,5 +128,15 @@ export const meta: GameMeta = {
       ],
       "step": 2
     }
-  ]
+  ],
+  legacy: {
+    version: 1,
+    read(get) {
+      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
+      const best: Record<string, number> = {};
+      for (const d of ['easy', 'normal', 'hard']) best[`default|${d}`] = num(get(`arcade:hachuping-whack-a-mole:{d}:highScore`.replace('{d}', d)));
+      best['legacy|-'] = num(get('arcade:hachuping-whack-a-mole:highScore'));
+      return { best };
+    },
+  },
 };

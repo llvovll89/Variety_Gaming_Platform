@@ -1,4 +1,4 @@
-import type { GameRecord, MetaState, RunReport, ScoreOrder } from './types';
+import type { GameRecord, LegacyRecord, MetaState, RunReport, ScoreOrder } from './types';
 
 /** Pure record keeping: every function returns a new state and never touches storage. */
 
@@ -75,4 +75,23 @@ export function addProgress(state: MetaState, gameId: string, key: string, value
   const before = state.games[gameId] ?? emptyRecord();
   if ((before.progress[key] ?? -Infinity) >= value) return state;
   return { ...state, games: { ...state.games, [gameId]: { ...before, progress: { ...before.progress, [key]: value } } } };
+}
+
+const count = (n: unknown) => (finite(n) && n >= 0 ? n : 0);
+
+/** Merges records a game kept before (bests, progress, run counts) without lowering anything. */
+export function mergeLegacy(state: MetaState, gameId: string, legacy: LegacyRecord, version: number, order: ScoreOrder = 'high'): MetaState {
+  const before = state.games[gameId] ?? emptyRecord();
+  const record: GameRecord = { ...before, best: { ...before.best }, progress: { ...before.progress } };
+  for (const [key, value] of Object.entries(legacy.best ?? {})) {
+    if (!finite(value) || key.length > MAX_STAT_KEY) continue;
+    if (order === 'high' && value <= 0) continue; // 0 points is "never played", not a record
+    if (isBetter(order, value, record.best[key])) record.best[key] = value;
+  }
+  for (const [key, value] of Object.entries(legacy.progress ?? {})) {
+    if (finite(value) && key.length <= MAX_STAT_KEY && value > (record.progress[key] ?? 0)) record.progress[key] = value;
+  }
+  record.runs = Math.max(record.runs, count(legacy.runs));
+  record.wins = Math.max(record.wins, count(legacy.wins));
+  return { ...state, games: { ...state.games, [gameId]: record }, importedLegacy: { ...state.importedLegacy, [gameId]: version } };
 }

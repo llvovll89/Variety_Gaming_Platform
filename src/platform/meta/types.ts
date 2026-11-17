@@ -84,12 +84,26 @@ export interface DailyTemplate {
   seeded?: boolean;
 }
 
-/** Data a game declares about its records. No code, so the registry can load it eagerly. */
+/** Records a game kept on its own before the arcade-wide store, read once (never written). */
+export interface LegacyRecord {
+  best?: Record<string, number>;
+  progress?: Record<string, number>;
+  runs?: number;
+  wins?: number;
+}
+export interface LegacyAdapter {
+  /** Raise to read the old keys again (e.g. after fixing the adapter). */
+  version: number;
+  read(get: (key: string) => string | null): LegacyRecord;
+}
+
+/** Data a game declares about its records. Small and import-free, so the registry can load it eagerly. */
 export interface GameMeta {
   scoreOrder?: ScoreOrder;
   scoreUnit?: string;
   achievements: AchievementDef[];
   daily?: DailyTemplate[];
+  legacy?: LegacyAdapter;
 }
 
 export interface DailyChallenge {

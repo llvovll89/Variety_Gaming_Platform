@@ -77,5 +77,14 @@ export const meta: GameMeta = {
       ],
       "step": 1
     }
-  ]
+  ],
+  legacy: {
+    version: 1,
+    read(get) {
+      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
+      const r = JSON.parse(get('arcade:night-train:records') ?? 'null');
+      if (!r || typeof r !== 'object') return {};
+      return { runs: num(r.runs), wins: num(r.wins), best: { 'default|-': num(r.bestScore) }, progress: { station: num(r.bestFloor) } };
+    },
+  },
 };

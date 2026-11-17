@@ -71,5 +71,13 @@ export const meta: GameMeta = {
         "atLeast": 72
       }
     }
-  ]
+  ],
+  legacy: {
+    version: 1,
+    read(get) {
+      const p = JSON.parse(get('gh-ghost-movers-v1') ?? 'null');
+      const stars = Object.entries(p?.best ?? {}).filter(([i, v]) => Number(i) < 24 && Number.isInteger((v as { stars?: unknown })?.stars)).map(([, v]) => Math.min(3, Math.max(1, (v as { stars: number }).stars)));
+      return { progress: { cleared: stars.length, stars: stars.reduce((a, b) => a + b, 0) } };
+    },
+  },
 };

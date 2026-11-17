@@ -67,5 +67,13 @@ export const meta: GameMeta = {
         "atLeast": 20
       }
     }
-  ]
+  ],
+  legacy: {
+    version: 1,
+    read(get) {
+      // The save holds the chapter being played; the ones before it are cleared.
+      const s = JSON.parse(get('gh-arcade:fantasy-tactics:v1') ?? 'null');
+      return Number.isInteger(s?.stage) && s.stage >= 0 && s.stage <= 6 ? { progress: { chapter: s.stage } } : {};
+    },
+  },
 };
