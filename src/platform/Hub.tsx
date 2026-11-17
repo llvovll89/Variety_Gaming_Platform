@@ -7,6 +7,7 @@ import { PLAY_INFO, TIME_CHOICES, gamesForTime, type TimeChoice } from "./playEx
 import { savedProgressLabel } from "./savedProgress";
 import { GameDialog } from "../shared/kit/GameDialog";
 import { SettingsPanel } from "../shared/kit/SettingsPanel";
+import { TodayCard } from "./meta/TodayCard";
 import "./hub.css";
 
 interface HubProps {
@@ -120,6 +121,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
           {quickGame ? <div className="hub-quick-pick" aria-live="polite"><span><strong>{quickGame.title}</strong><small>{PLAY_INFO[quickGame.id]?.duration} · {PLAY_INFO[quickGame.id]?.controls}</small></span><div><button type="button" className="hub-play" onClick={() => onSelect(quickGame.id)}><PlayIcon size={17} weight="fill"/>시작하기</button>{quickGames.length > 1 && <button type="button" className="hub-another" onClick={() => setQuickIndex(index => index + 1)}>다른 게임</button>}</div></div> : <p role="status">이 시간에 맞는 게임을 준비하고 있어요. 다른 시간을 골라 주세요.</p>}
         </div>
       </section>
+      <TodayCard games={playableAll} onSelect={id => onSelect(id)} />
       {stage && <section className="hub-feature" aria-label="추천 게임">
         <div className="hub-feature-stage">
           <div className="hub-feature-art"><Cover key={stage.id} game={stage} featured /></div>

@@ -106,3 +106,28 @@
 .hub-play-facts{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:11px;line-height:1.65;color:var(--muted);margin-top:3px}.hub-play-facts>span{display:inline-block}.hub-play-facts>span:first-child{font-weight:700;color:var(--text)}.hub-feature-info>.hub-play-facts{margin-top:16px}
 @media(max-width:767px){.hub-start{grid-template-columns:1fr;gap:22px;padding:20px;margin-bottom:20px}.hub-continue{padding:0 0 20px;border-right:0;border-bottom:1px solid var(--line)}.hub-start h2{font-size:19px}.hub-time-choices{gap:6px}.hub-time-choices button{padding:8px 10px}.hub-quick-pick{align-items:flex-start;flex-direction:column;gap:14px}.hub-play-facts{font-size:11px}}
 .hub-settings{--kit-surface:var(--surface);--kit-ink:var(--text);--kit-muted:var(--muted);--kit-line:var(--line);--kit-accent:var(--accent);--kit-on-accent:var(--accent-ink);--kit-radius:8px;--kit-backdrop:#0007}
+/* Today's challenges and this week's stamps. */
+.hub-today{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px;align-items:start;margin-top:16px;padding:24px;border-radius:6px;background:var(--surface)}
+.hub-today-head{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.hub-today-head h2{display:flex;gap:10px;align-items:baseline}
+.hub-today-head h2>span{font-size:14px;font-weight:400;color:var(--muted)}
+.hub-today-head p{color:var(--muted);font-size:13px}
+.hub-today-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.hub-today-list button:not(.kit-btn){display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--page);text-align:left}
+.hub-today-list button:hover{border-color:var(--accent)}
+.hub-today-list img{width:64px;height:36px;flex-shrink:0;border-radius:4px;object-fit:cover;background:var(--skeleton)}
+.hub-today-list button>span{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.hub-today-list small{color:var(--muted);font-size:11px}
+.hub-today-list strong{font-size:13px;font-weight:600;line-height:1.4}
+.hub-today-list svg{flex-shrink:0;color:var(--muted)}
+.hub-today-list .hub-today-done{color:var(--accent)}
+.hub-today-week{grid-row:2;grid-column:2;display:flex;flex-direction:column;align-items:center;gap:8px}
+.hub-today-week ol{display:flex;gap:6px;margin:0;padding:0;list-style:none}
+.hub-today-week li{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hub-today-week li>span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;border:1px dashed var(--line);color:var(--accent-ink);font-size:13px}
+.hub-today-week li[data-on=true]>span{border:0;background:var(--accent)}
+.hub-today-week li[data-today=true]>span{outline:2px solid var(--accent);outline-offset:2px}
+.hub-today-week small{color:var(--muted);font-size:11px}
+.hub-today-week p{color:var(--muted);font-size:12px}
+@media(max-width:1023px){.hub-today{grid-template-columns:1fr}.hub-today-week{grid-row:auto;grid-column:auto}.hub-today-list{grid-template-columns:1fr}}
+@media(max-width:767px){.hub-today{padding:18px}}

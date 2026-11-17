@@ -106,6 +106,9 @@ export interface LegacyAdapter {
 
 /** Data a game declares about its records. Small and import-free, so the registry can load it eagerly. */
 export interface GameMeta {
+  /** The game calls reportRun when a run ends. Only these games offer daily challenges on the hub,
+   * since a challenge nobody can complete would be a broken promise. */
+  reportsRuns?: boolean;
   scoreOrder?: ScoreOrder;
   scoreUnit?: string;
   achievements: AchievementDef[];
