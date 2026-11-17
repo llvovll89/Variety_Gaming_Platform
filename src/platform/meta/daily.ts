@@ -103,18 +103,22 @@ export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: Ru
   if (!check.matches) return { state };
   const today = state.daily[challenge.date] ?? {};
   const before = today[challenge.gameId];
-  const better = check.value !== null && (before === undefined || (challenge.compare === 'atMost' ? check.value < before.best : check.value > before.best));
+  const previous = before?.best ?? null;
+  // A run without the stat leaves the best as it was (null until a real value arrives).
+  const better = check.value !== null && (previous === null || (challenge.compare === 'atMost' ? check.value < previous : check.value > previous));
   const done = (before?.done ?? false) || check.done;
   const justCompleted = done && !before?.done;
-  const entry = { done, best: better ? check.value! : before?.best ?? (check.value ?? 0) };
+  const entry = { done, best: better ? check.value : previous };
+  // Keep this day and the 13 before it; days after it (a clock that was once ahead) are dropped.
   const daily: MetaState['daily'] = {};
-  for (const date of Object.keys(state.daily).sort().slice(-(DAILY_KEEP_DAYS - 1))) if (date !== challenge.date) daily[date] = state.daily[date];
+  const kept = Object.keys(state.daily).filter(date => date < challenge.date).sort().slice(-(DAILY_KEEP_DAYS - 1));
+  for (const date of kept) daily[date] = state.daily[date];
   daily[challenge.date] = { ...today, [challenge.gameId]: entry };
   let games = state.games;
   if (justCompleted) {
     // Completed challenges are counted forever (for achievements), even after the day is dropped.
     const record = games[challenge.gameId] ?? emptyRecord();
-    games = { ...games, [challenge.gameId]: { ...record, totals: { ...record.totals, daily: (record.totals.daily ?? 0) + 1 } } };
+    games = { ...games, [challenge.gameId]: { ...record, dailyDone: record.dailyDone + 1 } };
   }
   return { state: { ...state, daily, games }, result: { id: challenge.id, label: challenge.label, completed: done, justCompleted } };
 }
@@ -129,8 +133,10 @@ const RECENT_DAYS = 35;
 export function addStreakDay(state: MetaState, today: string, run: RunReport): { state: MetaState; streak: { days: number; extendedToday: boolean } } {
   const counts = run.durationMs >= STREAK_MIN_MS || run.outcome === 'win' || run.outcome === 'complete';
   const days = state.days;
-  if (!counts || days.last === today) return { state, streak: { days: days.last && daysBetween(days.last, today) <= 1 ? days.streak : 0, extendedToday: false } };
-  const streak = days.last && daysBetween(days.last, today) === 1 ? days.streak + 1 : 1;
+  const gap = days.last ? daysBetween(days.last, today) : null;
+  // gap < 0: the device clock went back. Keep the streak as it is rather than resetting it.
+  if (!counts || gap === 0 || (gap !== null && gap < 0)) return { state, streak: { days: gap !== null && gap <= 1 ? days.streak : 0, extendedToday: false } };
+  const streak = gap === 1 ? days.streak + 1 : 1;
   const next = {
     first: days.first ?? today,
     last: today,

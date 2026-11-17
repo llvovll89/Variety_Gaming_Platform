@@ -37,14 +37,17 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
   return {
     reportRun(run) {
       const now = clock();
+      const today = localDateKey(now);
+      // A run started for yesterday's challenge (and finished after midnight) counts for yesterday.
+      const startedOn = run.dailyId?.split(':')[0];
+      const challenge = dailyChallenge(startedOn && /^\d{4}-\d{2}-\d{2}$/.test(startedOn) ? startedOn : today, gameId, meta?.daily);
       let rewards: RunRewards = NO_REWARDS;
       metaStore.update(state => {
         const added = addRun(state, gameId, run, now.getTime(), order);
         let next = added.state;
-        const challenge = todays();
         const daily = challenge ? addDailyRun(next, challenge, run) : undefined;
         if (daily) next = daily.state;
-        const streak = addStreakDay(next, localDateKey(now), run);
+        const streak = addStreakDay(next, today, run);
         next = streak.state;
         const earned = evaluate(next, gameId, achievements, order, now.getTime());
         next = earned.state;

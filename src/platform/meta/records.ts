@@ -11,7 +11,10 @@ export const emptyMeta = (): MetaState => ({
   daily: {},
 });
 
-export const emptyRecord = (): GameRecord => ({ runs: 0, wins: 0, playMs: 0, lastPlayed: 0, best: {}, totals: {}, peaks: {}, progress: {} });
+export const emptyRecord = (): GameRecord => ({ runs: 0, wins: 0, playMs: 0, lastPlayed: 0, best: {}, totals: {}, peaks: {}, progress: {}, dailyDone: 0 });
+
+/** Longest stat or progress key kept; the store rejects longer ones, so they are dropped here. */
+export const MAX_STAT_KEY = 120;
 
 /** Best scores are kept per mode and difficulty: `${mode}|${difficulty}`. */
 export function recordKey(mode?: string, difficulty?: string): string {
@@ -54,19 +57,21 @@ export function addRun(state: MetaState, gameId: string, run: RunReport, now: nu
     peaks: { ...before.peaks },
   };
   // A quit run still counts as played time, but its score is not a record.
-  const newBest = finite(run.score) && run.outcome !== 'quit' && isBetter(order, run.score, previous);
-  if (newBest) record.best[key] = run.score!;
+  const scored = finite(run.score) && run.outcome !== 'quit' && isBetter(order, run.score, previous);
+  if (scored) record.best[key] = run.score!;
   for (const [stat, value] of Object.entries(run.stats ?? {})) {
-    if (!finite(value)) continue;
-    record.totals[stat] = (record.totals[stat] ?? 0) + value;
+    if (!finite(value) || stat.length > MAX_STAT_KEY) continue;
+    const total = (record.totals[stat] ?? 0) + value;
+    if (finite(total)) record.totals[stat] = total;
     record.peaks[stat] = Math.max(record.peaks[stat] ?? -Infinity, value);
   }
-  return { state: { ...state, games: { ...state.games, [gameId]: record } }, previousBest: previous ?? null, newBest };
+  // A first score is a first record, not a "new best" to celebrate (it could be 0).
+  return { state: { ...state, games: { ...state.games, [gameId]: record } }, previousBest: previous ?? null, newBest: scored && previous !== undefined };
 }
 
 /** Progress only moves forward (world reached, chapters cleared). */
 export function addProgress(state: MetaState, gameId: string, key: string, value: number): MetaState {
-  if (!finite(value)) return state;
+  if (!finite(value) || key.length > MAX_STAT_KEY) return state;
   const before = state.games[gameId] ?? emptyRecord();
   if ((before.progress[key] ?? -Infinity) >= value) return state;
   return { ...state, games: { ...state.games, [gameId]: { ...before, progress: { ...before.progress, [key]: value } } } };

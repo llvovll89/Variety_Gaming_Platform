@@ -63,7 +63,7 @@ test('a run completes today\'s challenge only on the right difficulty, and count
   s = r.state;
   r = M.addDailyRun(s, c, { difficulty: 'hard', score: 100, durationMs: 1, outcome: 'complete' });
   assert.deepEqual([r.result.completed, r.result.justCompleted, r.state.daily['2026-11-17'].mole.best], [true, false, 230]);
-  assert.equal(r.state.games.mole.totals.daily, 1);
+  assert.equal(r.state.games.mole.dailyDone, 1);
   const times = { ...c, stat: 'time', goal: 60, compare: 'atMost', difficulty: undefined };
   assert.equal(M.addDailyRun(M.emptyMeta(), times, { score: 1, stats: { time: 55 }, durationMs: 1, outcome: 'win' }).result.completed, true);
 });
@@ -76,7 +76,7 @@ test('only the last two weeks of daily results are kept', () => {
   }
   assert.equal(Object.keys(s.daily).length, 14);
   assert.ok(s.daily['2026-03-20'] && !s.daily['2026-03-06']);
-  assert.equal(s.games.g.totals.daily, 20, 'completions are still counted');
+  assert.equal(s.games.g.dailyDone, 20, 'completions are still counted');
 });
 
 test('the streak grows day by day, resets after a gap, and ignores runs that end at once', () => {
@@ -94,4 +94,30 @@ test('the streak grows day by day, resets after a gap, and ignores runs that end
   assert.equal(r.streak.days, 1, 'a gap starts over (a finished short run still counts)');
   assert.equal(s.days.bestStreak, 3);
   assert.deepEqual(s.days.recent, ['2026-12-30', '2026-12-31', '2027-01-01', '2027-01-04']);
+});
+
+test('a run without the stat never becomes a perfect best, and days after today are dropped', () => {
+  const times = { id: 't', date: '2026-11-17', gameId: 'maze', label: '', stat: 'time', goal: 60, compare: 'atMost', seed: 1, seeded: false };
+  let s = { ...M.emptyMeta(), daily: { '2027-05-01': { maze: { done: true, best: 1 } } } };
+  s = M.addDailyRun(s, times, { durationMs: 1, outcome: 'lose' }).state;
+  assert.equal(s.daily['2026-11-17'].maze.best, null);
+  s = M.addDailyRun(s, times, { stats: { time: 45 }, durationMs: 1, outcome: 'win' }).state;
+  assert.equal(s.daily['2026-11-17'].maze.best, 45);
+  assert.equal(s.daily['2027-05-01'], undefined, 'a day from a clock that was ahead is not kept forever');
+  for (let d = 1; d <= 20; d++) {
+    const date = `2026-03-${String(d).padStart(2, '0')}`;
+    const c = { ...times, id: date, date };
+    s = M.addDailyRun(s, c, { stats: { time: 1 }, durationMs: 1, outcome: 'win' }).state;
+    s = M.addDailyRun(s, c, { stats: { time: 2 }, durationMs: 1, outcome: 'win' }).state;
+  }
+  assert.equal(Object.keys(s.daily).length, 14, 'a second run on the same day still keeps 14 days');
+});
+
+test('a clock that goes back a day keeps the streak instead of resetting it', () => {
+  const real = { durationMs: 30000, outcome: 'lose' };
+  let s = M.emptyMeta();
+  for (const day of ['2026-11-16', '2026-11-17', '2026-11-18']) s = M.addStreakDay(s, day, real).state;
+  const back = M.addStreakDay(s, '2026-11-17', real);
+  assert.deepEqual(back.streak, { days: 3, extendedToday: false });
+  assert.equal(back.state.days.last, '2026-11-18');
 });

@@ -32,8 +32,7 @@ test('one report gives the result screen everything a run earned', () => {
     const api = M.createRecordsApi('jump', meta, () => day);
     assert.equal(api.daily().label, '100점 넘기');
     const first = api.reportRun({ score: 120, durationMs: 45000, outcome: 'lose' });
-    assert.equal(first.newBest, true);
-    assert.equal(first.best, 120);
+    assert.deepEqual([first.newBest, first.previousBest, first.best], [false, null, 120], 'a first record, not a new best');
     assert.deepEqual(first.unlocked.map(a => [a.id, a.kids?.sticker]), [['first', '🌟']]);
     assert.deepEqual(first.daily, { id: '2026-11-17:jump:score', label: '100점 넘기', completed: true, justCompleted: true });
     assert.deepEqual(first.streak, { days: 1, extendedToday: true });
@@ -58,4 +57,16 @@ test('outside the arcade shell a game can still call the API safely', () => {
   const records = M.createRecordsApi('x', undefined);
   M.renderToStaticMarkup(M.createElement(M.PlaySession.Provider, { value: { games: [], gameId: 'x', selectGame() {}, exit() {}, records } }, M.createElement(Probe)));
   assert.equal(seen, records);
+});
+
+test('a daily run that ends after midnight counts for the day it began', () => {
+  withStorage(() => {
+    let now = new Date(2026, 10, 17, 23, 59);
+    const api = M.createRecordsApi('jump', meta, () => now);
+    const started = api.daily();
+    now = new Date(2026, 10, 18, 0, 1);
+    const rewards = api.reportRun({ score: 150, durationMs: 120000, outcome: 'lose', dailyId: started.id });
+    assert.equal(rewards.daily.id, started.id);
+    assert.equal(M.metaStore.get().daily['2026-11-17'].jump.done, true);
+  });
 });

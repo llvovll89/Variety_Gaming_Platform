@@ -12,7 +12,7 @@ export function ruleProgress(rule: AchievementRule, record: GameRecord | undefin
     case 'peak': return progress(r.peaks[rule.stat] ?? 0, rule.atLeast);
     case 'total': return progress(r.totals[rule.stat] ?? 0, rule.atLeast);
     case 'progress': return progress(r.progress[rule.key] ?? 0, rule.atLeast);
-    case 'daily': return progress(r.totals['daily'] ?? 0, rule.atLeast);
+    case 'daily': return progress(r.dailyDone, rule.atLeast);
     case 'best': {
       const best = bestOf(r, order, rule.mode, rule.difficulty);
       // For lower-is-better scores, atLeast reads as "this good or better" (e.g. 60 seconds or less).

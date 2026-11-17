@@ -7,7 +7,7 @@ const M = await loadBundle(`
   export * from './src/platform/meta/achievements.ts';
 `);
 
-const record = { runs: 4, wins: 2, playMs: 0, lastPlayed: 0, best: { 'default|hard': 150, 'default|easy': 300 }, totals: { hits: 90, daily: 3 }, peaks: { combo: 12 }, progress: { world: 3 } };
+const record = { runs: 4, wins: 2, playMs: 0, lastPlayed: 0, best: { 'default|hard': 150, 'default|easy': 300 }, totals: { hits: 90, daily: 99 }, peaks: { combo: 12 }, progress: { world: 3 }, dailyDone: 3 };
 
 test('every rule kind measures the right number', () => {
   const cases = [
@@ -18,7 +18,7 @@ test('every rule kind measures the right number', () => {
     [{ kind: 'peak', stat: 'combo', atLeast: 10 }, 12, true],
     [{ kind: 'total', stat: 'hits', atLeast: 100 }, 90, false],
     [{ kind: 'progress', key: 'world', atLeast: 3 }, 3, true],
-    [{ kind: 'daily', atLeast: 3 }, 3, true],
+    [{ kind: 'daily', atLeast: 3 }, 3, true], // completed challenges, not a game stat that happens to be named 'daily'
   ];
   for (const [rule, current, met] of cases) {
     const p = M.ruleProgress(rule, record, 'high');

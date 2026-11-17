@@ -17,6 +17,9 @@ export interface RunReport {
   outcome: Outcome;
   /** Other numbers from this run (combo, accuracy, kills...). Summed into totals, maxed into peaks. */
   stats?: Record<string, number>;
+  /** The challenge this run was started for (DailyChallenge.id), so a run that ends after midnight
+   * still counts for the day it began. */
+  dailyId?: string;
 }
 
 export interface GameRecord {
@@ -29,6 +32,8 @@ export interface GameRecord {
   totals: Record<string, number>;
   peaks: Record<string, number>;
   progress: Record<string, number>;
+  /** Daily challenges completed, ever (the per-day results are pruned). */
+  dailyDone: number;
 }
 
 export interface MetaState {
@@ -40,7 +45,7 @@ export interface MetaState {
   /** `${gameId}/${achievementId}` → unlocked at (ms). */
   achievements: Record<string, number>;
   /** date → gameId → today's challenge state. Only recent days are kept. */
-  daily: Record<string, Record<string, { done: boolean; best: number }>>;
+  daily: Record<string, Record<string, { done: boolean; best: number | null }>>;
 }
 
 export type AchievementRule =
