@@ -65,18 +65,13 @@ export const kitCss = `@layer kit{
 :where(.kit-setting input[type=range]){width:min(50%,180px);accent-color:${accent}}
 :where(.kit-setting input[type=checkbox]){width:22px;height:22px;accent-color:${accent}}
 :where(.kit-setting select){min-height:36px;padding:4px 8px;border:1px solid ${line};border-radius:8px;background:${surface};color:inherit;font:inherit}
-:where(.kit-next){display:flex;flex-direction:column;gap:8px;align-self:stretch;width:100%;min-width:0;margin-top:16px;padding-top:14px;border-top:1px solid #8885;text-align:left;font-family:${font};color:inherit}
-:where(.kit-next)>p{font-size:12px;line-height:1.6;margin:0;color:inherit;opacity:.85}
-:where(.kit-next) button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:10px 12px;margin:0;border:1px solid #8885;border-radius:6px;background:#8881;color:inherit;text-align:left;font:inherit;font-size:12px;line-height:1.5;cursor:pointer;box-shadow:none;white-space:normal}
-:where(.kit-next) button:hover{background:#8883}
-:where(.kit-next) button:active{transform:translateY(1px)}
-:where(.kit-next) button:focus-visible{outline:3px solid currentColor;outline-offset:2px}
-:where(.kit-next) button span{display:flex;flex-direction:column;gap:2px;min-width:0}
-:where(.kit-next) button b{font-size:12px;font-weight:700}
-:where(.kit-next) button small{font-size:11px;opacity:.8}
-:where(.kit-next) .kit-next-hub{justify-content:center;border:0;background:transparent;text-decoration:underline;text-underline-offset:3px}
-:where(.kit-score-feedback){font:600 13px/1.6 ${font};color:inherit;margin:8px 0;overflow-wrap:anywhere}
 :root[data-kit-motion=reduce] :where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}
 :where(.kit-motion-reduce) :where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}
 @media (prefers-reduced-motion:reduce){:where(.kit-dialog,.kit-dialog *){animation:none!important;transition:none!important}}
 }`;
+
+/**
+ * "What to play next" is platform UI that must look the same in every game, so unlike the rest of
+ * the kit it is unlayered with doubled classes: it beats a game's generic `button {}` rules.
+ */
+export const nextCss = `.kit-next.kit-next{display:flex;flex-direction:column;gap:8px;align-self:stretch;width:100%;min-width:0;margin-top:16px;padding-top:14px;border-top:1px solid #8885;text-align:left;font-family:Pretendard,system-ui,sans-serif;color:inherit}.kit-next.kit-next>p{font-size:12px;line-height:1.6;margin:0;color:inherit;opacity:.85}.kit-next.kit-next button{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:10px 12px;margin:0;border:1px solid #8885;border-radius:6px;background:#8881;color:inherit;text-align:left;font:inherit;font-size:12px;line-height:1.5;cursor:pointer;box-shadow:none;white-space:normal}.kit-next.kit-next button:hover{background:#8883}.kit-next.kit-next button:active{transform:translateY(1px)}.kit-next.kit-next button:focus-visible{outline:3px solid currentColor;outline-offset:2px}.kit-next.kit-next button span{display:flex;flex-direction:column;gap:2px;min-width:0}.kit-next.kit-next button b{font-size:12px;font-weight:700}.kit-next.kit-next button small{font-size:11px;opacity:.8}.kit-next.kit-next .kit-next-hub{justify-content:center;border:0;background:transparent;text-decoration:underline;text-underline-offset:3px}.kit-score-feedback.kit-score-feedback{font:600 13px/1.6 Pretendard,system-ui,sans-serif;color:inherit;margin:8px 0;overflow-wrap:anywhere}`;
