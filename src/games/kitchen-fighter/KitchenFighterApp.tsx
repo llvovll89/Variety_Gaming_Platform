@@ -50,12 +50,21 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   const [activeControls, setActiveControls] = useState<string[]>([]);
   const [hud, setHud] = useState({ hp: [100, 100], gauge: [0, 0], wins: [0, 0], time: 60, phase: 'ready', round: 1, winner: null as number | null });
   const canvas = useRef<HTMLCanvasElement>(null), fight = useRef(new Fight('cpu', ['spatula', 'swatter']));
+  const photoSources = useRef<[string, string]>(['', '']), photoImages = useRef<[HTMLImageElement | null, HTMLImageElement | null]>([null, null]);
   const portraits = useRef<[Portrait, Portrait]>([{ image: null, zoom: 1, x: 0, y: 0 }, { image: null, zoom: 1, x: 0, y: 0 }]);
   const keys = useRef(new Set<string>()), touch = useRef(new Set<string>()), audio = useRef<FightAudio | null>(null);
   const direction = useRef<{ time: number; forward: boolean } | null>(null);
   useEffect(() => {
     safeSetItem(key, JSON.stringify(characters.map(ch => ({ ...ch, photoVersion: 2 }))));
-    portraits.current = characters.map(ch => { const image = ch.photo ? new Image() : null; if (image) image.src = ch.photo; return { image, zoom: ch.zoom, x: ch.x, y: ch.y }; }) as [Portrait, Portrait];
+    // Keep the decoded image while only the crop changes: a fresh Image hides the fighter until it decodes
+    // and makes the scene upload the texture again, which flickered on every slider tick.
+    portraits.current = characters.map((ch, i) => {
+      if (photoSources.current[i] !== ch.photo) {
+        photoSources.current[i] = ch.photo;
+        photoImages.current[i] = ch.photo ? Object.assign(new Image(), { src: ch.photo }) : null;
+      }
+      return { image: photoImages.current[i], zoom: ch.zoom, x: ch.x, y: ch.y };
+    }) as [Portrait, Portrait];
     if (screen === 'setup') fight.current = new Fight(mode, characters.map(ch => ch.weapon) as [Weapon, Weapon], difficulty);
   }, [characters, mode, difficulty, screen]);
   useEffect(() => { const a = new FightAudio(); audio.current = a; return () => { a.dispose(); audio.current = null; }; }, []);
