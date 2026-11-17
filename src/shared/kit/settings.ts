@@ -168,6 +168,15 @@ export function useSettings(): PlatformSettings {
   return useSyncExternalStore(settingsStore.subscribe, settingsStore.get, settingsStore.get);
 }
 
+/**
+ * One value from the settings, e.g. whether a game is muted. Re-renders only when that value changes,
+ * not on every volume-slider step. The selector must return a primitive (or a stable reference).
+ */
+export function useSettingsValue<T>(select: (settings: PlatformSettings) => T): T {
+  const read = () => select(settingsStore.get());
+  return useSyncExternalStore(settingsStore.subscribe, read, read);
+}
+
 export function useGameSettings(gameId: string) {
   const settings = useSettings();
   return {

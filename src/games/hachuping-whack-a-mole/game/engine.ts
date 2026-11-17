@@ -1,7 +1,7 @@
 ﻿import { GAME_TOTAL_TIME, MOLE_GRID_COLS, MOLE_GRID_ROWS, POINTS_PER_HIT, HIT_FLASH_DURATION, DIFFICULTY_CONFIGS, DEFAULT_DIFFICULTY, type DifficultyLevel } from './constants';
 import { UIStore } from './uiStore';
 import type { GameState } from './types';
-import { playHitSound, playGameOverSound } from './sound';
+import { playGameOver, playHit } from './sound';
 
 export class WhackAMoleEngine {
   readonly uiStore = new UIStore();
@@ -11,7 +11,6 @@ export class WhackAMoleEngine {
   private lastTime: number | null = null;
   private resumeStatus: 'ready' | 'playing' = 'playing';
   private uiTimer = 0;
-  private muted = false;
   constructor(private bestScore: number, private onGameOver: (score: number) => void, private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY) {
     this.gameState = this.initialState(); this.publish();
   }
@@ -26,7 +25,6 @@ export class WhackAMoleEngine {
       totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, gameOver: false, finalScore: null, difficulty: this.difficulty,
       moles: Array.from({length: MOLE_GRID_COLS * MOLE_GRID_ROWS}, (_, id) => ({id, gridX: id % MOLE_GRID_COLS, gridY: Math.floor(id / MOLE_GRID_COLS), isActive: false, activeSince: 0, duration: this.duration(false)})) };
   }
-  setMuted = (muted: boolean) => { this.muted = muted; };
   startGame = () => {
     this.destroy(); this.gameState = this.initialState(); this.gameState.status = 'ready';
     this.hitTimers.clear(); this.lastTime = null; this.publish(); this.rafId = requestAnimationFrame(this.loop);
@@ -43,7 +41,7 @@ export class WhackAMoleEngine {
     if (this.gameState.gameOver) return;
     this.destroy(); this.gameState.status = 'game-over'; this.gameState.gameOver = true;
     this.gameState.finalScore = this.gameState.score;
-    if (!this.muted) playGameOverSound(); this.publish(); this.onGameOver(this.gameState.score);
+    playGameOver(); this.publish(); this.onGameOver(this.gameState.score);
   };
   hitMole = (id: number): boolean => {
     const s = this.gameState;
@@ -55,7 +53,7 @@ export class WhackAMoleEngine {
     s.score += POINTS_PER_HIT; s.totalMolesHit++; s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
     mole.isActive = false; mole.activeSince = 0; mole.duration = this.duration(false);
     this.hitTimers.set(id, HIT_FLASH_DURATION);
-    if (!this.muted) playHitSound(); this.publish(); return true;
+    playHit(); this.publish(); return true;
   };
   private loop = (now: number) => {
     this.rafId = null;

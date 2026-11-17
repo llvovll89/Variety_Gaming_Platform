@@ -7,7 +7,7 @@ let next=0;
 const callbacks=new Map();
 globalThis.requestAnimationFrame=cb=>{callbacks.set(++next,cb);return next;};
 globalThis.cancelAnimationFrame=id=>callbacks.delete(id);
-function make(difficulty='normal',done=()=>{}) {const e=new WhackAMoleEngine(80,done,difficulty);e.setMuted(true);return e;}
+function make(difficulty='normal',done=()=>{}) {const e=new WhackAMoleEngine(80,done,difficulty);return e;}
 function play(e){e.startGame(); e.update(3); assert.equal(e.getGameState().status,'playing');}
 
 test('ready countdown does not spend play time and prevents early hits',()=>{

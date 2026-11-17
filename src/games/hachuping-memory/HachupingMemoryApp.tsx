@@ -70,7 +70,9 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
 
   const gameActive = screen === "playing";
   // Escape, P or looking away pauses (the game had no keyboard pause before).
-  useAutoPause({ active: gameActive && snapshot.status === "playing", onPause: handleTogglePause });
+  // togglePause would resume if two triggers (blur + hidden tab) arrive together, so only pause a running game.
+  const pauseIfPlaying = useCallback(() => { if (engine?.uiStore.getSnapshot().status === "playing") engine.togglePause(); }, [engine]);
+  useAutoPause({ active: gameActive && snapshot.status === "playing", onPause: pauseIfPlaying });
   const isPaused = snapshot.status === "paused";
 
   return (
@@ -146,6 +148,7 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
           onResume={handleTogglePause}
           onQuit={handleMainMenu}
           quitLabel="처음 화면으로"
+          showSettings={false}
         />
       )}
       {snapshot.status === 'game-over' && <GameDialog labelledBy={resultTitle} onClose={handleMainMenu}>

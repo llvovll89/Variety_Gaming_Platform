@@ -5,8 +5,9 @@
 .hub{--page:#f4f5f7;--surface:#fcfcfd;--surface-hover:#e9ebef;--text:#242730;--muted:#626975;--line:#d9dde3;--accent:#2f4bff;--accent-ink:#fcfcfd;--skeleton:#e2e5e9;position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;background:var(--page);color:var(--text);font-family:Pretendard,system-ui,sans-serif;font-size:14px;line-height:1.55;word-break:keep-all;-webkit-text-size-adjust:100%;color-scheme:light}
 .hub[data-theme=dark]{--page:#191c22;--surface:#22262e;--surface-hover:#2c313b;--text:#eef0f4;--muted:#aeb5c1;--line:#363d48;--accent:#a4b3ff;--accent-ink:#1a2546;--skeleton:#2e3440;color-scheme:dark}
 .hub *,.hub *::before,.hub *::after{box-sizing:border-box}
-.hub button{font:inherit;color:inherit;cursor:pointer;border:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.hub button:active{transform:translateY(1px)}
+/* Kit buttons (in hub dialogs) keep the kit's own look. */
+.hub button:not(.kit-btn){font:inherit;color:inherit;cursor:pointer;border:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.hub button:not(.kit-btn):active{transform:translateY(1px)}
 .hub :focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 .hub input{font:inherit;color:var(--text);user-select:text}
 .hub h1,.hub h2,.hub h3,.hub p{margin:0}
@@ -105,4 +106,3 @@
 .hub-play-facts{display:flex;flex-wrap:wrap;gap:5px 10px;font-size:11px;line-height:1.65;color:var(--muted);margin-top:3px}.hub-play-facts>span{display:inline-block}.hub-play-facts>span:first-child{font-weight:700;color:var(--text)}.hub-feature-info>.hub-play-facts{margin-top:16px}
 @media(max-width:767px){.hub-start{grid-template-columns:1fr;gap:22px;padding:20px;margin-bottom:20px}.hub-continue{padding:0 0 20px;border-right:0;border-bottom:1px solid var(--line)}.hub-start h2{font-size:19px}.hub-time-choices{gap:6px}.hub-time-choices button{padding:8px 10px}.hub-quick-pick{align-items:flex-start;flex-direction:column;gap:14px}.hub-play-facts{font-size:11px}}
 .hub-settings{--kit-surface:var(--surface);--kit-ink:var(--text);--kit-muted:var(--muted);--kit-line:var(--line);--kit-accent:var(--accent);--kit-on-accent:var(--accent-ink);--kit-radius:8px;--kit-backdrop:#0007}
-.hub-settings .kit-btn-primary{color:var(--accent-ink);font-weight:700}

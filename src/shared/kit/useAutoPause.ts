@@ -54,11 +54,12 @@ export function useAutoPause({ active, onPause, blur = true, visibility = true, 
   useEffect(() => {
     if (!active) return;
     const pauseKeys = keyList ? keyList.split('\u0000') : [];
+    let deferred: ReturnType<typeof setTimeout> | null = null;
     const onKey = (event: KeyboardEvent) => {
       if (!shouldPauseForKey(event, pauseKeys)) return;
       event.preventDefault();
       // Open the pause dialog after this key press is done, or the same Escape would close it again.
-      setTimeout(() => pause.current(), 0);
+      if (deferred === null) deferred = setTimeout(() => { deferred = null; pause.current(); }, 0);
     };
     const onBlur = () => pause.current();
     const onVisibility = () => { if (document.hidden) pause.current(); };
@@ -66,6 +67,8 @@ export function useAutoPause({ active, onPause, blur = true, visibility = true, 
     if (blur) window.addEventListener('blur', onBlur);
     if (visibility) document.addEventListener('visibilitychange', onVisibility);
     return () => {
+      // Stopped being active (paused another way, ended, left): a pending key pause no longer applies.
+      if (deferred !== null) clearTimeout(deferred);
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('blur', onBlur);
       document.removeEventListener('visibilitychange', onVisibility);
