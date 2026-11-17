@@ -1,6 +1,7 @@
 import { PlayIcon } from "@phosphor-icons/react/dist/icons/Play";
 import { COLOR_PALETTE, DIFFICULTY_CONFIGS, type DifficultyLevel } from "../game/constants";
 import { Drop } from "./Paint";
+import type { LeaderboardEntry } from "../../../shared/hooks/useLeaderboard";
 
 interface StartMenuProps {
   difficulty: DifficultyLevel;
@@ -12,6 +13,7 @@ interface StartMenuProps {
   bestScore: number;
   /** Best score from before records were split by difficulty. */
   legacyBest: number;
+  legacyLeaderboard: LeaderboardEntry[];
   onTogglePatterns: () => void;
   onStart: () => void;
 }
@@ -22,7 +24,7 @@ const LEVEL_NOTES: Record<DifficultyLevel, string> = {
   hard: "물감 5통",
 };
 
-export default function StartMenu({ difficulty, onDifficultyChange, focusDifficulty, patterns, bestScore, legacyBest, onTogglePatterns, onStart }: StartMenuProps) {
+export default function StartMenu({ difficulty, onDifficultyChange, focusDifficulty, patterns, bestScore, legacyBest, legacyLeaderboard, onTogglePatterns, onStart }: StartMenuProps) {
   const config = DIFFICULTY_CONFIGS[difficulty];
 
   return (
@@ -63,7 +65,13 @@ export default function StartMenu({ difficulty, onDifficultyChange, focusDifficu
           <PlayIcon size={18} weight="fill" /> 시작하기
         </button>
         {bestScore > 0 && <p className="cm-best">{config.name} 최고 기록 <b className="cm-num">{bestScore}</b>점</p>}
-        {legacyBest > 0 && <p className="cm-best">난이도 구분 전 기록 <b className="cm-num">{legacyBest}</b>점</p>}
+        {(legacyBest > 0 || legacyLeaderboard.length > 0) && (
+          <details className="cm-best">
+            <summary>난이도 구분 전 기록 · 최고 <b className="cm-num">{legacyBest}</b>점</summary>
+            <p>난이도 정보가 없는 이전 기록이에요. 난이도별 기록과 따로 보관해요.</p>
+            {legacyLeaderboard.length > 0 && <ol>{legacyLeaderboard.map((entry, i) => <li key={`${entry.score}-${entry.timestamp}`}>{i + 1}위 · <b className="cm-num">{entry.score}</b>점</li>)}</ol>}
+          </details>
+        )}
       </div>
     </div>
   );

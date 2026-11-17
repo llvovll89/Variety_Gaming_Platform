@@ -116,7 +116,8 @@ test('the menu shows the best score of the selected difficulty, apart from older
   const bundled=new Module(fileURLToPath(import.meta.url));bundled.filename=fileURLToPath(import.meta.url);bundled.paths=Module._nodeModulePaths(process.cwd());
   bundled._compile(ui.outputFiles[0].text,bundled.filename);
   const {createElement,renderToStaticMarkup,StartMenu}=bundled.exports;
-  const html=renderToStaticMarkup(createElement(StartMenu,{difficulty:'hard',onDifficultyChange(){},focusDifficulty:false,patterns:false,bestScore:120,legacyBest:300,onTogglePatterns(){},onStart(){}}));
+  const html=renderToStaticMarkup(createElement(StartMenu,{difficulty:'hard',onDifficultyChange(){},focusDifficulty:false,patterns:false,bestScore:120,legacyBest:300,legacyLeaderboard:[{score:300,timestamp:1},{score:250,timestamp:2}],onTogglePatterns(){},onStart(){}}));
   assert.match(html,new RegExp(`${DIFFICULTY_CONFIGS.hard.name} 최고 기록 <b class="cm-num">120</b>`));
-  assert.match(html,/난이도 구분 전 기록 <b class="cm-num">300<\/b>/);
+  assert.match(html,/난이도 구분 전 기록 · 최고 <b class="cm-num">300<\/b>/);
+  assert.match(html,/2위 · <b class="cm-num">250<\/b>/,'older TOP 10 stays visible');
 });
