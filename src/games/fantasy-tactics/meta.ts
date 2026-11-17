@@ -70,10 +70,12 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      // The save holds the chapter being played; the ones before it are cleared.
-      const s = JSON.parse(get('gh-arcade:fantasy-tactics:v1') ?? 'null');
-      return Number.isInteger(s?.stage) && s.stage >= 0 && s.stage <= 6 ? { progress: { chapter: s.stage } } : {};
+    read(get, parse) {
+      // The save holds the chapter in play (0-based); after its battle is won it counts as finished.
+      const s = parse.json(get('gh-arcade:fantasy-tactics:v1')) as { stage?: unknown; phase?: unknown } | null;
+      if (!Number.isInteger(s?.stage) || (s!.stage as number) < 0 || (s!.stage as number) > 5) return {};
+      const finished = ['won', 'camp', 'ending'].includes(String(s!.phase)) ? (s!.stage as number) + 1 : (s!.stage as number);
+      return finished > 0 ? { progress: { chapter: finished } } : {};
     },
   },
 };

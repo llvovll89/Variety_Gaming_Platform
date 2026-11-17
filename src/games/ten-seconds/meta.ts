@@ -74,9 +74,11 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      const p = JSON.parse(get('ten-seconds-progress-v1') ?? 'null');
-      const stars = Object.entries(p?.best ?? {}).filter(([i, v]) => Number(i) < 9 && Number.isInteger((v as { stars?: unknown })?.stars)).map(([, v]) => Math.min(3, Math.max(1, (v as { stars: number }).stars)));
+    read(get, parse) {
+      const p = parse.json(get('ten-seconds-progress-v1')) as any;
+      // Same checks as the game's own loader: whole-number level keys, 1 to 3 stars.
+      const stars = Object.entries(p?.best ?? {}).filter(([i]) => /^\d+$/.test(i) && Number(i) < 9)
+        .map(([, v]) => (v as { stars?: unknown })?.stars).filter((n): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 3);
       return { progress: { cleared: stars.length, stars: stars.reduce((a, b) => a + b, 0) } };
     },
   },

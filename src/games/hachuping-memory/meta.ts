@@ -105,9 +105,8 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
-      return { best: { 'default|-': Math.max(num(get('arcade:hachuping-memory:highScore')), num(get('hachuping-memory-highscore'))) } };
+    read(get, parse) {
+      return { best: { 'default|-': Math.max(parse.num(get('arcade:hachuping-memory:highScore')), parse.num(get('hachuping-memory-highscore'))) } };
     },
   },
 };

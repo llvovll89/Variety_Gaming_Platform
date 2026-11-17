@@ -22,7 +22,7 @@ const OLD = {
   'arcade:hachuping-memory:highScore': '6',
   'rune-ranger-best-nightmare': '612',
   'arcade:night-train:records': JSON.stringify({ runs: 12, wins: 2, bestFloor: 13, bestScore: 4321 }),
-  'gh-ghost-movers-v1': JSON.stringify({ unlocked: 9, best: { 0: { stars: 3, steps: 10 }, 1: { stars: 2, steps: 20 }, 99: { stars: 3, steps: 1 } } }),
+  'gh-ghost-movers-v1': JSON.stringify({ unlocked: 9, best: { 0: { stars: 3, steps: 10 }, 1: { stars: 2, steps: 20 }, 99: { stars: 3, steps: 1 }, '-1': { stars: 3 }, '': { stars: 3 }, 2: { stars: 9 } } }),
   'ten-seconds-progress-v1': JSON.stringify({ unlocked: 2, best: { 0: { stars: 3, loops: 1, deaths: 0 }, 1: { stars: 1, loops: 4, deaths: 2 } } }),
   'gh-arcade:fantasy-tactics:v1': '{broken',
 };
@@ -35,9 +35,9 @@ test('old records come in once, read-only, and unlock what they already earned',
     M.importLegacyRecords(games, k => store.get(k) ?? null, 5);
     const s = M.metaStore.get();
     assert.deepEqual(s.games['hachuping-whack-a-mole'].best, { 'default|normal': 320, 'default|hard': 410, 'legacy|-': 500 });
-    assert.deepEqual(s.games['hachuping-color-match'].best, {}, 'a 0 high score means never played');
+    assert.equal(s.games['hachuping-color-match'], undefined, 'a 0 high score means never played: no record at all');
     assert.equal(s.games['hachuping-memory'].best['default|-'], 9, 'the older memory key wins when higher');
-    assert.equal(s.games['hachuping-slither'].best['default|-'], undefined, 'garbage is skipped');
+    assert.equal(s.games['hachuping-slither'], undefined, 'garbage is skipped');
     assert.equal(s.games['hachuping-dodge'].best['default|nightmare'], 612);
     assert.deepEqual([s.games['night-train'].runs, s.games['night-train'].wins, s.games['night-train'].progress.station], [12, 2, 13]);
     assert.deepEqual(s.games['ghost-movers'].progress, { cleared: 2, stars: 5 }, 'out-of-range levels ignored');
@@ -50,5 +50,18 @@ test('old records come in once, read-only, and unlock what they already earned',
     M.importLegacyRecords(games, k => store.get(k) ?? null, 6);
     assert.equal(M.metaStore.get().games['night-train'].runs, runsBefore, 'a second start does not count twice');
     assert.equal(M.metaStore.get().importedLegacy['night-train'], 1);
+    // Games still save to their old keys until they report to the arcade store, so a newer score
+    // set after the first import comes in on the next start.
+    store.set('arcade:hachuping-jump:highScore', '900');
+    store.set('gh-arcade:fantasy-tactics:v1', JSON.stringify({ stage: 5, phase: 'ending' }));
+    store.set('three-kingdoms-local-v2', JSON.stringify({ warRoom: { towerFloor: 16 } }));
+    M.importLegacyRecords(games, k => store.get(k) ?? null, 7);
+    const later = M.metaStore.get();
+    assert.equal(later.games['hachuping-jump'].best['default|-'], 900);
+    assert.equal(later.games['fantasy-tactics'].progress.chapter, 6, 'the final chapter, won, counts as finished');
+    assert.ok(later.achievements['fantasy-tactics/ch6'] && later.achievements['three-kingdoms-card/tower15']);
+    const raw = store.get('arcade:meta:v1');
+    M.importLegacyRecords(games, k => store.get(k) ?? null, 8);
+    assert.equal(store.get('arcade:meta:v1'), raw, 'with nothing new, nothing is written');
   } finally { delete globalThis.localStorage; M.metaStore.resetForTests(); }
 });

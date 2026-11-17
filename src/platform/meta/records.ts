@@ -81,6 +81,7 @@ const count = (n: unknown) => (finite(n) && n >= 0 ? n : 0);
 
 /** Merges records a game kept before (bests, progress, run counts) without lowering anything. */
 export function mergeLegacy(state: MetaState, gameId: string, legacy: LegacyRecord, version: number, order: ScoreOrder = 'high'): MetaState {
+  const stamped = state.importedLegacy[gameId] === version ? state : { ...state, importedLegacy: { ...state.importedLegacy, [gameId]: version } };
   const before = state.games[gameId] ?? emptyRecord();
   const record: GameRecord = { ...before, best: { ...before.best }, progress: { ...before.progress } };
   for (const [key, value] of Object.entries(legacy.best ?? {})) {
@@ -93,5 +94,8 @@ export function mergeLegacy(state: MetaState, gameId: string, legacy: LegacyReco
   }
   record.runs = Math.max(record.runs, count(legacy.runs));
   record.wins = Math.max(record.wins, count(legacy.wins));
-  return { ...state, games: { ...state.games, [gameId]: record }, importedLegacy: { ...state.importedLegacy, [gameId]: version } };
+  // Nothing new (or a game never played): leave the records as they are, so re-running is free.
+  const changed = record.runs !== before.runs || record.wins !== before.wins
+    || JSON.stringify(record.best) !== JSON.stringify(before.best) || JSON.stringify(record.progress) !== JSON.stringify(before.progress);
+  return changed ? { ...stamped, games: { ...stamped.games, [gameId]: record } } : stamped;
 }

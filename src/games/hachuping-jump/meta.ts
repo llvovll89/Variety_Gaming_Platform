@@ -82,9 +82,8 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
-      return { best: { 'default|-': num(get('arcade:hachuping-jump:highScore')) } };
+    read(get, parse) {
+      return { best: { 'default|-': parse.num(get('arcade:hachuping-jump:highScore')) } };
     },
   },
 };

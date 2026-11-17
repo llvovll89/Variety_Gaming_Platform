@@ -91,10 +91,17 @@ export interface LegacyRecord {
   runs?: number;
   wins?: number;
 }
+/** Parsing helpers the platform hands to adapters, so meta.ts files stay import-free. */
+export interface LegacyParse {
+  /** A positive whole number, or 0 for anything else. */
+  num(raw: unknown): number;
+  /** Parsed JSON, or null when missing or broken. */
+  json(raw: string | null): unknown;
+}
 export interface LegacyAdapter {
-  /** Raise to read the old keys again (e.g. after fixing the adapter). */
+  /** Raised when an adapter changes, to tell old imports apart. */
   version: number;
-  read(get: (key: string) => string | null): LegacyRecord;
+  read(get: (key: string) => string | null, parse: LegacyParse): LegacyRecord;
 }
 
 /** Data a game declares about its records. Small and import-free, so the registry can load it eagerly. */

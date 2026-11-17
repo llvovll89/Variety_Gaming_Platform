@@ -80,11 +80,10 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
-      const r = JSON.parse(get('arcade:night-train:records') ?? 'null');
+    read(get, parse) {
+      const r = parse.json(get('arcade:night-train:records')) as any;
       if (!r || typeof r !== 'object') return {};
-      return { runs: num(r.runs), wins: num(r.wins), best: { 'default|-': num(r.bestScore) }, progress: { station: num(r.bestFloor) } };
+      return { runs: parse.num(r.runs), wins: parse.num(r.wins), best: { 'default|-': parse.num(r.bestScore) }, progress: { station: parse.num(r.bestFloor) } };
     },
   },
 };

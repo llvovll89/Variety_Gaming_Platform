@@ -36,5 +36,12 @@ export const meta: GameMeta = {
         "atLeast": 30
       }
     }
-  ]
+  ],
+  legacy: {
+    version: 1,
+    read(get, parse) {
+      const save = parse.json(get('three-kingdoms-local-v2')) as { warRoom?: { towerFloor?: unknown } } | null;
+      return { progress: { tower: parse.num(save?.warRoom?.towerFloor) } };
+    },
+  },
 };

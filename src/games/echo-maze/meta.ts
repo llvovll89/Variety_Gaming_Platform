@@ -21,9 +21,9 @@ export const meta: GameMeta = {
       "description": "보통 미로 탈출",
       "tier": 1,
       "rule": {
-        "kind": "best",
-        "atLeast": 999,
-        "difficulty": "normal"
+        "kind": "progress",
+        "key": "escapedNormal",
+        "atLeast": 1
       }
     },
     {
@@ -32,9 +32,9 @@ export const meta: GameMeta = {
       "description": "어려움 미로 탈출",
       "tier": 2,
       "rule": {
-        "kind": "best",
-        "atLeast": 999,
-        "difficulty": "hard"
+        "kind": "progress",
+        "key": "escapedHard",
+        "atLeast": 1
       }
     },
     {

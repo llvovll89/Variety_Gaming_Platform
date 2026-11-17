@@ -131,11 +131,10 @@ export const meta: GameMeta = {
   ],
   legacy: {
     version: 1,
-    read(get) {
-      const num = (raw: string | null) => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; };
+    read(get, parse) {
       const best: Record<string, number> = {};
-      for (const d of ['easy', 'normal', 'hard']) best[`default|${d}`] = num(get(`arcade:hachuping-color-match:{d}:highScore`.replace('{d}', d)));
-      best['legacy|-'] = num(get('arcade:hachuping-color-match:highScore'));
+      for (const d of ['easy', 'normal', 'hard']) best[`default|${d}`] = parse.num(get(`arcade:hachuping-color-match:${d}:highScore`));
+      best['legacy|-'] = parse.num(get('arcade:hachuping-color-match:highScore'));
       return { best };
     },
   },
