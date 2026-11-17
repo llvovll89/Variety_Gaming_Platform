@@ -2,9 +2,14 @@ import { useContext } from 'react';
 import { PlaySession } from '../playSessionContext';
 import { evaluate, unlockManual } from './achievements';
 import { addDailyRun, addStreakDay, dailyChallenge, localDateKey } from './daily';
-import { addProgress, addRun, bestOf } from './records';
+import { addProgress, addRun, bestOf, mergeLegacy } from './records';
 import { metaStore } from './store';
-import type { DailyChallenge, GameMeta, RunReport, RunRewards, UnlockedAchievement } from './types';
+import type { DailyChallenge, GameMeta, LegacyParse, RunReport, RunRewards, UnlockedAchievement } from './types';
+
+const legacyParse: LegacyParse = {
+  num(raw) { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; },
+  json(raw) { try { return raw === null ? null : JSON.parse(raw); } catch { return null; } },
+};
 
 /** What a running game can tell the platform, and ask it. Bound to one game. */
 export interface RecordsApi {
@@ -89,4 +94,26 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
 /** The records API for the running game (a no-op outside the arcade shell). */
 export function useRecords(): RecordsApi {
   return useContext(PlaySession)?.records ?? offlineRecords;
+}
+
+/**
+ * Brings in each game's own records (bests, progress) and unlocks what they already earn, quietly.
+ * Runs on every start: until a game reports to the arcade store itself, its newer scores only reach
+ * its old keys. Merging keeps the higher value, so running again never counts anything twice, and
+ * with nothing new it writes nothing. Old keys are only read.
+ */
+export function importLegacyRecords(games: readonly { id: string; meta?: GameMeta }[], get: (key: string) => string | null, now = Date.now()): void {
+  metaStore.update(state => {
+    let next = state;
+    for (const game of games) {
+      const legacy = game.meta?.legacy;
+      if (!legacy) continue;
+      let found;
+      try { found = legacy.read(get, legacyParse); } catch { continue; } // unreadable now: try again next start
+      const order = game.meta?.scoreOrder ?? 'high';
+      next = mergeLegacy(next, game.id, found, legacy.version, order);
+      next = evaluate(next, game.id, game.meta?.achievements ?? [], order, now).state;
+    }
+    return next;
+  });
 }

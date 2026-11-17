@@ -14,12 +14,29 @@ const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mol
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
 const NightTrainApp = lazy(() => import('../games/night-train/NightTrainApp'));
+// Records data is tiny and code-free, so it loads with the registry (unlike the games themselves).
+import { meta as NightTrainMeta } from '../games/night-train/meta';
+import { meta as KitchenFighterMeta } from '../games/kitchen-fighter/meta';
+import { meta as GhostMoversMeta } from '../games/ghost-movers/meta';
+import { meta as TenSecondsMeta } from '../games/ten-seconds/meta';
+import { meta as FantasyTacticsMeta } from '../games/fantasy-tactics/meta';
+import { meta as EchoMazeMeta } from '../games/echo-maze/meta';
+import { meta as ThreeKingdomsCardMeta } from '../games/three-kingdoms-card/meta';
+import { meta as ThreeKingdomsMeta } from '../games/three-kingdoms/meta';
+import { meta as HachupingSlitherMeta } from '../games/hachuping-slither/meta';
+import { meta as HachupingDodgeMeta } from '../games/hachuping-dodge/meta';
+import { meta as HachupingJumpMeta } from '../games/hachuping-jump/meta';
+import { meta as HachupingMemoryMeta } from '../games/hachuping-memory/meta';
+import { meta as HachupingWhackAMoleMeta } from '../games/hachuping-whack-a-mole/meta';
+import { meta as HachupingColorMatchMeta } from '../games/hachuping-color-match/meta';
+import { meta as HachupingBalloonMeta } from '../games/hachuping-balloon/meta';
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
 export const GAMES: GameDefinition[] = [
   {
     id: 'night-train',
+    meta: NightTrainMeta,
     title: '별빛 야간열차',
     description: '카드로 덱을 키워 새벽역까지 달리는 로그라이크 덱빌딩 · 매번 달라지는 13개 역',
     thumbnail: '/art/hub/night-train.jpg',
@@ -34,6 +51,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'kitchen-fighter',
+    meta: KitchenFighterMeta,
     title: '밥상 대격돌',
     description: '주걱·파리채·골프채를 들고 주방에서 붙는 3D 격투. 사이드스텝, 대시, 띄우기 콤보까지.',
     thumbnail: '/art/hub/kitchen-fighter.jpg',
@@ -48,6 +66,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'ghost-movers',
+    meta: GhostMoversMeta,
     title: '유령 이삿짐센터',
     description: '일곱 가구에 빙의하는 3D 이사 퍼즐 · 3개 챕터와 24개 야간 배송 현장',
     thumbnail: '/art/hub/ghost-movers.jpg',
@@ -62,6 +81,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'ten-seconds',
+    meta: TenSecondsMeta,
     title: '텐 세컨즈 · 시간의 잔상',
     description: '10초 전의 나와 협동하는 3D 시간 퍼즐 · 과거의 발걸음으로 다음 순간을 열어 보세요',
     thumbnail: '/art/hub/ten-seconds.jpg',
@@ -76,6 +96,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'fantasy-tactics',
+    meta: FantasyTacticsMeta,
     title: '별빛 원정대',
     description: '네 동료와 떠나는 6개 챕터의 전술 RPG · 전직과 지형 전술로 바다 건너 별빛까지',
     thumbnail: '/art/hub/fantasy-tactics.jpg',
@@ -90,6 +111,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "echo-maze",
+    meta: EchoMazeMeta,
     title: "메아리 미로",
     description: "내 사진으로 떠나는 3D 미로 탐험 · 기억 닻과 시간 조각을 이용해 탈출하세요",
     thumbnail: '/art/hub/echo-maze.jpg',
@@ -103,6 +125,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "three-kingdoms-card",
+    meta: ThreeKingdomsCardMeta,
     title: "삼국 영지",
     description: "장수를 모집하고 부대를 편성해 나만의 영지를 키우는 삼국지 카드 전략",
     thumbnail: '/art/hub/three-kingdoms-card.jpg',
@@ -117,6 +140,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "three-kingdoms",
+    meta: ThreeKingdomsMeta,
     title: "삼국지 패업 PK",
     description: "3D 중원 전장 · 장수별 모델과 PK 편집 · 육각 턴제 전략",
     thumbnail: '/art/hub/three-kingdoms.jpg',
@@ -130,6 +154,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-slither",
+    meta: HachupingSlitherMeta,
     title: "슬리더",
     description: "별을 먹고 커지는 지렁이 게임",
     thumbnail: '/art/hub/hachuping-slither.jpg',
@@ -143,6 +168,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-dodge",
+    meta: HachupingDodgeMeta,
     title: "룬 레인저",
     description: "자동 사격과 레벨업으로 미니언 군단을 돌파하는 생존 액션 RPG",
     thumbnail: '/art/hub/hachuping-dodge.jpg',
@@ -156,6 +182,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-jump",
+    meta: HachupingJumpMeta,
     title: "점프",
     description: "장애물 사이를 뚫고 날아가는 점프 게임",
     thumbnail: '/art/hub/hachuping-jump.jpg',
@@ -169,6 +196,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-memory",
+    meta: HachupingMemoryMeta,
     title: "동물 친구 기억력",
     description: "패턴을 보고 따라하는 7세 두뇌 발달 게임",
     thumbnail: '/art/hub/hachuping-memory.jpg',
@@ -182,6 +210,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-whack-a-mole",
+    meta: HachupingWhackAMoleMeta,
     title: "두더지 잡기",
     description: "톡! 톡! 3D 두더지와 즐기는 30초 순발력 챌린지",
     thumbnail: '/art/hub/hachuping-whack-a-mole.jpg',
@@ -195,6 +224,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-color-match",
+    meta: HachupingColorMatchMeta,
     title: "색깔 맞추기",
     description: "물감 방울과 같은 색 물감 통을 고르는 30초 게임 · 5개마다 레벨 업, 무늬로도 구별 가능",
     thumbnail: '/art/hub/hachuping-color-match.jpg',
@@ -208,6 +238,7 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: "hachuping-balloon",
+    meta: HachupingBalloonMeta,
     title: "풍선 터뜨리기",
     description: "반짝이는 풍선과 별, 하트를 톡! 60초 동안 즐기는 하늘 위 풍선 축제.",
     thumbnail: '/art/hub/hachuping-balloon.jpg',

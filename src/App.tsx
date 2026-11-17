@@ -11,7 +11,8 @@ import { KitStyles } from "./shared/kit/KitStyles";
 import { KitGameContext } from "./shared/kit/context";
 import { documentTitle, gameIdFromPath, gamePath, isPlayable } from "./platform/route";
 import { audienceOf } from "./platform/types";
-import { createRecordsApi } from "./platform/meta/api";
+import { createRecordsApi, importLegacyRecords } from "./platform/meta/api";
+import { safeGetItem } from "./shared/storage";
 
 type Intent = "start" | "resume";
 const GAME_STATE = (id: string) => ({ arcade: "game", id });
@@ -64,6 +65,9 @@ export default function App() {
   }, []);
 
   useEffect(() => { document.title = documentTitle(activeGame); }, [activeGame]);
+
+  // Records each game kept on its own before the arcade-wide store: read once, never changed.
+  useEffect(() => { importLegacyRecords(GAMES, safeGetItem); }, []);
 
   const selectGame = useCallback((gameId: string, intent: Intent = "start") => {
     const game = getGameById(gameId);

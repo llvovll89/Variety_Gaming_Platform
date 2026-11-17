@@ -84,12 +84,33 @@ export interface DailyTemplate {
   seeded?: boolean;
 }
 
-/** Data a game declares about its records. No code, so the registry can load it eagerly. */
+/** Records a game kept on its own before the arcade-wide store, read once (never written). */
+export interface LegacyRecord {
+  best?: Record<string, number>;
+  progress?: Record<string, number>;
+  runs?: number;
+  wins?: number;
+}
+/** Parsing helpers the platform hands to adapters, so meta.ts files stay import-free. */
+export interface LegacyParse {
+  /** A positive whole number, or 0 for anything else. */
+  num(raw: unknown): number;
+  /** Parsed JSON, or null when missing or broken. */
+  json(raw: string | null): unknown;
+}
+export interface LegacyAdapter {
+  /** Raised when an adapter changes, to tell old imports apart. */
+  version: number;
+  read(get: (key: string) => string | null, parse: LegacyParse): LegacyRecord;
+}
+
+/** Data a game declares about its records. Small and import-free, so the registry can load it eagerly. */
 export interface GameMeta {
   scoreOrder?: ScoreOrder;
   scoreUnit?: string;
   achievements: AchievementDef[];
   daily?: DailyTemplate[];
+  legacy?: LegacyAdapter;
 }
 
 export interface DailyChallenge {
