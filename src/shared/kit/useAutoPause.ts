@@ -57,7 +57,8 @@ export function useAutoPause({ active, onPause, blur = true, visibility = true, 
     const onKey = (event: KeyboardEvent) => {
       if (!shouldPauseForKey(event, pauseKeys)) return;
       event.preventDefault();
-      pause.current();
+      // Open the pause dialog after this key press is done, or the same Escape would close it again.
+      setTimeout(() => pause.current(), 0);
     };
     const onBlur = () => pause.current();
     const onVisibility = () => { if (document.hidden) pause.current(); };

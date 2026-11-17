@@ -4,6 +4,9 @@ let openDialogs = 0;
 /** True while any kit dialog is open; useAutoPause stays quiet then. */
 export function isKitDialogOpen() { return openDialogs > 0; }
 
+/** The key press that opened a dialog (e.g. Escape to pause) must not also close it. */
+const OPENING_GRACE_MS = 150;
+
 /** Put this attribute on the control that should get focus when the dialog opens. */
 export const AUTOFOCUS = { 'data-kit-autofocus': '' } as const;
 
@@ -41,6 +44,7 @@ function outsideBox(event: MouseEvent<HTMLDialogElement>): boolean {
  */
 export function GameDialog({ open = true, label, labelledBy, describedBy, onClose, dismissible = true, closeOnBackdrop = false, initialFocus, returnFocus = true, className, children }: GameDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const openedAt = useRef(0);
   const latest = useRef({ onClose, dismissible, returnFocus });
   latest.current = { onClose, dismissible, returnFocus };
 
@@ -54,6 +58,7 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
       try { dialog.showModal(); } catch { dialog.setAttribute('open', ''); }
     };
     show();
+    openedAt.current = performance.now();
     openDialogs++;
     // React focuses autoFocus children before this effect opens the dialog, so focus here instead.
     (initialFocus?.current ?? dialog.querySelector<HTMLElement>('[data-kit-autofocus]'))?.focus();
@@ -62,7 +67,7 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
     let closing = false;
     const onNativeClose = () => {
       if (closing) return;
-      if (latest.current.dismissible) latest.current.onClose();
+      if (latest.current.dismissible && performance.now() - openedAt.current > OPENING_GRACE_MS) latest.current.onClose();
       else show();
     };
     dialog.addEventListener('close', onNativeClose);
@@ -83,7 +88,7 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
       aria-label={label}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
-      onCancel={event => { event.preventDefault(); if (dismissible) latest.current.onClose(); }}
+      onCancel={event => { event.preventDefault(); if (dismissible && performance.now() - openedAt.current > OPENING_GRACE_MS) latest.current.onClose(); }}
       onClick={closeOnBackdrop ? event => { if (outsideBox(event)) latest.current.onClose(); } : undefined}
     >
       {children}
