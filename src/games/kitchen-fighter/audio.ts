@@ -1,3 +1,4 @@
+import { kitOutput } from '../../shared/kit/sound';
 import type { HitEvent } from './engine';
 /** Short noise transient + resonant wooden body: synthesized utensil foley, no network assets. */
 export class FightAudio {
@@ -14,11 +15,11 @@ export class FightAudio {
     const noise = c.createBufferSource(); noise.buffer = buffer;
     const filter = c.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = hit.weapon === 'swatter' ? 2500 : 1100;
     const gain = c.createGain(); gain.gain.value = hit.kind === 'block' ? .13 : .36;
-    noise.connect(filter).connect(gain).connect(c.destination); noise.start(time);
+    noise.connect(filter).connect(gain).connect(kitOutput(c, 'kitchen-fighter')); noise.start(time);
     const osc = c.createOscillator(), body = c.createGain(); osc.type = 'triangle';
     osc.frequency.setValueAtTime(hit.weapon === 'golf' ? 340 : 185, time); osc.frequency.exponentialRampToValueAtTime(65, time + .13);
     body.gain.setValueAtTime(.24, time); body.gain.exponentialRampToValueAtTime(.001, time + duration);
-    osc.connect(body).connect(c.destination); osc.start(time); osc.stop(time + duration);
+    osc.connect(body).connect(kitOutput(c, 'kitchen-fighter')); osc.start(time); osc.stop(time + duration);
   }
   dispose() { void this.context?.close().catch(() => {}); this.context = null; }
 }

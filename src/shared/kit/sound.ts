@@ -154,3 +154,36 @@ export function createGameSound<K extends string>(gameId: string, recipes: Recor
     },
   };
 }
+
+/**
+ * For a game that still runs its own AudioContext: connect its sound to this node instead of
+ * `ctx.destination`, and the arcade's mute and volume (global and per game) apply to it, live.
+ * Moving the game to createGameSound later makes this unnecessary.
+ */
+const outputs = new Map<AudioContext, { gain: GainNode; gameId: string }>();
+let followingSettings = false;
+
+function applyOutputs() {
+  const settings = settingsStore.get();
+  for (const [ctx, out] of outputs) {
+    try { out.gain.gain.setTargetAtTime(effectiveAudio(settings, out.gameId).volume, ctx.currentTime, 0.02); } catch { /* closed context */ }
+  }
+}
+
+export function kitOutput(ctx: AudioContext, gameId: string): AudioNode {
+  let out = outputs.get(ctx);
+  if (!out) {
+    const gain = ctx.createGain();
+    gain.gain.value = effectiveAudio(settingsStore.get(), gameId).volume;
+    gain.connect(ctx.destination);
+    out = { gain, gameId };
+    outputs.set(ctx, out);
+    if (!followingSettings) { followingSettings = true; settingsStore.subscribe(applyOutputs); }
+  }
+  return out.gain;
+}
+
+/** True when the arcade settings silence this game (skip building the sound at all). */
+export function isGameMuted(gameId: string): boolean {
+  return effectiveAudio(settingsStore.get(), gameId).muted;
+}

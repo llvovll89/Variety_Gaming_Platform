@@ -1,5 +1,6 @@
 import type { Cue } from '../engine';
 import { safeGetItem, safeSetItem } from '../../../shared/storage';
+import { kitOutput } from '../../../shared/kit/sound';
 
 /**
  * Synthesised sound for 별빛 야간열차. Every effect is built from oscillators and filtered noise
@@ -49,7 +50,7 @@ class SoundEngine {
       const comp = this.ctx.createDynamicsCompressor();
       comp.threshold.value = -14;
       comp.ratio.value = 4;
-      this.master.connect(comp).connect(this.ctx.destination);
+      this.master.connect(comp).connect(kitOutput(this.ctx, 'night-train'));
       this.sfxBus = this.ctx.createGain();
       this.ambientBus = this.ctx.createGain();
       this.sfxBus.connect(this.master);
