@@ -1,3 +1,4 @@
+import { kitOutput } from '../../../shared/kit/sound';
 /**
  * A short synthesized "pop" via the Web Audio API — no audio asset files needed. The
  * AudioContext is created lazily on the first pop (called from a pointerdown handler), which
@@ -28,7 +29,7 @@ export class PopSoundPlayer {
       osc.frequency.exponentialRampToValueAtTime(140 * pitch, now + 0.12);
       gain.gain.setValueAtTime(0.28, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
-      osc.connect(gain).connect(ctx.destination);
+      osc.connect(gain).connect(kitOutput(ctx, 'hachuping-balloon'));
       osc.start(now);
       osc.stop(now + 0.18);
     } catch {

@@ -1,4 +1,5 @@
-﻿import { useEffect, useState, type RefObject } from 'react';
+import { keyOf } from '../../../shared/kit/keys';
+import { useEffect, useState, type RefObject } from 'react';
 import { WhackAMoleEngine } from '../game/engine';
 import { MoleScene, type TargetPoint } from '../game/renderer';
 import { MOLE_KEYS, type DifficultyLevel } from '../game/constants';
@@ -19,7 +20,7 @@ export function useWhackAMoleEngine(canvasRef: RefObject<HTMLCanvasElement | nul
     frame=requestAnimationFrame(draw);
     const key=(e:KeyboardEvent)=> {
       if(e.repeat || e.altKey || e.ctrlKey || e.metaKey || (e.target instanceof HTMLElement && ['INPUT','TEXTAREA'].includes(e.target.tagName))) return;
-      const id=MOLE_KEYS.indexOf(e.key.toLowerCase());
+      const id=MOLE_KEYS.indexOf(keyOf(e));
       if(id>=0) {e.preventDefault(); engine.hitMole(id);}
     };
     // Pausing (Escape, P, looking away) is handled by the kit's useAutoPause in the app.

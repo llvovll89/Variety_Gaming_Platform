@@ -97,23 +97,29 @@ export function meetsChallenge(challenge: DailyChallenge, run: RunReport): { mat
   return { matches: true, value, done: challenge.compare === 'atMost' ? value <= challenge.goal : value >= challenge.goal };
 }
 
-/** Records a run against today's challenge. Old days are dropped. */
-export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: RunReport): { state: MetaState; result?: { id: string; label: string; completed: boolean; justCompleted: boolean } } {
+/**
+ * Records a run against a day's challenge and keeps the 14 most recent days.
+ * `today` is the real date now. It differs from challenge.date when a run started before midnight
+ * ends after it; days after `today` (a clock that was once ahead) are the only ones dropped.
+ */
+export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: RunReport, today: string = challenge.date): { state: MetaState; result?: { id: string; label: string; completed: boolean; justCompleted: boolean } } {
   const check = meetsChallenge(challenge, run);
   if (!check.matches) return { state };
-  const today = state.daily[challenge.date] ?? {};
-  const before = today[challenge.gameId];
+  const dayEntries = state.daily[challenge.date] ?? {};
+  const before = dayEntries[challenge.gameId];
   const previous = before?.best ?? null;
   // A run without the stat leaves the best as it was (null until a real value arrives).
   const better = check.value !== null && (previous === null || (challenge.compare === 'atMost' ? check.value < previous : check.value > previous));
   const done = (before?.done ?? false) || check.done;
   const justCompleted = done && !before?.done;
   const entry = { done, best: better ? check.value : previous };
-  // Keep this day and the 13 before it; days after it (a clock that was once ahead) are dropped.
+  // Keep the 14 most recent days up to today (and the challenge day itself).
   const daily: MetaState['daily'] = {};
-  const kept = Object.keys(state.daily).filter(date => date < challenge.date).sort().slice(-(DAILY_KEEP_DAYS - 1));
-  for (const date of kept) daily[date] = state.daily[date];
-  daily[challenge.date] = { ...today, [challenge.gameId]: entry };
+  const latest = challenge.date > today ? challenge.date : today;
+  // The challenge day itself always stays, so a completion is never counted twice.
+  const others = Object.keys(state.daily).filter(date => date <= latest && date !== challenge.date).sort().slice(-(DAILY_KEEP_DAYS - 1));
+  const dates = [...others, challenge.date].sort();
+  for (const date of dates) daily[date] = date === challenge.date ? { ...dayEntries, [challenge.gameId]: entry } : state.daily[date];
   let games = state.games;
   if (justCompleted) {
     // Completed challenges are counted forever (for achievements), even after the day is dropped.

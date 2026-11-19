@@ -66,8 +66,15 @@ export default function App() {
 
   useEffect(() => { document.title = documentTitle(activeGame); }, [activeGame]);
 
-  // Records each game kept on its own before the arcade-wide store: read once, never changed.
-  useEffect(() => { importLegacyRecords(GAMES, safeGetItem); }, []);
+  // Most games still save only to their own keys, so bring those records in whenever the hub shows
+  // (first load and every return from a game). Old keys are only read; with nothing new, nothing is written.
+  const importedOnce = useRef(false);
+  useEffect(() => {
+    // Also on first load straight into a game (a /play/<id> link), so its old best counts from the first run.
+    if (activeGameId && importedOnce.current) return;
+    importedOnce.current = true;
+    importLegacyRecords(GAMES, safeGetItem);
+  }, [activeGameId]);
 
   const selectGame = useCallback((gameId: string, intent: Intent = "start") => {
     const game = getGameById(gameId);

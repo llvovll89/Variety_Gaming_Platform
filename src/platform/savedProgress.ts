@@ -1,5 +1,13 @@
 import { safeGetItem } from '../shared/storage';
 
+/** '로' or '으로' after a word: '으로' after a final consonant other than ㄹ ('신야로', '낙양성으로'). */
+export function toParticle(word: string): string {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return '(으)로';
+  const final = code % 28;
+  return final === 0 || final === 8 ? '로' : '으로';
+}
+
 /** Use each game's own validator, and load its rules only when a save exists. */
 export async function savedProgressLabel(id: string): Promise<string | null> {
   try {
@@ -42,7 +50,11 @@ export async function savedProgressLabel(id: string): Promise<string | null> {
       const { STORAGE_KEY, demoSchema } = await import('../games/three-kingdoms-card/lib/demoGame');
       const raw = safeGetItem(STORAGE_KEY);
       if (!raw) return null;
-      return demoSchema.safeParse(JSON.parse(raw)).success ? '저장된 영지로 돌아가기' : null;
+      // Opening the game saves even before a lord is named; that empty land is nothing to resume.
+      const parsed = demoSchema.safeParse(JSON.parse(raw));
+      if (!parsed.success || !parsed.data.lordName) return null;
+      const castle = parsed.data.castleName.trim();
+      return castle ? `${castle}${toParticle(castle)} 돌아가기` : '저장된 영지로 돌아가기';
     }
   } catch { /* Broken saves and blocked storage must leave the hub usable. */ }
   return null;

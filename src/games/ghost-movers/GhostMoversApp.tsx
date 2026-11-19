@@ -1,3 +1,5 @@
+import { keyOf } from '../../shared/kit/keys';
+import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, ArrowUUpLeft, ArrowCounterClockwise, ArrowsClockwise, Ghost, House, Lightbulb, MapTrifold, Pause, Play, Question, SpeakerHigh, SpeakerSlash, Star, X, Check, Package, SignOut } from '@phosphor-icons/react';
@@ -43,7 +45,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   },[run]);
   useEffect(()=>{
     if(!sound||!run||!run.steps)return;
-    try {const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(run.status==='won'?740:run.effect?.kind==='ice'?880:run.effect?.kind==='wind'?400:240,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(run.status==='won'?1100:160,ctx.currentTime+.14);gain.gain.setValueAtTime(.045,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.2);}catch{/* Silent play works when audio is unavailable. */}
+    try {const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(run.status==='won'?740:run.effect?.kind==='ice'?880:run.effect?.kind==='wind'?400:240,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(run.status==='won'?1100:160,ctx.currentTime+.14);gain.gain.setValueAtTime(.045,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);osc.connect(gain);gain.connect(kitOutput(ctx,'ghost-movers'));osc.start();osc.stop(ctx.currentTime+.2);}catch{/* Silent play works when audio is unavailable. */}
   // Play only when a turn changes, not when a player reads or rotates.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[run?.steps,sound]);
@@ -51,7 +53,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   useEffect(()=>{
     const handler=(e:KeyboardEvent)=>{
       if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName))return;
-      const k=e.code==='Space'?' ':e.key.length===1?e.key.toLowerCase():e.key;
+      const k=e.code==='Space'?' ':keyOf(e);
       if((k===' '||k==='Enter')&&(e.target as HTMLElement).closest('button'))return;
       if(modal||!run)return;
       if(k==='Escape'){e.preventDefault();if(travel)setPlanned(null);else setPaused(true);return;}

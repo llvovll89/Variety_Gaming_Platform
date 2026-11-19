@@ -1,3 +1,4 @@
+import { keyOf } from "../../shared/kit/keys";
 import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import PlayField from "./components/PlayField";
@@ -106,7 +107,7 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
     const onVisibility = () => { if (document.hidden) pause(); };
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.altKey || e.ctrlKey || e.metaKey) return;
-      if (e.key === "Escape" || e.key.toLowerCase() === "p") { e.preventDefault(); togglePause(); return; }
+      if (e.key === "Escape" || keyOf(e) === "p") { e.preventDefault(); togglePause(); return; }
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= 6 && engine.getGameState().status === "playing") { e.preventDefault(); engine.selectOptionAt(n - 1); }
     };

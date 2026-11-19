@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadBundle } from './bundle.mjs';
 
-const { scheduleRecipe, shouldPauseForKey, createGameSound, haptic, settingsStore, audienceOf } = await loadBundle(`
+const { scheduleRecipe, shouldPauseForKey, createGameSound, haptic, settingsStore, audienceOf, kitOutput, isGameMuted } = await loadBundle(`
   export {audienceOf} from './src/platform/types.ts';
-  export {scheduleRecipe, createGameSound} from './src/shared/kit/sound.ts';
+  export {scheduleRecipe, createGameSound, kitOutput, isGameMuted} from './src/shared/kit/sound.ts';
   export {shouldPauseForKey} from './src/shared/kit/useAutoPause.ts';
   export {haptic} from './src/shared/kit/haptics.ts';
   export {settingsStore} from './src/shared/kit/settings.ts';
@@ -54,4 +54,52 @@ test('kids games are found from their genre unless a game says otherwise', () =>
   assert.equal(audienceOf({ genres: ['키즈', '캐주얼'] }), 'kids');
   assert.equal(audienceOf({ genres: ['액션'] }), 'general');
   assert.equal(audienceOf({ genres: ['액션'], audience: 'kids' }), 'kids');
+});
+
+test('a game with its own audio follows the arcade mute and volume, live', async () => {
+  const { readdirSync, readFileSync, statSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const store = new Map();
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  settingsStore.resetForTests();
+  try {
+    const gain = { value: 1, setTargetAtTime(v) { this.value = v; } };
+    const node = { gain, connect() {} };
+    const ctx = { currentTime: 0, destination: {}, createGain: () => node };
+    assert.equal(kitOutput(ctx, 'balloon'), node);
+    assert.equal(gain.value, 0.8, 'starts at the master volume');
+    settingsStore.setGame('balloon', { volume: 0.5 });
+    assert.equal(gain.value, 0.4, 'master times game volume');
+    settingsStore.set({ muted: true });
+    assert.equal(gain.value, 0);
+    assert.equal(isGameMuted('balloon'), true);
+    assert.equal(kitOutput(ctx, 'balloon'), node, 'one output per audio context');
+    ctx.state = 'closed';
+    let created = 0;
+    const next = { currentTime: 0, destination: {}, createGain: () => { created++; return { gain: { value: 1, setTargetAtTime() {} }, connect() {} }; } };
+    kitOutput(next, 'balloon');
+    gain.value = 'untouched';
+    settingsStore.set({ muted: false });
+    assert.equal(gain.value, 'untouched', 'a closed context is forgotten, not updated forever');
+  } finally { delete globalThis.localStorage; settingsStore.resetForTests(); }
+  // Every game's sound goes through the arcade output, so the hub's sound switch reaches it.
+  const walk = dir => readdirSync(dir).flatMap(f => statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]);
+  const direct = walk('src/games').filter(f => /\.tsx?$/.test(f) && /\.destination/.test(readFileSync(f, 'utf8').replace(/kitOutput\([^)]*\)/g, '')));
+  assert.deepEqual(direct, [], 'no game connects straight to the speakers');
+});
+
+test('letter keys work with a Korean keyboard layout', async () => {
+  const { keyOf } = await loadBundle(`export {keyOf} from './src/shared/kit/keys.ts';`);
+  assert.equal(keyOf({ key: 'ㅈ', code: 'KeyW' }), 'w');
+  assert.equal(keyOf({ key: 'W', code: 'KeyW' }), 'w');
+  assert.equal(keyOf({ key: '!', code: 'Digit1' }), '!', 'Shift+1 is not 1');
+  assert.equal(keyOf({ key: 'r', code: 'KeyO' }), 'r', 'Dvorak: the printed letter, not the QWERTY position');
+  assert.equal(keyOf({ key: 'Process', code: 'KeyQ' }), 'q', 'IME composing');
+  assert.equal(keyOf({ key: 'ArrowUp', code: 'ArrowUp' }), 'ArrowUp');
+  assert.equal(keyOf({ key: 'Escape', code: 'Escape' }), 'Escape');
+  assert.equal(keyOf({ key: 'a' }), 'a', 'synthetic events without a code still work');
+  const { readFileSync } = await import('node:fs');
+  for (const file of ['src/games/hachuping-whack-a-mole/hooks/useWhackAMoleEngine.ts', 'src/games/hachuping-dodge/survivor/SurvivorApp.tsx', 'src/games/echo-maze/EchoMazeApp.tsx', 'src/games/ghost-movers/GhostMoversApp.tsx', 'src/games/ten-seconds/TenSecondsApp.tsx', 'src/games/night-train/NightTrainApp.tsx', 'src/games/night-train/ui/CombatView.tsx']) {
+    assert.ok(!/\bkey\.toLowerCase\(\)|\be\.key\.length/.test(readFileSync(file, 'utf8')), `${file} reads letters by physical key`);
+  }
 });

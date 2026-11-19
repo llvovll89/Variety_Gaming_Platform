@@ -1,3 +1,5 @@
+import { keyOf } from '../../shared/kit/keys';
+import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUp, ArrowRight, ArrowDown, ArrowCounterClockwise, Clock, Ghost, Play, Pause, Lock, Star, MapTrifold, SpeakerHigh, SpeakerSlash, ArrowUUpLeft, Sparkle, X } from '@phosphor-icons/react';
@@ -34,7 +36,7 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   const resumeAfterHelp=useRef(false),touchMove=useRef<number|null>(null);
   const preview=useMemo(()=>{const p=new TimeRun(0);p.player.direction=2;p.echoes=[Array.from({length:600},()=>({x:3,y:3,direction:2 as Direction}))];return p;},[]),held=useRef<Direction|null>(null),page=useRef<HTMLElement>(null),dialog=useRef<HTMLDivElement>(null),wonRun=useRef<TimeRun|null>(null),audio=useRef<AudioContext|null>(null);
   const update=()=>refresh(n=>n+1);
-  const tone=(frequency=520)=>{if(!sound)return;try{const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(frequency,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(frequency*.65,ctx.currentTime+.18);gain.gain.setValueAtTime(.07,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.23);}catch{/* Sound is optional. */}};
+  const tone=(frequency=520)=>{if(!sound)return;try{const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(frequency,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(frequency*.65,ctx.currentTime+.18);gain.gain.setValueAtTime(.07,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);osc.connect(gain);gain.connect(kitOutput(ctx,'ten-seconds'));osc.start();osc.stop(ctx.currentTime+.23);}catch{/* Sound is optional. */}};
   const launch=(index:number,immediate=false,practice:boolean=index===0&&!progress.best[0])=>{held.current=null;const next=new TimeRun(index);next.practice=practice;if(immediate)next.start();setRun(next);setMapOpen(false);setHelpOpen(false);page.current?.scrollTo({top:0});};
   const rewind=()=>{if(run?.rewind())tone(660);held.current=null;update();};
   const pause=()=>{touchMove.current=null;held.current=null;if(run)run.route=[];run?.pause();update();};
@@ -50,13 +52,13 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   useEffect(()=>{
     const down=(e:KeyboardEvent)=>{
       if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName))return;
-      const k=e.key.length===1?e.key.toLowerCase():e.key;
+      const k=keyOf(e);
       if(k==='Escape'&&!e.repeat){e.preventDefault();if(helpOpen){closeHelp();}else if(mapOpen){setMapOpen(false);}else if(run?.status==='playing')pause();else if(run?.status==='paused'){run.start();update();}return;}
       if(!run||helpOpen||mapOpen||run.status!=='playing')return;
       if(k in directionKeys){e.preventDefault();held.current=directionKeys[k];if(!e.repeat){run.move(held.current);update();}}
       if(k==='r'&&!e.repeat){e.preventDefault();rewind();}
     };
-    const up=(e:KeyboardEvent)=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(directionKeys[k]===held.current)held.current=null;};
+    const up=(e:KeyboardEvent)=>{const k=keyOf(e);if(directionKeys[k]===held.current)held.current=null;};
     const hidden=()=>{if(document.hidden)pause();};
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',pause);document.addEventListener('visibilitychange',hidden);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',pause);document.removeEventListener('visibilitychange',hidden);held.current=null;};

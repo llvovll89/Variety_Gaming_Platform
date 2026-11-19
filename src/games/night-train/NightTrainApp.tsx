@@ -1,3 +1,4 @@
+import { keyOf } from '../../shared/kit/keys';
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { GameProps } from '../../platform/types';
 import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
@@ -195,7 +196,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       if (/INPUT|TEXTAREA|SELECT/.test((event.target as HTMLElement).tagName)) return;
       if (!run || panel || document.querySelector('dialog[open]')) return;
       if (event.key === 'Escape') { event.preventDefault(); setPanel('menu'); }
-      else if (event.key.toLowerCase() === 'd') { event.preventDefault(); setPanel('deck'); }
+      else if (keyOf(event) === 'd') { event.preventDefault(); setPanel('deck'); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

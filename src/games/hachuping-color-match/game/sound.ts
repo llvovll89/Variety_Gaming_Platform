@@ -3,6 +3,10 @@
  * Generates simple tone-based sounds without external audio files.
  */
 
+import { isGameMuted, kitOutput } from '../../../shared/kit/sound';
+
+/** Plays through the arcade's mute and volume settings as well as this game's own toggle. */
+const GAME_ID = 'hachuping-color-match';
 let audioContext: AudioContext | null = null;
 let muted = false;
 
@@ -20,7 +24,7 @@ function getAudioContext(): AudioContext {
 
 /** Play a bright ascending chime for a correct answer */
 export function playCorrectSound(): void {
-  if (muted) return;
+  if (muted || isGameMuted(GAME_ID)) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -31,7 +35,7 @@ export function playCorrectSound(): void {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(kitOutput(ctx, GAME_ID));
 
       osc.frequency.value = freq;
       osc.type = "sine";
@@ -50,7 +54,7 @@ export function playCorrectSound(): void {
 
 /** Play a low buzz for a wrong answer */
 export function playWrongSound(): void {
-  if (muted) return;
+  if (muted || isGameMuted(GAME_ID)) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -60,7 +64,7 @@ export function playWrongSound(): void {
     const gain = ctx.createGain();
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(kitOutput(ctx, GAME_ID));
 
     osc.frequency.setValueAtTime(220, now);
     osc.frequency.exponentialRampToValueAtTime(120, now + 0.25);
@@ -78,7 +82,7 @@ export function playWrongSound(): void {
 
 /** Play a sound for game over */
 export function playGameOverSound(): void {
-  if (muted) return;
+  if (muted || isGameMuted(GAME_ID)) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -88,7 +92,7 @@ export function playGameOverSound(): void {
     const gain = ctx.createGain();
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(kitOutput(ctx, GAME_ID));
 
     osc.frequency.setValueAtTime(600, now);
     osc.frequency.exponentialRampToValueAtTime(300, now + 0.5);
@@ -106,7 +110,7 @@ export function playGameOverSound(): void {
 
 /** Play a quick rising three-note run when the level goes up */
 export function playLevelUpSound(): void {
-  if (muted) return;
+  if (muted || isGameMuted(GAME_ID)) return;
   try {
     const ctx = getAudioContext();
     if (ctx.state === "suspended") ctx.resume();
@@ -115,7 +119,7 @@ export function playLevelUpSound(): void {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(kitOutput(ctx, GAME_ID));
       osc.type = "triangle";
       osc.frequency.value = freq;
       const start = now + i * 0.07;

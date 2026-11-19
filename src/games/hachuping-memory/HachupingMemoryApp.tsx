@@ -65,8 +65,9 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
   useEffect(() => {
     if (snapshot.status !== 'game-over' || !engine || reported.current === engine) return;
     reported.current = engine; // once per run, also under StrictMode
+    // A memory run only ends on a mistake: 'lose', so a 3-second slip is not a win or a streak day.
     submitScore(snapshot.score);
-    setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'complete', stats: { stage: snapshot.gameState.stage } }));
+    setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'lose', stats: { stage: snapshot.gameState.stage } }));
   }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records]);
 
   const handleStart = useCallback(() => {

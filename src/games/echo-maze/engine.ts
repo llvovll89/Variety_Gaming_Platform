@@ -85,15 +85,18 @@ export class MazeRun {
     if (this.seals.delete(key(p))) { this.sealsCollected++; this.message = `봉인 해제! ${this.sealsCollected}/${this.requiredSeals} · ${this.seals.size ? '남은 봉인을 찾아보세요.' : '출구가 열렸어요!'}`; }
     if (this.traps.has(key(p)) && this.trapsActive) { this.trapHits++; this.remaining = Math.max(0, this.remaining - 6); this.message = '시간 함정! −6초 · 빛이 꺼질 때 건너세요.'; }
     if (!this.remaining) { this.status = 'lost'; this.message = '시간 함정에 남은 시간을 잃었어요.'; return; }
-    if (key(p) === key(this.exit)) {
-      if (this.seals.size) this.message = `출구가 잠겨 있어요. 봉인 ${this.seals.size}개를 더 모으세요.`;
-      else { this.status = 'won'; this.message = '모든 봉인을 풀고 탈출했어요!'; }
-    }
+    this.checkExit();
+  }
+  /** Standing on the exit with every seal opened wins, however the player got there. */
+  private checkExit() {
+    if (key(this.player) !== key(this.exit)) return;
+    if (this.seals.size) this.message = `출구가 잠겨 있어요. 봉인 ${this.seals.size}개를 더 모으세요.`;
+    else { this.status = 'won'; this.message = '모든 봉인을 풀고 탈출했어요!'; }
   }
   action(action: 'anchor' | 'return' | 'pulse') {
     if (this.paused || this.status !== 'playing') return;
     if (action === 'anchor') { this.anchor = { ...this.player }; this.message = '기억 닻을 남겼어요. 언제든 돌아오세요.'; }
-    if (action === 'return' && this.anchor && this.returns > 0) { this.player = { ...this.anchor }; this.returns--; this.message = '기억 닻으로 돌아왔어요. 시간은 그대로 흘러요.'; }
+    if (action === 'return' && this.anchor && this.returns > 0) { this.player = { ...this.anchor }; this.returns--; this.message = '기억 닻으로 돌아왔어요. 시간은 그대로 흘러요.'; this.checkExit(); }
     if (action === 'pulse' && this.pulses > 0 && this.remaining > 4) { this.pulses--; this.remaining -= 4; this.reveal = 5; this.message = '메아리! 5초 동안 전체 미로가 보여요. −4초'; }
   }
 }
