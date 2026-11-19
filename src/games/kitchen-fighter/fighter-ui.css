@@ -58,3 +58,15 @@
  .kf-battle .kf-touch-controls{order:2;margin-top:auto;padding-top:16px}
 }
 @media(max-width:360px){.kf-hud{gap:50px}.kf-hud-name span{display:none}.kf-hud-name strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+/* Kit dialogs keep the existing result card look. */
+.kf-dialog{width:auto;max-width:calc(100% - 32px);padding:0;border:0;background:none;box-shadow:none;overflow:visible}
+.kf-dialog::backdrop{background:#0008}
+.kf-ladder{display:grid;gap:8px;margin-top:14px}
+.kf-ladder p{margin:0;font-size:13px}
+.kf-ladder ol{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0;padding:0;list-style:none}
+.kf-ladder button{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;min-height:58px;padding:6px 4px;border:1px solid #d9d2c4;border-radius:10px;background:#fff;color:#3a2f22;font:inherit;cursor:pointer}
+.kf-ladder button b{font-size:16px}
+.kf-ladder button small{font-size:10px;line-height:1.3;opacity:.85;text-align:center}
+.kf-ladder button[data-cleared=true]{border-color:#d9a21b;background:#fff4d6}
+.kf-ladder button:disabled{opacity:.45;background:#f1eee8;cursor:not-allowed}
+@media (max-width:600px){.kf-ladder ol{grid-template-columns:repeat(3,minmax(0,1fr))}}

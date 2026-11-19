@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const result = await build({ stdin: { contents: 'export * from "./src/games/kitchen-fighter/engine.ts"; export * from "./src/games/kitchen-fighter/controls.ts"; export * from "./src/games/kitchen-fighter/pose.ts"; export * from "./src/games/kitchen-fighter/characters.ts";', resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
-const { Fight, movementInput, photoSize, fighterPose, WEAPON_LENGTH, WEAPONS, MOVES, readCharacters, saveCharacterSettings, savePhoto, CHARACTERS_KEY, photoKey } = await import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'));
+const { Fight, movementInput, photoSize, fighterPose, WEAPON_LENGTH, WEAPONS, MOVES, LADDER, cpuLevel, readCharacters, saveCharacterSettings, savePhoto, CHARACTERS_KEY, photoKey } = await import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'));
 function battle(weapon = 'spatula') { const f = new Fight('local', [weapon, 'spatula']); f.phase = 'fight'; f.fighters[0].x = 450; f.fighters[1].x = 575; return f; }
 function advance(f, seconds) { for (let t = 0; t < seconds; t += .01) f.step(.01); }
 test('startup, recovery and one hit per attack prevent instant or repeated damage', () => {
@@ -173,4 +173,15 @@ test('moving an old inline photo never drops it, and a refused photo never bring
     assert.equal(savePhoto(0, next), false);
     assert.equal(readCharacters('나')[0].photo, '', 'the replaced photo does not come back');
   } finally { delete globalThis.localStorage; }
+});
+
+test('the CPU ladder climbs from gentle to sharp, and the easy/normal choices keep their old feel', () => {
+  assert.deepEqual(cpuLevel('easy'), LADDER[2]);
+  assert.deepEqual(cpuLevel('normal'), LADDER[4]);
+  for (let step = 1; step < 5; step++) {
+    assert.ok(LADDER[step + 1].think < LADDER[step].think, 'thinks faster');
+    assert.ok(LADDER[step + 1].guard > LADDER[step].guard, 'guards more');
+    assert.ok(LADDER[step + 1].attack < LADDER[step].attack, 'attacks more readily');
+  }
+  assert.equal(new Fight('cpu', ['spatula', 'swatter'], 5).difficulty, 5);
 });
