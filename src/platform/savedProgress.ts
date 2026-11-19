@@ -42,7 +42,9 @@ export async function savedProgressLabel(id: string): Promise<string | null> {
       const { STORAGE_KEY, demoSchema } = await import('../games/three-kingdoms-card/lib/demoGame');
       const raw = safeGetItem(STORAGE_KEY);
       if (!raw) return null;
-      return demoSchema.safeParse(JSON.parse(raw)).success ? '저장된 영지로 돌아가기' : null;
+      // Opening the game saves even before a lord is named; that empty land is nothing to resume.
+      const parsed = demoSchema.safeParse(JSON.parse(raw));
+      return parsed.success && parsed.data.lordName ? parsed.data.castleName ? `${parsed.data.castleName} 영지로 돌아가기` : '저장된 영지로 돌아가기' : null;
     }
   } catch { /* Broken saves and blocked storage must leave the hub usable. */ }
   return null;

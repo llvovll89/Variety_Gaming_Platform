@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const compiled = await build({ stdin: { contents: "export * from './src/platform/playExperience'; export * from './src/platform/savedProgress'; export { Battle, serialize } from './src/games/fantasy-tactics/game'; export { createRun, act, availableNodes } from './src/games/night-train/engine';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
-const { gamesForTime, recommendNext, scoreMessage, savedProgressLabel, Battle, serialize, createRun, act, availableNodes } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
+const compiled = await build({ stdin: { contents: "export * from './src/platform/playExperience'; export * from './src/platform/savedProgress'; export { Battle, serialize } from './src/games/fantasy-tactics/game'; export { createRun, act, availableNodes } from './src/games/night-train/engine'; export { createDemo } from './src/games/three-kingdoms-card/lib/demoGame';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'node' });
+const { gamesForTime, recommendNext, scoreMessage, savedProgressLabel, Battle, serialize, createRun, act, availableNodes, createDemo } = await import('data:text/javascript;base64,' + Buffer.from(compiled.outputFiles[0].text).toString('base64'));
 const game = (id, genres, tags=[], extra={}) => ({id,genres,tags,...extra});
 const games = [game('hachuping-balloon',['키즈','캐주얼']),game('hachuping-whack-a-mole',['액션','캐주얼']),game('hachuping-jump',['액션','캐주얼']),game('fantasy-tactics',['전략']),game('three-kingdoms',['전략']),game('hachuping-color-match',['캐주얼'],[],{releaseStatus:'coming-soon'})];
 
@@ -53,4 +53,16 @@ test('night train offers to resume a validated run but not a finished one',async
   assert.equal(await savedProgressLabel('night-train'),'1번째 역 · 체력 70/70');
   values.set('arcade:night-train:run',JSON.stringify({...started,phase:'victory',combat:null}));
   assert.equal(await savedProgressLabel('night-train'),null);
+});
+
+test('the card game offers to resume only a land that has a lord', async () => {
+  const values = new Map();
+  globalThis.localStorage = { getItem: key => values.get(key) ?? null };
+  try {
+    const now = Date.now();
+    values.set('three-kingdoms-local-v2', JSON.stringify({ ...createDemo(now), savedAt: now }));
+    assert.equal(await savedProgressLabel('three-kingdoms-card'), null, 'opened but never named a lord');
+    values.set('three-kingdoms-local-v2', JSON.stringify({ ...createDemo(now), lordName: '유비', castleName: '신야', savedAt: now }));
+    assert.equal(await savedProgressLabel('three-kingdoms-card'), '신야 영지로 돌아가기');
+  } finally { delete globalThis.localStorage; }
 });
