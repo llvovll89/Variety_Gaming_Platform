@@ -44,6 +44,8 @@ test('one report gives the result screen everything a run earned', () => {
     assert.deepEqual(api.unlock('secret').map(a => a.id), ['secret']);
     assert.deepEqual(api.unlock('secret'), [], 'once');
     assert.equal(api.best(), 120);
+    assert.deepEqual([api.record().runs, api.record().progress.world], [3, 3], 'the whole record, for games that unlock things');
+    assert.equal(M.createRecordsApi('nobody', undefined).record(), null);
     assert.equal(JSON.parse(store.get('arcade:meta:v1')).games.jump.runs, 3, 'saved');
   });
 });

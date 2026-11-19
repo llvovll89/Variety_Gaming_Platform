@@ -13,3 +13,9 @@
 /* Readable floor: nothing on screen below 11px, on phones included. */
 .survivor :is(.survivor-stage>span,.survivor-level,.survivor-level>small,.survivor-bar-label,.survivor-bar-label span,.survivor-objective,.survivor-job-hud span,.survivor-job-hud small,.survivor-bottom>div,.survivor-bottom>span b,.survivor-bottom>small,.survivor-boss small,.survivor-upgrades small,.survivor-route small,.survivor-character-caption>span,.survivor-difficulty p),.survivor kbd,.survivor-menu-footer,.survivor-nav{font-size:11px}
 .survivor .survivor-bottom div>span>b{font-size:11px}
+
+/* Dialogs are native (kit GameDialog): the overlay look moves to ::backdrop. */
+.survivor .survivor-dialog.kit-dialog{margin:auto;max-height:calc(100dvh - 32px);color:#efeaf4}
+.survivor .survivor-dialog.kit-dialog::backdrop{background:#191d27d9;backdrop-filter:blur(4px)}
+.survivor{--kit-surface:#30333d;--kit-ink:#efeaf4;--kit-muted:#c4bccd;--kit-accent:#d9b8ff}
+.survivor-opened{margin:12px 0 0;padding:10px 12px;border:1px solid #d9b8ff66;border-radius:6px;font-size:13px;line-height:1.6;text-align:left}.survivor-opened small{color:#c4bccd}

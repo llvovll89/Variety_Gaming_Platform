@@ -4,7 +4,7 @@ import { evaluate, unlockManual } from './achievements';
 import { addDailyRun, addStreakDay, dailyChallenge, localDateKey } from './daily';
 import { addProgress, addRun, bestOf, mergeLegacy } from './records';
 import { metaStore } from './store';
-import type { DailyChallenge, GameMeta, LegacyParse, RunReport, RunRewards, UnlockedAchievement } from './types';
+import type { DailyChallenge, GameMeta, GameRecord, LegacyParse, RunReport, RunRewards, UnlockedAchievement } from './types';
 
 const legacyParse: LegacyParse = {
   num(raw) { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; },
@@ -22,6 +22,8 @@ export interface RecordsApi {
   best(mode?: string, difficulty?: string): number | null;
   /** Today's challenge for this game, if it has one. */
   daily(): DailyChallenge | null;
+  /** Everything kept for this game (runs, wins, bests, totals, progress), or null before the first record. */
+  record(): GameRecord | null;
 }
 
 const NO_REWARDS: RunRewards = { newBest: false, previousBest: null, best: null, unlocked: [], streak: { days: 0, extendedToday: false } };
@@ -33,6 +35,7 @@ export const offlineRecords: RecordsApi = {
   unlock: () => [],
   best: () => null,
   daily: () => null,
+  record: () => null,
 };
 
 export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clock: () => Date = () => new Date()): RecordsApi {
@@ -88,6 +91,7 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
     },
     best: (mode, difficulty) => bestOf(metaStore.get().games[gameId], order, mode, difficulty),
     daily: todays,
+    record: () => metaStore.get().games[gameId] ?? null,
   };
 }
 
