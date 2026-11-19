@@ -18,6 +18,6 @@ export default function StartMenu({onStart,onExit,bestScore,difficulty,onDifficu
       </section>
       <section className="mole-showcase" aria-label="게임 미리보기"><div className="mole-big-word" aria-hidden="true">MOLE<br/>POP!</div><MolePreview/><span className="mole-showcase-caption">준비됐어? 이번엔 내가 더 빠를걸!</span></section>
     </div>
-    <footer className="mole-menu-footer"><p><CursorClickIcon size={22}/><span><b>보이면, 톡!</b> 클릭 또는 터치로 +10점</span></p><p><TimerIcon size={22}/><span><b>딱 30초의 몰입</b> 놓치지 않고 연속으로 잡아보세요</span></p><small>키보드 Q W E / A S D / Z X C 지원</small></footer>
+    <footer className="mole-menu-footer"><p><CursorClickIcon size={22}/><span><b>보이면, 톡!</b> 한 마리 10점, 연속으로 잡으면 최대 3배</span></p><p><TimerIcon size={22}/><span><b>딱 30초, 세 라운드</b> 10초마다 두더지가 빨라져요</span></p><small>키보드 Q W E / A S D / Z X C 지원</small></footer>
   </main>;
 }

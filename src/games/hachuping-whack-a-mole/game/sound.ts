@@ -4,7 +4,9 @@ import { createGameSound } from '../../../shared/kit/sound';
 export const moleSound = createGameSound('hachuping-whack-a-mole', {
   hit: [{ f: 800, dur: 0.2, gain: 0.3 }],
   gameOver: [{ f: 600, to: 300, dur: 0.5, gain: 0.2 }],
+  roundUp: [{ f: 600, dur: 0.1, gain: 0.2 }, { f: 800, dur: 0.1, gain: 0.2, at: 0.15 }],
 });
 
 export function playHit(): void { moleSound.play('hit'); }
 export function playGameOver(): void { moleSound.play('gameOver'); }
+export function playRoundUp(): void { moleSound.play('roundUp'); }

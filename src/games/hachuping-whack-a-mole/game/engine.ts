@@ -1,7 +1,7 @@
-﻿import { GAME_TOTAL_TIME, MOLE_GRID_COLS, MOLE_GRID_ROWS, POINTS_PER_HIT, HIT_FLASH_DURATION, DIFFICULTY_CONFIGS, DEFAULT_DIFFICULTY, type DifficultyLevel } from './constants';
+﻿import { GAME_TOTAL_TIME, MOLE_GRID_COLS, MOLE_GRID_ROWS, POINTS_PER_HIT, HIT_FLASH_DURATION, DIFFICULTY_CONFIGS, DEFAULT_DIFFICULTY, ROUND_SPEED, comboMultiplier, roundFor, type DifficultyLevel } from './constants';
 import { UIStore } from './uiStore';
 import type { GameState } from './types';
-import { playGameOver, playHit } from './sound';
+import { playGameOver, playHit, playRoundUp } from './sound';
 
 export class WhackAMoleEngine {
   readonly uiStore = new UIStore();
@@ -18,11 +18,12 @@ export class WhackAMoleEngine {
     const c = DIFFICULTY_CONFIGS[this.difficulty];
     const min = active ? c.moleActiveDurationMin : c.moleInactiveDurationMin;
     const max = active ? c.moleActiveDurationMax : c.moleInactiveDurationMax;
-    return min + Math.random() * (max - min);
+    const speed = ROUND_SPEED[(this.gameState?.round ?? 1) - 1] ?? 1;
+    return (min + Math.random() * (max - min)) * speed;
   }
   private initialState(): GameState {
     return { status: 'idle', score: 0, timeRemaining: GAME_TOTAL_TIME, countdown: 3, round: 1,
-      totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, gameOver: false, finalScore: null, difficulty: this.difficulty,
+      totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, lastPoints: 0, gameOver: false, finalScore: null, difficulty: this.difficulty,
       moles: Array.from({length: MOLE_GRID_COLS * MOLE_GRID_ROWS}, (_, id) => ({id, gridX: id % MOLE_GRID_COLS, gridY: Math.floor(id / MOLE_GRID_COLS), isActive: false, activeSince: 0, duration: this.duration(false)})) };
   }
   startGame = () => {
@@ -50,7 +51,8 @@ export class WhackAMoleEngine {
     if (!mole) return false;
     s.attempts++;
     if (!mole.isActive) { s.combo = 0; this.publish(); return false; }
-    s.score += POINTS_PER_HIT; s.totalMolesHit++; s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
+    s.totalMolesHit++; s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
+    s.lastPoints = Math.round(POINTS_PER_HIT * comboMultiplier(s.combo)); s.score += s.lastPoints;
     mole.isActive = false; mole.activeSince = 0; mole.duration = this.duration(false);
     this.hitTimers.set(id, HIT_FLASH_DURATION);
     playHit(); this.publish(); return true;
@@ -71,7 +73,8 @@ export class WhackAMoleEngine {
     if (s.status !== 'playing') return;
     s.timeRemaining = Math.max(0, s.timeRemaining - dt);
     if (!s.timeRemaining) { this.endGame(); return; }
-    s.round = s.timeRemaining > 20 ? 1 : s.timeRemaining > 10 ? 2 : 3;
+    const round = roundFor(s.timeRemaining);
+    if (round !== s.round) { s.round = round; playRoundUp(); }
     for (const [id, timer] of this.hitTimers) {
       if (timer <= dt) this.hitTimers.delete(id); else this.hitTimers.set(id, timer - dt);
     }

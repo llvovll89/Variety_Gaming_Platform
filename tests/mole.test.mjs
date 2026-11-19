@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const out=await build({stdin:{contents:`export * from './src/games/hachuping-whack-a-mole/game/engine'; export * from './src/games/hachuping-whack-a-mole/game/constants';`,resolveDir:process.cwd()},bundle:true,write:false,format:'esm',platform:'node'});
-const {WhackAMoleEngine,DIFFICULTY_CONFIGS}=await import('data:text/javascript;base64,'+Buffer.from(out.outputFiles[0].text).toString('base64'));
+const {WhackAMoleEngine,DIFFICULTY_CONFIGS,ROUND_SPEED,comboMultiplier}=await import('data:text/javascript;base64,'+Buffer.from(out.outputFiles[0].text).toString('base64'));
 let next=0;
 const callbacks=new Map();
 globalThis.requestAnimationFrame=cb=>{callbacks.set(++next,cb);return next;};
@@ -33,7 +33,7 @@ test('each difficulty respects its simultaneous target cap and sampled visible d
   for(const difficulty of ['easy','normal','hard']){
     const e=make(difficulty);play(e);const s=e.getGameState(),c=DIFFICULTY_CONFIGS[difficulty];
     for(let i=0;i<240;i++) {e.update(.05);assert.ok(s.moles.filter(m=>m.isActive).length<=c.activeMoleCount);
-      for(const m of s.moles.filter(m=>m.isActive)){assert.ok(m.duration>=c.moleActiveDurationMin&&m.duration<=c.moleActiveDurationMax);}}
+      for(const m of s.moles.filter(m=>m.isActive)){assert.ok(m.duration>=c.moleActiveDurationMin*ROUND_SPEED[2]-1e-9&&m.duration<=c.moleActiveDurationMax);}}
     assert.ok(s.moles.some(m=>m.isActive));e.destroy();
   }
 });
@@ -46,4 +46,19 @@ test('restart clears statistics, hit effects and pause state',()=>{
   const e=make();play(e);e.getGameState().moles[0].isActive=true;e.hitMole(0);e.pauseGame();e.startGame();
   const s=e.getGameState();assert.equal(s.status,'ready');assert.equal(s.score,0);assert.equal(s.attempts,0);assert.equal(s.bestCombo,0);
   assert.equal(e.getMoleHitFlashAlpha(0),0);assert.equal(s.timeRemaining,30);e.destroy();
+});
+
+test('hits in a row pay more, and a miss resets the multiplier',()=>{
+  assert.deepEqual([1,4,5,9,10,19,20,40].map(comboMultiplier),[1,1,1.5,1.5,2,2,3,3]);
+  const e=make();play(e);const s=e.getGameState();
+  let total=0;for(let i=1;i<=10;i++){s.moles[0].isActive=true;assert.ok(e.hitMole(0));total+=Math.round(10*comboMultiplier(i));}
+  assert.equal(s.score,total);assert.equal(s.lastPoints,20,'the 10th hit in a row is worth 20');
+  s.moles[1].isActive=false;e.hitMole(1);s.moles[0].isActive=true;e.hitMole(0);
+  assert.equal(s.lastPoints,10,'back to 10 after a miss');
+});
+test('each 10-second round makes moles faster',()=>{
+  const e=make('normal');play(e);const s=e.getGameState(),c=DIFFICULTY_CONFIGS.normal;
+  for(let i=0;i<450;i++)e.update(.05); // 22.5 seconds in: round 3
+  assert.equal(s.round,3);
+  for(let i=0;i<40;i++){e.update(.05);for(const m of s.moles.filter(m=>m.isActive&&m.activeSince===0))assert.ok(m.duration<=c.moleActiveDurationMax*ROUND_SPEED[2]+1e-9);}
 });
