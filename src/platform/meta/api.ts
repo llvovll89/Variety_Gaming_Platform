@@ -50,7 +50,7 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
       metaStore.update(state => {
         const added = addRun(state, gameId, run, now.getTime(), order);
         let next = added.state;
-        const daily = challenge ? addDailyRun(next, challenge, run) : undefined;
+        const daily = challenge ? addDailyRun(next, challenge, run, today) : undefined;
         if (daily) next = daily.state;
         const streak = addStreakDay(next, today, run);
         next = streak.state;
