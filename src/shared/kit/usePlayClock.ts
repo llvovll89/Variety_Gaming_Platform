@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 /**
  * Counts only the time a run is actually being played: pauses, intros and hidden tabs (games
@@ -16,5 +16,6 @@ export function usePlayClock(playing: boolean) {
     return Math.round(c.ms + (c.since ? performance.now() - c.since : 0));
   }, []);
   const reset = useCallback(() => { clock.current = { ms: 0, since: clock.current.since ? performance.now() : 0 }; }, []);
-  return { elapsed, reset };
+  // Stable, so effects can list the clock in their deps without re-running every render.
+  return useMemo(() => ({ elapsed, reset }), [elapsed, reset]);
 }

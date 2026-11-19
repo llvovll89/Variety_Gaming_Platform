@@ -142,3 +142,9 @@ test('an old challenge day is kept with its completion, so it is never counted t
   assert.equal(s.games.mole.dailyDone, 1);
   assert.equal(Object.keys(s.daily).length, 14);
 });
+
+test('pickDaily replays one of the player\'s own levels: same all day, nothing from an empty list', () => {
+  assert.equal(M.pickDaily(12345, []), undefined);
+  assert.equal(M.pickDaily(7, [0, 3, 5]), M.pickDaily(7, [0, 3, 5]));
+  assert.ok([0, 3, 5].includes(M.pickDaily(4294967295, [0, 3, 5])));
+});

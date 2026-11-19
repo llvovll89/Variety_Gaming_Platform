@@ -20,6 +20,8 @@ export function emptySnapshot(): UISnapshot {
     minimap: { worldSize: WORLD_SIZE, player: null, trails: [], viewport: null },
     finalScore: null,
     death: null,
+    kills: 0,
+    timeLeft: null,
   };
 }
 

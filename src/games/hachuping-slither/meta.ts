@@ -2,6 +2,7 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
   "achievements": [
     {
       "id": "first",
@@ -64,6 +65,28 @@ export const meta: GameMeta = {
         "kind": "best",
         "atLeast": 800
       }
+    },
+    {
+      "id": "timed200",
+      "title": "3분의 성장",
+      "description": "3분 점수전에서 길이 200",
+      "tier": 2,
+      "rule": {
+        "kind": "best",
+        "mode": "timed",
+        "atLeast": 200
+      }
+    },
+    {
+      "id": "survive300",
+      "title": "끈질긴 생존",
+      "description": "한 판에 5분 버티기",
+      "tier": 2,
+      "rule": {
+        "kind": "peak",
+        "stat": "survivalSec",
+        "atLeast": 300
+      }
     }
   ],
   "daily": [
@@ -86,6 +109,17 @@ export const meta: GameMeta = {
         6
       ],
       "step": 1
+    },
+    {
+      "id": "timed",
+      "label": "3분 점수전에서 길이 {n}",
+      "stat": "score",
+      "range": [
+        100,
+        250
+      ],
+      "step": 50,
+      "mode": "timed"
     }
   ],
   legacy: {

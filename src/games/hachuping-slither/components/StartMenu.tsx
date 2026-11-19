@@ -11,11 +11,16 @@ interface StartMenuProps {
   bodyPaletteId: string;
   onSelectBodyPalette: (id: string) => void;
   onStart: () => void;
+  onStartTimed: () => void;
+  /** Best length in the three-minute mode, if played. */
+  timedBest: number | null;
+  /** Today's challenge, shown as a reason to play today. */
+  daily: string | null;
   onExit: () => void;
   usePortrait: boolean;
   onTogglePortrait: (value: boolean) => void;
 }
-export default function StartMenu({ profile, bodyPaletteId, onSelectBodyPalette, onStart, onExit, usePortrait, onTogglePortrait }: StartMenuProps) {
+export default function StartMenu({ profile, bodyPaletteId, onSelectBodyPalette, onStart, onStartTimed, timedBest, daily, onExit, usePortrait, onTogglePortrait }: StartMenuProps) {
   return <div className="slither-menu">
     <nav className="slither-nav"><button onClick={onExit}><ArrowLeftIcon size={15} /> 게임 허브</button><span>먹고, 자라고, 살아남으세요</span></nav>
     <main className="slither-intro">
@@ -26,6 +31,8 @@ export default function StartMenu({ profile, bodyPaletteId, onSelectBodyPalette,
         <label className="slither-name" htmlFor="slither-name">플레이어 이름</label>
         <input id="slither-name" value={profile.name} onChange={e => profile.setName(e.target.value.slice(0, 12))} placeholder="이름을 입력하세요" maxLength={12} />
         <button className="slither-primary slither-start" onClick={onStart}>플레이 <ArrowRightIcon size={21} /></button>
+        <button className="slither-timed" onClick={onStartTimed}><span><strong>3분 점수전</strong><small>{timedBest !== null ? `최고 길이 ${timedBest.toLocaleString()}` : '3분 동안 가장 길게'}</small></span><ArrowRightIcon size={19} /></button>
+        {daily && <p className="slither-daily"><strong>오늘의 도전</strong> {daily}</p>}
         <div className="slither-controls"><span>마우스 / 터치로 방향 조절</span><span>마우스 꾹 누르기 / 번개 버튼으로 부스트</span></div>
       </div>
       <section className="slither-showcase" aria-label="캐릭터 꾸미기">
