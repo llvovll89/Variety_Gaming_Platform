@@ -1,16 +1,19 @@
 import { NextGameActions } from '../../../platform/PlaySession';
+import { RewardStrip } from '../../../platform/meta/RewardStrip';
+import type { RunRewards } from '../../../platform/meta/types';
 import { HANJA_FONT } from "../game/constants";
 import { UI_PALETTE as PALETTE } from '../game/uiPalette';
 import type { UISnapshot } from "../game/types";
 
 interface Props {
   snapshot: UISnapshot;
+  rewards?: RunRewards | null;
   onRestart: () => void;
   onExit: () => void;
 }
 
 /** 통일 or 멸망. Shown over the board so the final map stays visible behind it. */
-export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
+export function ResultScreen({ snapshot, rewards, onRestart, onExit }: Props) {
   const won = snapshot.result === "victory";
   const seal = won ? "統" : "終";
   const months = Math.floor((snapshot.turn - 1) / 3);
@@ -84,6 +87,7 @@ export function ResultScreen({ snapshot, onRestart, onExit }: Props) {
             나가기
           </button>
         </div>
+        <RewardStrip rewards={rewards} audience="general"/>
         <NextGameActions/>
       </div>
     </div>

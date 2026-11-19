@@ -1,4 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRecords } from "../../platform/meta/api";
+import { usePlayClock } from "../../shared/kit/usePlayClock";
+import type { RunRewards } from "../../platform/meta/types";
+import { FirstTurns } from "./components/FirstTurns";
 import type { GameProps } from "../../platform/types";
 import { useExitGuard } from "../../platform/exitGuard";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
@@ -35,6 +39,12 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
   // A restored save is handed to the engine once it exists, since the engine builds a fresh
   // scenario in its constructor and only then can adopt someone else's board.
   const resumeRef = useRef<GameState | null>(initialSave);
+  // The first three turns of a new campaign get a short guide; a resumed one does not.
+  const [tutorial, setTutorial] = useState<{ startTurn: number } | null>(null);
+  const records = useRecords();
+  const [rewards, setRewards] = useState<RunRewards | null>(null);
+  const reported = useRef<GameEngine | null>(null);
+  const { elapsed, reset: resetClock } = usePlayClock(!!engine && snapshot.result === "playing");
 
   const handleReady = useCallback((next: GameEngine) => {
     setEngine(next);
@@ -46,22 +56,46 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
 
   const startNew = useCallback((id: FactionId) => {
     resumeRef.current = null;
+    setTutorial({ startTurn: 0 });
     setFactionId(id);
   }, []);
 
   const restart = useCallback(() => {
     clearSave();
     resumeRef.current = null;
+    setRewards(null);
+    resetClock();
     setEngine(null);
     setFactionId(null);
-  }, []);
+  }, [resetClock]);
 
   const resume = useCallback(() => {
     const saved = loadGame();
     if (!saved) return;
     resumeRef.current = saved;
+    setTutorial(null);
     setFactionId(saved.playerFactionId);
   }, []);
+
+  // The guide counts from the turn the new campaign actually began on.
+  useEffect(() => {
+    if (tutorial?.startTurn === 0 && engine && snapshot.turn > 0) setTutorial({ startTurn: snapshot.turn });
+  }, [tutorial, engine, snapshot.turn]);
+  // How far the campaign has come, every turn: cities held is progress (it only ever counts the peak).
+  useEffect(() => {
+    if (engine && snapshot.player && snapshot.result === "playing") {
+      records.reportProgress("started", 1);
+      records.reportProgress("cities", snapshot.player.cities);
+    }
+  }, [engine, snapshot.turn, snapshot.player?.cities, snapshot.result, records]);
+  // A campaign that ends (통일 or 멸망) is the run, reported once.
+  useEffect(() => {
+    if (!engine || snapshot.result === "playing" || reported.current === engine) return;
+    reported.current = engine;
+    const won = snapshot.result === "victory";
+    setRewards(records.reportRun({ durationMs: elapsed(), outcome: won ? "win" : "lose", score: won ? snapshot.turn : undefined,
+      stats: { turns: snapshot.turn, cities: snapshot.player?.cities ?? 0, officers: snapshot.player?.officers ?? 0 } }));
+  }, [engine, snapshot.result, snapshot.turn, snapshot.player, records, elapsed]);
 
   // Leaving saves first and stays only if that save fails.
   const leave = () => { if (!engine || engine.saveForExit()) onExit(); };
@@ -87,6 +121,8 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
         onSave={() => engine?.save()}
         onExit={leave}
       />
+      {tutorial && tutorial.startTurn > 0 && state && snapshot.turn < tutorial.startTurn + 3 && snapshot.result === "playing" && !help &&
+        <FirstTurns state={state} factionId={factionId} startTurn={tutorial.startTurn} turn={snapshot.turn} onClose={() => setTutorial(null)} />}
       {help && <div className="tk-help-panel"><div><b>一 · 도시 관리</b><p>내 도시 선택 → 내정·군사·건설 분류 → 담당 무장 선택 → 명령. 명령은 다음 순에 실행됩니다.</p></div><div><b>二 · 전장 지휘</b><p>군사 → 부대 편성·출진. 부대를 선택한 뒤 파란 칸으로 이동하고 붉은 적을 눌러 공격합니다.</p></div><div><b>三 · 시간 진행</b><p>명령을 마치면 10일 진행. 진행 중 가속 버튼으로 연출을 건너뛸 수 있습니다.</p></div><button onClick={()=>setHelp(false)}>닫기</button></div>}
       <div className="tk-war-room">
       <aside className="tk-domain-rail" aria-label="군주와 영지">
@@ -112,7 +148,7 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
         </div>
         <aside className="tk-command-panel" aria-label="명령 및 선택 정보">{engine && state && <InspectorPanel key={snapshot.selected.kind==='city'?snapshot.selected.cityId:snapshot.selected.kind} engine={engine} state={state} snapshot={snapshot} />}</aside>
         {snapshot.result !== "playing" && (
-          <ResultScreen snapshot={snapshot} onRestart={restart} onExit={onExit} />
+          <ResultScreen snapshot={snapshot} rewards={rewards} onRestart={restart} onExit={onExit} />
         )}
       </div>
       </div>
