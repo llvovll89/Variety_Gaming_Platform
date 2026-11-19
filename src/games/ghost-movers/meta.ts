@@ -2,6 +2,7 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
   "scoreOrder": "low",
   "scoreUnit": "걸음",
   "achievements": [
@@ -71,6 +72,10 @@ export const meta: GameMeta = {
         "atLeast": 72
       }
     }
+  ],
+  // Today's job: one the player has already cleared (chosen with the day's seed), within par.
+  daily: [
+    { id: 'par', label: '오늘의 의뢰를 기준 행동 안에 끝내기 (별 {n}개)', stat: 'stars', range: [3, 3], step: 1, mode: 'daily', seeded: true },
   ],
   legacy: {
     version: 1,

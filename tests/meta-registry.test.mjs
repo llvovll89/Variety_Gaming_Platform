@@ -57,3 +57,13 @@ test('삼국 영지 brings in its stage and heroes from the save, not just the t
   assert.deepEqual(found.progress, { tower: 7, stage: 3, heroes: 4 });
   assert.deepEqual(metas['three-kingdoms-card'].legacy.read(() => null, parse).progress, { tower: 0, stage: 0, heroes: 0 });
 });
+
+test('puzzle par challenges only count runs started from the challenge', () => {
+  for (const id of ['ghost-movers', 'ten-seconds']) {
+    const [t] = metas[id].daily;
+    assert.equal(t.mode, 'daily', `${id}: a normal level clear does not complete the challenge`);
+    assert.equal(t.stat, 'stars');
+    assert.ok(t.range[1] <= 3, `${id}: at most three stars`);
+    assert.ok(metas[id].reportsRuns, `${id} reports runs`);
+  }
+});

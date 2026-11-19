@@ -48,3 +48,10 @@
 .slither-nav,.slither-controls,.slither-character-picker summary>span,.slither-footer,.slither-xp-label,.slither-hud-numbers small,.slither-hud-numbers strong small,.slither-boost-note,.slither-stats,.slither-death-report small,.slither-progress-line,.slither-boost-status,.slither-upgrade-toggle>span:last-child,.slither-upgrade-hint,.slither-upgrade-dock p,.slither-upgrade-dock small,.slither-upgrade-dock kbd{font-size:11px}
 .slither-upgrade-toggle{font-size:11px!important}
 @media(max-width:767px){.slither-leaderboard{width:180px}.slither-leaderboard li{font-size:11px;line-height:15px;grid-template-columns:22px minmax(0,1fr) 38px}}
+/* Score attack and today's challenge on the start menu. */
+.slither-timed{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:340px;min-height:52px;margin-top:10px;padding:10px 20px;background:transparent;color:#e5e9f0;border:1px solid #75879d99;border-radius:5px;text-align:left}.slither-timed:hover{border-color:#b6d477}.slither-timed strong{display:block;font-size:14px}.slither-timed small{display:block;font-size:11px;color:#a6b3c5;margin-top:2px}
+.slither-daily{max-width:340px;margin:12px 0 0;font-size:12px;line-height:1.6;color:#bcc8d8}.slither-daily strong{color:#b6d477;margin-right:6px}
+.slither-time-left{font-size:15px;color:#e0e4ed}.slither-time-left strong{font-size:18px;margin-left:4px}
+@media(max-width:767px){.slither-timed{max-width:none}}
+/* Kit pieces (reward badges) read these: light text on the dark dialogs. */
+.slither{--kit-surface:#152130;--kit-ink:#e5e9f0;--kit-muted:#a6b3c5;--kit-accent:#b6d477;--kit-on-accent:#182317}

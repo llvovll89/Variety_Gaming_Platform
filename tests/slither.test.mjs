@@ -150,3 +150,15 @@ test('mutual and one-sided head collisions report opponent without inventing a k
     assert.equal(rival.alive,!mutual);
   }
 });
+
+test('a rival that loses a head-on collision counts as the player\'s kill; mutual ones do not', () => {
+  for (const mutual of [false, true]) {
+    const w = new World('player'), p = w.player;
+    const rival = createSnake(false, 'rival', 10, 0, 80, 8);
+    p.head = {x:0,y:0}; p.pathHistory = [{...p.head}]; p.heading = 0;
+    rival.heading = mutual ? Math.PI : Math.PI / 2; rival.pathHistory = [{...rival.head}];
+    w.snakes = [p, rival]; w.update(0, {angle:0, boosting:false});
+    assert.equal(rival.alive, false);
+    assert.equal(w.playerKills, mutual ? 0 : 1);
+  }
+});
