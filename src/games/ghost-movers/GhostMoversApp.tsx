@@ -1,6 +1,11 @@
 import { keyOf } from '../../shared/kit/keys';
 import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
+import { GameDialog } from '../../shared/kit/GameDialog';
+import { usePlayClock } from '../../shared/kit/usePlayClock';
+import { useRecords } from '../../platform/meta/api';
+import { RewardStrip } from '../../platform/meta/RewardStrip';
+import type { RunRewards } from '../../platform/meta/types';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, ArrowUUpLeft, ArrowCounterClockwise, ArrowsClockwise, Ghost, House, Lightbulb, MapTrifold, Pause, Play, Question, SpeakerHigh, SpeakerSlash, Star, X, Check, Package, SignOut } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
@@ -14,9 +19,7 @@ import './ghost-movers.css';
 
 function Stars({count}:{count:number}) {return <span className="gm-stars" role="img" aria-label={`별 ${count}개`}>{[1,2,3].map(i=><Star key={i} weight={i<=count?'fill':'regular'}/>)}</span>;}
 function Modal({children,label,onClose}:{children:ReactNode;label:string;onClose:()=>void}) {
-  const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const d=ref.current;if(d&&!d.open)d.showModal();return()=>{d?.close();};},[]);
-  return <dialog className="gm-modal" ref={ref} aria-label={label} onCancel={e=>{e.preventDefault();onClose();}}><button className="gm-close gm-icon-button" aria-label="닫기" onClick={onClose}><X size={22}/></button>{children}</dialog>;
+  return <GameDialog className="gm-modal" label={label} onClose={onClose}><button className="gm-close gm-icon-button" aria-label="닫기" onClick={onClose}><X size={22}/></button>{children}</GameDialog>;
 }
 const keys:Record<string,Direction>={ArrowUp:0,w:0,ArrowRight:1,d:1,ArrowDown:2,s:2,ArrowLeft:3,a:3};
 const arrowIcons=[ArrowUp,ArrowRight,ArrowDown,ArrowLeft];
@@ -29,20 +32,28 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   const preview=useRef({...createState(15),active:'cart'}),root=useRef<HTMLElement>(null),audio=useRef<AudioContext|null>(null),saved=useRef<State|null>(null);
   const state=run??preview.current,l=LEVELS[state.levelIndex],f=state.furniture.find(f=>f.id===state.active),delivered=state.cargo.filter(c=>c.delivered).length;
   const modal=panel!==null||paused||!!run&&run.status!=='playing';
+  const records=useRecords(),[rewards,setRewards]=useState<RunRewards|null>(null);
+  const clock=usePlayClock(!!run&&run.status==='playing'&&!modal);
   const [planned,setPlanned]=useState<{source:State;plan:TravelPlan}|null>(null);
   const travel=planned?.source===run&&!modal?planned.plan:null;
   const command=(c:Command)=>{setPlanned(null);setRun(s=>s?act(s,c):s);};
   const requestTravel=(c:TravelCommand)=>{if(!run||modal)return;const plan=planTravel(run,c);if(plan)setPlanned({source:run,plan});else command(c);};
   useEffect(()=>{if(modal)setPlanned(null);},[modal]);
-  const launch=(index:number,mode=relaxed)=>{setRun(createState(index,mode));setPanel(null);setPaused(false);root.current?.scrollTo({top:0});};
+  const launch=(index:number,mode=relaxed)=>{clock.reset();setRewards(null);setRun(createState(index,mode));setPanel(null);setPaused(false);root.current?.scrollTo({top:0});};
   const restart=()=>{if(run)launch(run.levelIndex,run.relaxed);};
   const rotate=()=>{if(f)command({type:'face',direction:((f.direction+1)%4) as Direction});};
   const nextFurniture=()=>{if(!run)return;const index=run.furniture.findIndex(f=>f.id===run.active);command({type:'possess',id:run.furniture[(index+1)%run.furniture.length].id});};
   useEffect(()=>{root.current?.scrollTo({top:0});},[run?.levelIndex]);
   useEffect(()=>{
     if(!run||run.status!=='won'||saved.current===run)return;saved.current=run;
-    setProgress(p=>{const next=completeLevel(p,run);try{localStorage.setItem(SAVE_KEY,JSON.stringify(next));setSaveError(false);}catch{setSaveError(true);}return next;});
-  },[run]);
+    const next=completeLevel(progress,run);setProgress(next);
+    try{localStorage.setItem(SAVE_KEY,JSON.stringify(next));setSaveError(false);}catch{setSaveError(true);}
+    // A cleared job is the run: progress (jobs cleared, stars) drives the achievements.
+    const best=Object.values(next.best);
+    const unlocked=[...records.reportProgress('cleared',best.length),...records.reportProgress('stars',best.reduce((n,r)=>n+r.stars,0))];
+    const earned=records.reportRun({durationMs:clock.elapsed(),outcome:'win',stats:{steps:run.steps,stars:stars(run),undos:run.undos}});
+    setRewards({...earned,unlocked:[...unlocked,...earned.unlocked]});
+  },[run,progress,records,clock]);
   useEffect(()=>{
     if(!sound||!run||!run.steps)return;
     try {const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(run.status==='won'?740:run.effect?.kind==='ice'?880:run.effect?.kind==='wind'?400:240,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(run.status==='won'?1100:160,ctx.currentTime+.14);gain.gain.setValueAtTime(.045,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);osc.connect(gain);gain.connect(kitOutput(ctx,'ghost-movers'));osc.start();osc.stop(ctx.currentTime+.2);}catch{/* Silent play works when audio is unavailable. */}
@@ -56,7 +67,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
       const k=e.code==='Space'?' ':keyOf(e);
       if((k===' '||k==='Enter')&&(e.target as HTMLElement).closest('button'))return;
       if(modal||!run)return;
-      if(k==='Escape'){e.preventDefault();if(travel)setPlanned(null);else setPaused(true);return;}
+      if(k==='Escape'){e.preventDefault();if(travel)setPlanned(null);else setTimeout(()=>setPaused(true),0);return;}
       if(k in keys){e.preventDefault();if(e.repeat)return;command({type:e.shiftKey?'face':'move',direction:keys[k]});}
       else if(k===' '){e.preventDefault();if(!e.repeat)command({type:'ability'});}
       else if(!e.repeat){if(k==='q'){e.preventDefault();rotate();}else if(k==='e'){e.preventDefault();nextFurniture();}else if(k==='z'){e.preventDefault();command({type:'undo'});}else if(k==='r'){e.preventDefault();restart();}else if(/^[1-9]$/.test(k)){const furniture=run.furniture[Number(k)-1];if(furniture){e.preventDefault();command({type:'possess',id:furniture.id});}}}
@@ -85,7 +96,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
     {panel==='help'&&<Modal label="게임 방법" onClose={()=>setPanel(null)}><div className="gm-modal-ghost"><svg viewBox="-45 -40 90 85"><GhostArt/></svg></div><p className="gm-modal-kicker">신입 유령 업무 안내</p><h2>일곱 가구, 일곱 가지 해결법.</h2><p>가구를 누르면 빙의해요. 바닥이나 짐을 누르면 경로와 소모 행동을 먼저 보여 줘요. 이동하기를 누르면 선택한 칸이나 짐 앞까지 이동하고, 취소 또는 Esc로 미리보기를 닫아요. 짐 위에 올라가지 않고 앞에서 Space 또는 화면의 능력 버튼을 누르세요.</p><div className="gm-help-rules">{(Object.keys(FURNITURE) as (keyof typeof FURNITURE)[]).map(kind=><div key={kind}><svg viewBox="-50 -80 100 110" aria-hidden="true"><FurnitureArt kind={kind}/></svg><span><strong>{FURNITURE[kind].name}</strong><p>{FURNITURE[kind].description}</p></span></div>)}</div><p className="gm-help-tip">옷장은 얼음 위에서 밀거나 책상에 실어 옮겨요. 침대는 상자를 두 칸 튕기고, 스탠드는 노란 전동문을 열어요. 실은 짐은 반드시 내려야 배송돼요.</p><dl className="gm-help-keys"><div><dt>방향키 / WASD</dt><dd>이동</dd></div><div><dt>Space</dt><dd>가구 능력</dd></div><div><dt>Q / Shift + 방향키</dt><dd>제자리 회전</dd></div><div><dt>E / 1–9</dt><dd>빙의할 가구 전환</dd></div><div><dt>Z / R / Esc</dt><dd>되돌리기 / 재시작 / 쉬기</dd></div></dl><button className="gm-primary" onClick={()=>setPanel(null)}>업무 이해 완료 <Check size={20}/></button></Modal>}
     {panel==='map'&&<Modal label="이사 의뢰 목록" onClose={()=>setPanel(null)}><p className="gm-modal-kicker">24개 현장 · 3개 챕터</p><h2>오늘 밤은 어느 동네로?</h2><CampaignMap progress={progress} initialChapter={mapChapter} onLaunch={index=>launch(index)}/><label className="gm-relaxed gm-dark-label"><input type="checkbox" checked={relaxed} onChange={e=>setRelaxed(e.target.checked)}/><span>여유 모드 <small>귀가 제한 없이 플레이</small></span></label></Modal>}
     {!panel&&paused&&<Modal label="일시정지" onClose={()=>setPaused(false)}><div className="gm-modal-ghost"><svg viewBox="-45 -40 90 85"><GhostArt/></svg></div><p className="gm-modal-kicker">잠깐 쉬어 갑니다</p><h2>유령도 휴식은 필요해요.</h2><p>이삿짐은 그대로 있어요. 준비되면 돌아오세요.</p><div className="gm-modal-actions"><button className="gm-primary" onClick={()=>setPaused(false)}><Play weight="fill"/>계속 일하기</button><button className="gm-secondary" onClick={restart}><ArrowCounterClockwise/>다시 시작</button><button className="gm-text-button" onClick={()=>{setRun(null);setPaused(false);}}><SignOut/>시작 화면</button></div></Modal>}
-    {!panel&&!paused&&run?.status==='won'&&<Modal label="이사 완료" onClose={()=>setRun(null)}><div className="gm-complete-stamp"><Check size={38} weight="bold"/><span>이사 완료</span></div><p className="gm-modal-kicker">{l.client}의 감사 인사</p><h2>{run.levelIndex===LEVELS.length-1?'24개 현장, 모두 완료!':'짐은 도착, 유령은 퇴근!'}</h2><Stars count={stars(run)}/><p>{run.levelIndex===LEVELS.length-1?'세 챕터와 24개 현장을 마쳤어요. 이제 당신은 베테랑 야간 이사 전문가!':'“분명 가구가 혼자 움직인 것 같은데… 아무튼 정말 감사합니다!”'}</p><div className="gm-result-stats"><span><strong>{run.steps}</strong>사용한 행동</span><span><strong>{run.undos}</strong>되돌린 횟수</span><span><strong>{l.par}</strong>3별 목표</span></div>{saveError&&<p role="alert">기록을 저장하지 못했어요. 지금 열린 게임에서는 계속할 수 있어요.</p>}<div className="gm-modal-actions">{run.levelIndex<LEVELS.length-1?<button className="gm-primary" onClick={()=>launch(run.levelIndex+1,run.relaxed)}>다음 의뢰 받기 <ArrowRight size={20}/></button>:<button className="gm-primary" onClick={()=>{setRun(null);}}>퇴근하기 <Ghost size={20}/></button>}<button className="gm-secondary" onClick={restart}>별 세 개 다시 도전</button></div><NextGameActions/></Modal>}
+    {!panel&&!paused&&run?.status==='won'&&<Modal label="이사 완료" onClose={()=>setRun(null)}><div className="gm-complete-stamp"><Check size={38} weight="bold"/><span>이사 완료</span></div><p className="gm-modal-kicker">{l.client}의 감사 인사</p><h2>{run.levelIndex===LEVELS.length-1?'24개 현장, 모두 완료!':'짐은 도착, 유령은 퇴근!'}</h2><Stars count={stars(run)}/><p>{run.levelIndex===LEVELS.length-1?'세 챕터와 24개 현장을 마쳤어요. 이제 당신은 베테랑 야간 이사 전문가!':'“분명 가구가 혼자 움직인 것 같은데… 아무튼 정말 감사합니다!”'}</p><div className="gm-result-stats"><span><strong>{run.steps}</strong>사용한 행동</span><span><strong>{run.undos}</strong>되돌린 횟수</span><span><strong>{l.par}</strong>3별 목표</span></div><RewardStrip rewards={rewards} audience="general"/>{saveError&&<p role="alert">기록을 저장하지 못했어요. 지금 열린 게임에서는 계속할 수 있어요.</p>}<div className="gm-modal-actions">{run.levelIndex<LEVELS.length-1?<button className="gm-primary" onClick={()=>launch(run.levelIndex+1,run.relaxed)}>다음 의뢰 받기 <ArrowRight size={20}/></button>:<button className="gm-primary" onClick={()=>{setRun(null);}}>퇴근하기 <Ghost size={20}/></button>}<button className="gm-secondary" onClick={restart}>별 세 개 다시 도전</button></div><NextGameActions/></Modal>}
     {!panel&&!paused&&run?.status==='lost'&&<Modal label="집주인 귀가" onClose={()=>command({type:'undo'})}><div className="gm-modal-ghost"><svg viewBox="-45 -40 90 85"><GhostArt smile={false}/></svg></div><p className="gm-modal-kicker">열쇠 돌아가는 소리가 들려요</p><h2>앗, 집주인이 돌아왔어요!</h2><p>한 수 되돌려 길을 바꾸거나, 귀가 제한 없는 여유 모드로 연습해 보세요.</p><div className="gm-modal-actions"><button className="gm-primary" onClick={()=>command({type:'undo'})}><ArrowUUpLeft/>한 수 되돌리기</button><button className="gm-secondary" onClick={()=>launch(run.levelIndex,true)}>여유 모드로 다시 하기</button><button className="gm-text-button" onClick={restart}>같은 의뢰 다시 도전</button></div><NextGameActions/></Modal>}
   </main>;
 }
