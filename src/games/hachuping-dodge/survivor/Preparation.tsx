@@ -29,7 +29,9 @@ export default function Preparation({loadout,difficulty,best,unlocks,kept,onSele
         <div id="hero-panel" role="tabpanel" aria-labelledby="hero-tab" hidden={tab!=='hero'}>
           <div className="prep-heroes">{(Object.keys(HEROES) as Hero[]).map(key=>{const open=heroOpen(key,unlocks,kept);
             // A locked hero keeps its preview but cannot be picked; its condition says how to open it.
-            return <button key={key} className={open?undefined:'is-locked'} aria-disabled={open?undefined:true} aria-pressed={loadout.hero===key} onClick={()=>{if(open)onSelect({hero:key,weapon:HERO_STATS[key].weapon});}}><Portrait loadout={{...loadout,hero:key,weapon:HERO_STATS[key].weapon}}/><strong>{!open&&<LockSimpleIcon size={14} weight="bold" aria-label="잠김"/>}{HEROES[key]}</strong><small>{open?HERO_VISUALS[key].role:HERO_NEEDS[key]!.label}</small></button>;})}</div>
+            return <button key={key} className={open?undefined:'is-locked'} aria-disabled={open?undefined:true} aria-pressed={loadout.hero===key} onClick={()=>{if(!open)return;
+              // The hero's own weapon may still be locked (a hero kept from an old loadout): then keep the current one.
+              const home=HERO_STATS[key].weapon;onSelect({hero:key,weapon:weaponOpen(home,unlocks,kept)?home:loadout.weapon});}}><Portrait loadout={{...loadout,hero:key,weapon:HERO_STATS[key].weapon}}/><strong>{!open&&<LockSimpleIcon size={14} weight="bold" aria-label="잠김"/>}{HEROES[key]}</strong><small>{open?HERO_VISUALS[key].role:HERO_NEEDS[key]!.label}</small></button>;})}</div>
           <fieldset className="prep-tints"><legend>장비 장식색</legend>{(Object.keys(TINTS) as Tint[]).map((tint,i)=><button key={tint} aria-label={['영웅 고유색','금색 장식','자주색 장식','적갈색 장식'][i]} aria-pressed={loadout.tint===tint} style={{background:[visual.cloth,'#9b8050','#72617f','#926554'][i]}} onClick={()=>onSelect({tint})}>{loadout.tint===tint?<CheckIcon size={15} weight="bold"/>:null}</button>)}<small>영웅을 선택하면 숙련 무기를 장착합니다.</small></fieldset>
         </div>
         <div id="weapon-panel" role="tabpanel" aria-labelledby="weapon-tab" hidden={tab!=='weapon'}>

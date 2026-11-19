@@ -2,6 +2,8 @@ import { keyOf } from '../../../shared/kit/keys';
 import { NextGameActions, ScoreFeedback } from '../../../platform/PlaySession';
 import { useEffect, useRef, useState } from 'react';
 import { AUTOFOCUS, GameDialog, isKitDialogOpen } from '../../../shared/kit/GameDialog';
+import { useAutoPause } from '../../../shared/kit/useAutoPause';
+import type { UnlockedAchievement } from '../../../platform/meta/types';
 import { useRecords } from '../../../platform/meta/api';
 import { RewardStrip } from '../../../platform/meta/RewardStrip';
 import type { RunRewards } from '../../../platform/meta/types';
@@ -35,6 +37,8 @@ export default function SurvivorApp({onExit}:GameProps) {
   const [kept]=useState(()=>readKept(key=>localStorage.getItem(key),(key,value)=>localStorage.setItem(key,value)));
   const [unlocks,setUnlocks]=useState(progressOf),unlocksRef=useRef(unlocks);unlocksRef.current=unlocks;
   const [opened,setOpened]=useState<string[]>([]);
+  // Region achievements unlock mid-run (at each 'clear'); the result screen shows them with the rest.
+  const earnedOnTheWay=useRef<UnlockedAchievement[]>([]);
   const [initialWorld]=useState(()=>createWorld('menu',readDifficulty(),allowedLoadout(readLoadout(),unlocks,kept)));
   const world=useRef<World>(initialWorld);
   const canvas=useRef<HTMLCanvasElement>(null);
@@ -47,15 +51,21 @@ export default function SurvivorApp({onExit}:GameProps) {
   const [rewards,setRewards]=useState<RunRewards|null>(null);
   const publish=()=>setUi(structuredClone(world.current));
   const resetInput=()=>{keys.current.clear();pointer.current=null;};
-  const start=()=>{rangerSound.unlock();setRewards(null);setOpened([]);setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
-  const mainMenu=()=>{world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
+  const start=()=>{rangerSound.unlock();setRewards(null);setOpened([]);earnedOnTheWay.current=[];setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
+  const mainMenu=()=>{
+    // Leaving an expedition mid-way still counts as a run (play time, totals), never as a best.
+    const w=world.current;if(!['menu','dead','victory'].includes(w.status))recordsRef.current.reportRun({difficulty:w.difficulty,score:w.kills,durationMs:Math.round(w.time*1000),outcome:'quit',stats:{kills:w.kills,level:w.level,region:w.stage+1}});
+    earnedOnTheWay.current=[];
+    world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const selectLoadout=(change:Partial<Loadout>)=>{if((change.hero&&!heroOpen(change.hero,unlocksRef.current,kept))||(change.weapon&&!weaponOpen(change.weapon,unlocksRef.current,kept)))return;world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
   const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;saveDifficulty(difficulty);bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
   const pause=()=>{ const w=world.current; if(w.status==='playing')w.status='paused';else if(w.status==='paused')w.status='playing';resetInput();publish();};
+  // Escape / P pause the same way as every kit game (no modifiers, not while typing); leaving the window is handled below.
+  useAutoPause({active:ui.status==='playing',onPause:()=>{if(world.current.status==='playing')pause();},blur:false,visibility:false});
   useEffect(()=>{
     const element=canvas.current; if(!element)return;
     const c=element.getContext('2d');if(!c)return;
-    let width=1,height=1,frame=0,last=0,published=0,lastHurt=0,bossShown=false;
+    let width=1,height=1,frame=0,last=0,published=0,lastHurt=0,bossShown=false,heard=world.current.status;
     const resize=()=>{const r=element.getBoundingClientRect();width=r.width;height=r.height;const dpr=Math.min(window.devicePixelRatio||1,2);element.width=Math.round(width*dpr);element.height=Math.round(height*dpr);c.setTransform(dpr,0,0,dpr,0,0);};
     const observer=new ResizeObserver(resize);observer.observe(element);resize();
     const blur=()=>{resetInput();if(world.current.status==='playing'){world.current.status='paused';publish();}};
@@ -64,10 +74,8 @@ export default function SurvivorApp({onExit}:GameProps) {
       const k=keyOf(event).toLowerCase();
       if(world.current.status==='playing'&&['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){event.preventDefault();keys.current.add(k);}
       // The native dialog keeps Tab inside and turns Escape into its own close (resume when paused).
-      if((k==='escape'||k==='p')&&!event.repeat){
-        if(world.current.status==='playing'){event.preventDefault();setTimeout(()=>{if(world.current.status==='playing')pause();},0);}
-        else if(k==='p'&&world.current.status==='paused'&&isKitDialogOpen())pause();
-      }
+      // P also resumes from the pause dialog (Escape closes it natively).
+      if(k==='p'&&!event.repeat&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&world.current.status==='paused'&&isKitDialogOpen())pause();
       if(world.current.status==='promotion'&&['1','2'].includes(k)&&!event.repeat){const option=promotionOptions(world.current.loadout.hero,world.current.job)[Number(k)-1];if(option){choosePromotion(world.current,option.id);resetInput();publish();}}
       else if(world.current.status==='upgrade'&&['1','2','3'].includes(k)&&!event.repeat){const key=world.current.choices[Number(k)-1];if(key){chooseUpgrade(world.current,key);resetInput();publish();}}
     };
@@ -83,13 +91,13 @@ export default function SurvivorApp({onExit}:GameProps) {
       // Sound marks the moments: a hit (at most a few a second), a boss arriving, a new screen.
       if(w.status==='playing'&&w.player.hp<hp&&now-lastHurt>280){lastHurt=now;rangerSound.play('hurt');}
       const boss=w.enemies.some(e=>e.kind==='boss');if(boss&&!bossShown&&w.status==='playing')rangerSound.play('boss');bossShown=boss;
-      if(w.status!==previous){const cue=soundForStatus(w.status);if(cue)rangerSound.play(cue);}
+      if(w.status!==heard){heard=w.status;const cue=soundForStatus(w.status);if(cue)rangerSound.play(cue);}
       renderWorld(c,w,width,height);
       if(w.status!==previous){resetInput();
-        if(w.status==='clear'||w.status==='dead'||w.status==='victory')recordsRef.current.reportProgress('region',w.stage+1+(w.status==='clear'?1:0));
+        if(w.status==='clear'||w.status==='dead'||w.status==='victory')earnedOnTheWay.current.push(...recordsRef.current.reportProgress('region',w.stage+1+(w.status==='clear'?1:0)));
         if(w.status==='dead'||w.status==='victory'){const record=Math.max(bestRef.current,w.kills);bestRef.current=record;setBest(record);try{localStorage.setItem(`rune-ranger-best-${w.difficulty}`,String(record));}catch{/* Storage can be disabled. */}
           // The expedition is the run: kills are the score, per difficulty.
-          setRewards(recordsRef.current.reportRun({difficulty:w.difficulty,score:w.kills,durationMs:Math.round(w.time*1000),outcome:w.status==='victory'?'win':'lose',stats:{kills:w.kills,level:w.level,region:w.stage+1}}));
+          const run=recordsRef.current.reportRun({difficulty:w.difficulty,score:w.kills,durationMs:Math.round(w.time*1000),outcome:w.status==='victory'?'win':'lose',stats:{kills:w.kills,level:w.level,region:w.stage+1}});setRewards({...run,unlocked:[...earnedOnTheWay.current,...run.unlocked]});earnedOnTheWay.current=[];
           const after=progressOf();setOpened(newlyOpened(unlocksRef.current,after,kept));setUnlocks(after);}}
       if(now-published>100||w.status!==previous){publish();published=now;}
       frame=requestAnimationFrame(loop);
