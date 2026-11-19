@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { GameDialog } from '../../../shared/kit/GameDialog';
 import {
   CARDS, ENEMIES, RARITY_NAMES, RELICS, STATUS_INFO, TYPE_NAMES, cardStats, describeCard,
   type CardInstance, type DescribeContext, type EnemyState, type StatusId, type Statuses,
@@ -6,18 +7,13 @@ import {
 import { CARD_GLYPH, Glyph, RELIC_GLYPH, STATUS_GLYPH } from './glyphs';
 
 export function Modal({ label, onClose, children, wide = false, hideClose = false, className = '' }: { label: string; onClose?: () => void; children: ReactNode; wide?: boolean; hideClose?: boolean; className?: string }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const dialog = ref.current;
-    if (dialog && !dialog.open) dialog.showModal();
-    return () => dialog?.close();
-  }, []);
+  // Kit dialog: focus returns where it was, and Escape closes only dialogs that can be closed.
   return (
-    <dialog ref={ref} className={`nt-modal${wide ? ' nt-modal-wide' : ''}${className ? ` ${className}` : ''}`} aria-label={label}
-      onCancel={event => { event.preventDefault(); onClose?.(); }}>
+    <GameDialog className={`nt-modal${wide ? ' nt-modal-wide' : ''}${className ? ` ${className}` : ''}`} label={label}
+      dismissible={!!onClose} onClose={() => onClose?.()}>
       {onClose && !hideClose && <button type="button" className="nt-modal-close" aria-label="닫기" onClick={onClose}><Glyph name="close" size={18} /></button>}
       {children}
-    </dialog>
+    </GameDialog>
   );
 }
 

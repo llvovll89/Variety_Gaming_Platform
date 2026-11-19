@@ -1,3 +1,7 @@
+import { useRecords } from '../../platform/meta/api';
+import { RewardStrip } from '../../platform/meta/RewardStrip';
+import type { RunRewards } from '../../platform/meta/types';
+import { usePlayClock } from '../../shared/kit/usePlayClock';
 import { keyOf } from '../../shared/kit/keys';
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { GameProps } from '../../platform/types';
@@ -93,6 +97,9 @@ function SnackBag({ run, onUse, onDrop, aiming }: { run: RunState; onUse: (index
   );
 }
 
+/** Station number (1-based) the run reached, for the arcade records. */
+const stationOf = (run: RunState) => currentFloor(run);
+
 export default function NightTrainApp({ onExit, launchIntent, profile }: GameProps) {
   const [run, setRun] = useState<RunState | null>(() => (launchIntent === 'resume' ? loadRun(safeGetItem(SAVE_KEY)) : null));
   const [hasSave, setHasSave] = useState(() => loadRun(safeGetItem(SAVE_KEY)) !== null);
@@ -108,6 +115,11 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const [outroDone, setOutroDone] = useState<string | null>(() => (run ? outroKey(run) : null));
   const [soundSettings, setSoundSettings] = useState<SoundSettings>(loadSoundSettings);
   const recorded = useRef<RunState | null>(null);
+  const arcade = useRecords();
+  const [rewards, setRewards] = useState<RunRewards | null>(null);
+  // Real time spent riding (pauses and hidden tabs excluded), for the arcade records.
+  const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel;
+  const clock = usePlayClock(playing);
   const previousRun = useRef<RunState | null>(run);
   const root = useRef<HTMLElement>(null);
   const photo = profile.characterId === CUSTOM_CHARACTER_ID ? profile.characterImage : null;
@@ -125,6 +137,14 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       const next = recordRun(records, { won: run.phase === 'victory', floor: currentFloor(run), score: runScore(run) });
       setRecords(next);
       safeSetItem(RECORD_KEY, JSON.stringify(next));
+      // The arcade copy: the station reached is progress, the run itself feeds bests and achievements.
+      const earned = arcade.reportProgress('station', stationOf(run));
+      const result = arcade.reportRun({
+        mode: run.mode === 'easy' ? 'easy' : undefined, score: runScore(run), durationMs: clock.elapsed(),
+        outcome: run.phase === 'victory' ? 'win' : 'lose',
+        stats: { station: stationOf(run), battles: run.stats.battles, elites: run.stats.elites, damage: run.stats.damageDealt },
+      });
+      setRewards({ ...result, unlocked: [...earned, ...result.unlocked] });
       return;
     }
     try {
@@ -134,7 +154,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     } catch {
       setSaveError(true);
     }
-  }, [run, records]);
+  }, [run, records, arcade, clock]);
 
   useEffect(() => { root.current?.scrollTo({ top: 0 }); setPeek(null); setAimSnack(null); }, [run?.phase]);
 
@@ -171,6 +191,8 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
 
   const start = (chosen: Mode) => {
     removeSave();
+    clock.reset();
+    setRewards(null);
     recorded.current = null;
     setConfirmNew(false);
     setPanel(null);
@@ -359,6 +381,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
             <div><dt>덱</dt><dd>{run.deck.length}장</dd></div>
           </dl>
           <ScoreFeedback score={runScore(run)} previousBest={previousBest} />
+          <RewardStrip rewards={rewards} audience="general" />
           <div className="nt-modal-actions">
             <button type="button" className="nt-btn nt-btn-ink" onClick={() => start(run.mode)}><Glyph name="retry" size={18} />새 승차권으로 출발</button>
             <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => setPanel('deck')}>마지막 덱 보기</button>

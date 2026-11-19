@@ -2,6 +2,7 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
   "scoreUnit": "점",
   "achievements": [
     {
