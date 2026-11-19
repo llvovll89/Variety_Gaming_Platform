@@ -20,17 +20,19 @@ export const meta: GameMeta = {
       "description": "CPU를 이기기",
       "tier": 1,
       "rule": {
-        "kind": "wins",
+        "kind": "total",
+        "stat": "cpuWins",
         "atLeast": 1
       }
     },
     {
       "id": "wins10",
       "title": "동네 챔피언",
-      "description": "열 번 이기기",
+      "description": "CPU를 열 번 이기기",
       "tier": 2,
       "rule": {
-        "kind": "wins",
+        "kind": "total",
+        "stat": "cpuWins",
         "atLeast": 10
       }
     },

@@ -78,6 +78,7 @@ export const meta: GameMeta = {
       "range": [50, 80],
       "step": 10,
       "compare": "atMost",
+      "mode": "daily",
       "difficulty": [{ "id": "easy", "label": "쉬움" }],
       "seeded": true
     },
@@ -88,6 +89,7 @@ export const meta: GameMeta = {
       "range": [70, 100],
       "step": 10,
       "compare": "atMost",
+      "mode": "daily",
       "difficulty": [{ "id": "normal", "label": "보통" }],
       "seeded": true
     },
@@ -98,6 +100,7 @@ export const meta: GameMeta = {
       "range": [90, 130],
       "step": 10,
       "compare": "atMost",
+      "mode": "daily",
       "difficulty": [{ "id": "hard", "label": "어려움" }],
       "seeded": true
     }

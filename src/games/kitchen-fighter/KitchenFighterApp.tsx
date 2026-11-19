@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Camera, Pause, SpeakerHigh, SpeakerSlash, Play } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
 import { Fight, LADDER, WEAPONS, type LadderStep, type Move, type Weapon } from './engine';
-import { GameDialog, AUTOFOCUS } from '../../shared/kit/GameDialog';
+import { GameDialog, AUTOFOCUS, isKitDialogOpen } from '../../shared/kit/GameDialog';
 import { useRecords } from '../../platform/meta/api';
 import { useMeta } from '../../platform/meta/store';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
@@ -33,7 +33,6 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   const ladderCleared = Math.min(5, useMeta().games['kitchen-fighter']?.progress.ladder ?? 0);
   const [ladder, setLadder] = useState<LadderStep | null>(null);
   const [rewards, setRewards] = useState<RunRewards | null>(null);
-  const matchStart = useRef(0);
   const reportedMatch = useRef<Fight | null>(null);
   const [screen, setScreen] = useState<'setup' | 'battle'>('setup');
   const [paused, setPaused] = useState(false); const pauseRef = useRef(false);
@@ -78,11 +77,12 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
   useEffect(() => {
     if (screen !== 'battle') return;
     const down = (event: KeyboardEvent) => {
+      if (isKitDialogOpen()) return;
       if (!(event.code in attacks) && !['KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyQ', 'KeyE', 'KeyC', 'KeyO', 'ShiftLeft', 'ShiftRight', 'Space', 'Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Digit0', 'Numpad0', 'Period', 'NumpadDecimal', 'Escape'].includes(event.code)) return;
       event.preventDefault();
       if (event.repeat) return;
       // After this key press: the pause dialog opening on the same Escape would otherwise close at once.
-      if (event.code === 'Escape') { setTimeout(() => pause(!pauseRef.current), 0); return; }
+      if (event.code === 'Escape') { setTimeout(() => pause(true), 0); return; }
       if (pauseRef.current) return;
       keys.current.add(event.code);
       const soloArrow = fight.current.mode === 'cpu';
@@ -160,7 +160,8 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
     finally { setLoading(null); }
   }
   useEffect(() => {
-    if (hud.phase !== 'matchover' || reportedMatch.current === fight.current) return;
+    // Only from the battle screen: back on setup, the next edit swaps in a new Fight while hud still says matchover.
+    if (screen !== 'battle' || hud.phase !== 'matchover' || reportedMatch.current === fight.current) return;
     reportedMatch.current = fight.current;
     const vsCpu = fight.current.mode === 'cpu';
     const won = hud.winner === 0;
@@ -169,14 +170,14 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
       mode: ladder ? `ladder-${ladder}` : vsCpu ? `cpu-${difficulty}` : 'local',
       // Two players at one keyboard: nobody "wins" against the game, so the match is just complete.
       outcome: vsCpu ? (won ? 'win' : 'lose') : 'complete',
-      durationMs: Math.round(performance.now() - matchStart.current),
-      stats: { rounds: hud.wins[0] + hud.wins[1], [`weapon-${characters[0].weapon}`]: 1, ...(vsCpu && won ? { [`win-${characters[0].weapon}`]: 1 } : {}) },
+      durationMs: Math.round(fight.current.elapsed * 1000), // the fight clock stops while paused
+      stats: { rounds: hud.wins[0] + hud.wins[1], [`weapon-${characters[0].weapon}`]: 1, ...(vsCpu && won ? { cpuWins: 1, [`win-${characters[0].weapon}`]: 1 } : {}) },
     }));
-  }, [hud.phase, hud.winner, hud.wins, ladder, difficulty, records, characters]);
+  }, [screen, hud.phase, hud.winner, hud.wins, ladder, difficulty, records, characters]);
 
   function start(step: LadderStep | null = ladder) {
-    setLadder(step); setRewards(null); matchStart.current = performance.now();
     if (!renderReady) return;
+    setLadder(step); setRewards(null);
     fight.current = new Fight(step ? 'cpu' : mode, characters.map(ch => ch.weapon) as [Weapon, Weapon], step ?? difficulty);
     direction.current = null; pause(false); audio.current?.unlock(); setHud({ hp: [100, 100], gauge: [0, 0], wins: [0, 0], time: 60, phase: 'ready', round: 1, winner: null }); setScreen('battle');
   }
@@ -192,7 +193,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
       <div className={`kf-arena ${screen === 'setup' ? 'kf-preview' : ''}`}>
         <canvas ref={canvas} aria-label="사진 캐릭터가 주방에서 대결하는 격투 경기장" />
         {screen === 'setup' ? <div className="kf-preview-label"><span>1P · {characters[0].name || '선수 1'}</span><b>VS</b><span>2P · {characters[1].name || '선수 2'}</span></div> : <>
-          <div className="kf-hud">{characters.map((ch, i) => <div key={i} className={`kf-player-hud kf-player-${i}`}><div className="kf-hud-name"><strong>{ch.name || `선수 ${i + 1}`}</strong><span>{i === 1 && mode === 'cpu' ? 'CPU' : `${i + 1}P`} · {WEAPONS[ch.weapon].short}</span></div><div className="kf-health" role="meter" aria-label={`${ch.name} 체력`} aria-valuenow={hud.hp[i]} aria-valuemin={0} aria-valuemax={100}><div style={{ width: `${hud.hp[i]}%` }} /></div><div className="kf-meter-row"><div className={`kf-gauge ${hud.gauge[i] === 100 ? 'full' : ''}`}><div style={{ width: `${hud.gauge[i]}%` }} /></div><span>{hud.gauge[i] === 100 ? '필살기 준비!' : `${hud.gauge[i]}%`}</span><span className="kf-wins">{[0, 1].map(n => <i className={hud.wins[i] > n ? 'won' : ''} key={n} />)}</span></div></div>)}<div className="kf-timer"><b>{hud.time}</b><small>ROUND {hud.round}</small></div></div>
+          <div className="kf-hud">{characters.map((ch, i) => <div key={i} className={`kf-player-hud kf-player-${i}`}><div className="kf-hud-name"><strong>{ch.name || `선수 ${i + 1}`}</strong><span>{i === 1 && fight.current.mode === 'cpu' ? 'CPU' : `${i + 1}P`} · {WEAPONS[ch.weapon].short}</span></div><div className="kf-health" role="meter" aria-label={`${ch.name} 체력`} aria-valuenow={hud.hp[i]} aria-valuemin={0} aria-valuemax={100}><div style={{ width: `${hud.hp[i]}%` }} /></div><div className="kf-meter-row"><div className={`kf-gauge ${hud.gauge[i] === 100 ? 'full' : ''}`}><div style={{ width: `${hud.gauge[i]}%` }} /></div><span>{hud.gauge[i] === 100 ? '필살기 준비!' : `${hud.gauge[i]}%`}</span><span className="kf-wins">{[0, 1].map(n => <i className={hud.wins[i] > n ? 'won' : ''} key={n} />)}</span></div></div>)}<div className="kf-timer"><b>{hud.time}</b><small>ROUND {hud.round}</small></div></div>
           {hud.phase === 'ready' && <div className="kf-round-banner"><small>ROUND {hud.round}</small><strong>준비!</strong></div>}
           {hud.phase === 'roundover' && <div className="kf-round-banner"><strong>{hud.winner === null ? '무승부!' : 'K.O.'}</strong><small>{hud.winner === null ? '다시 한 판!' : `${characters[hud.winner].name} 라운드 승리`}</small></div>}
           {hud.phase === 'matchover' && <GameDialog label="경기 결과" onClose={() => { pause(false); setScreen('setup'); }} className="kf-dialog"><div className="kf-result"><p>{ladder ? `CPU 사다리 ${ladder}단계 · ${LADDER[ladder].name}` : '오늘의 주방 챔피언'}</p><h2>{hud.winner === null ? '무승부' : characters[hud.winner].name}</h2><p>{hud.wins[0]} : {hud.wins[1]} · 밥상은 내가 접수한다!</p><RewardStrip rewards={rewards} audience="general"/>{ladder && hud.winner === 0 && ladder < 5 ? <button {...AUTOFOCUS} className="kf-primary" onClick={() => start((ladder + 1) as LadderStep)}>다음 단계 도전 · {LADDER[(ladder + 1) as LadderStep].name}</button> : <button {...AUTOFOCUS} className="kf-primary" onClick={() => start()}>한 판 더</button>}<button className="kf-secondary" onClick={() => { pause(false); setScreen('setup'); }}>캐릭터 선택</button><NextGameActions/></div></GameDialog>}
@@ -213,7 +214,7 @@ export default function KitchenFighterApp({ onExit, profile }: GameProps) {
         <div className="kf-ladder" role="group" aria-label="CPU 사다리"><p><b>CPU 사다리</b> 다섯 상대를 차례로 이겨 보세요 · {ladderCleared}/5 돌파</p><ol>{([1, 2, 3, 4, 5] as LadderStep[]).map(step => <li key={step}><button type="button" disabled={step > ladderCleared + 1 || loading !== null || !renderReady} aria-label={`${step}단계 ${LADDER[step].name}${step <= ladderCleared ? ' (돌파)' : step > ladderCleared + 1 ? ' (잠김)' : ''}`} onClick={() => start(step)} data-cleared={step <= ladderCleared}><b>{step}</b><small>{LADDER[step].name}</small></button></li>)}</ol></div>
         <p className="kf-privacy">사진 전체를 자르지 않고 사용합니다. 전신 사진이나 배경이 투명한 PNG를 넣으면 더 자연스럽습니다. 사진은 이 브라우저에만 저장됩니다.</p>
       </> : <div className="kf-touch-controls" data-idle={paused || hud.phase === 'matchover'}><div className="kf-move-pad" role="group" aria-label="이동">{holdButton('KeyQ', '안쪽', 'Q', 'kf-pad-in')}{holdButton('KeyA', '왼쪽', 'A', 'kf-pad-left')}{holdButton('KeyD', '오른쪽', 'D', 'kf-pad-right')}{holdButton('KeyE', '바깥쪽', 'E', 'kf-pad-out')}</div><div className="kf-action-pad"><div className="kf-stance" role="group" aria-label="자세">{holdButton('KeyW', '점프', 'W')}{holdButton('ShiftLeft', '가드', 'Shift')}{holdButton('KeyS', '앉기', 'S')}</div><div className="kf-attack-buttons" role="group" aria-label="공격">{moveLabels.map(([move, label, letter]) => <button key={move} className={move === 'ultimate' ? 'kf-super' : ''} disabled={paused || hud.phase !== 'fight' || (move === 'ultimate' && hud.gauge[0] < 100)} onClick={e => { if (e.detail === 0) perform(0, move); }} onPointerDown={e => { e.preventDefault(); perform(0, move); }}><kbd>{letter}</kbd>{label}</button>)}</div></div></div>}
-      <details className="kf-help"><summary>기술과 조작법 <span>60초, 2선승</span></summary><div className="kf-help-grid"><p><b>1P</b> A/D 이동, W 점프, S 앉기<br />Q/E 톡 치면 사이드스텝, 누르고 있으면 옆걸음<br />Shift 또는 Space 가드. 뒤로 걸어도 자동 가드.<br />J 약공격, K 강공격, L 하단, U 띄우기, I 필살기<br />CPU 대전에서는 방향키 좌우 이동, ↑ 점프, ↓ 앉기.</p><p><b>연결 기술</b> A A / D D 빠르게 입력하면 백대시 / 대시.<br />S → 상대 방향(A/D) → J: 띄우기.<br />공격이 끝나기 직전에 다음 공격을 입력하면 연결됩니다.<br />S + Shift 하단 가드. 게이지 100%에서 I.</p><p><b>{mode === 'local' ? '2P' : '모바일'}</b>{mode === 'local' ? <><br />←/→ 이동, ↑ 점프, ↓ 앉기, Home/End 옆걸음<br />1/2/3 공격, 4 띄우기, 5 필살기, 0 가드</> : <><br />버튼을 누르고 있으면 이동·가드·앉기.<br />여러 버튼을 함께 눌러도 됩니다.</>}<br />Esc 일시정지</p></div></details>
+      <details className="kf-help"><summary>기술과 조작법 <span>60초, 2선승</span></summary><div className="kf-help-grid"><p><b>1P</b> A/D 이동, W 점프, S 앉기<br />Q/E 톡 치면 사이드스텝, 누르고 있으면 옆걸음<br />Shift 또는 Space 가드. 뒤로 걸어도 자동 가드.<br />J 약공격, K 강공격, L 하단, U 띄우기, I 필살기<br />CPU 대전에서는 방향키 좌우 이동, ↑ 점프, ↓ 앉기.</p><p><b>연결 기술</b> A A / D D 빠르게 입력하면 백대시 / 대시.<br />S → 상대 방향(A/D) → J: 띄우기.<br />공격이 끝나기 직전에 다음 공격을 입력하면 연결됩니다.<br />S + Shift 하단 가드. 게이지 100%에서 I.</p><p><b>{fight.current.mode === 'local' ? '2P' : '모바일'}</b>{fight.current.mode === 'local' ? <><br />←/→ 이동, ↑ 점프, ↓ 앉기, Home/End 옆걸음<br />1/2/3 공격, 4 띄우기, 5 필살기, 0 가드</> : <><br />버튼을 누르고 있으면 이동·가드·앉기.<br />여러 버튼을 함께 눌러도 됩니다.</>}<br />Esc 일시정지</p></div></details>
     </div>
   </main>;
 }
