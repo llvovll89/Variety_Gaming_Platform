@@ -69,3 +69,21 @@ test('a game card shows the best and earned count only after the game was played
   assert.deepEqual(P.visibleAchievements(maze, meta({}, { 'maze/b': 1 })).map(a => a.id), ['b'], 'only what its old records already earned');
   assert.equal(P.visibleAchievements(kids, meta({})).length, 2, 'a reporting game shows every goal');
 });
+
+test('the profile never shows "0 runs" for imported bests and explains an empty tab', async () => {
+  const P = await loadBundle(`
+    export {createElement} from 'react';
+    export {renderToStaticMarkup} from 'react-dom/server';
+    export {ProfileSheet} from './src/platform/meta/ProfileSheet.tsx';
+    export {metaStore} from './src/platform/meta/store.ts';
+  `);
+  const store = new Map([['arcade:meta:v1', JSON.stringify({ v: 1, importedLegacy: {}, days: { first: null, last: null, streak: 0, bestStreak: 0, recent: [] },
+    games: { balloon: { runs: 0, wins: 0, playMs: 0, lastPlayed: 0, best: { 'default|-': 45 }, totals: {}, peaks: {}, progress: {}, dailyDone: 0 } }, achievements: {}, daily: {} })]]);
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  P.metaStore.resetForTests();
+  try {
+    const games = [{ id: 'balloon', title: '풍선', genres: ['키즈'], meta: { scoreUnit: '개', achievements: [{ id: 'a', title: 'A', description: 'a', tier: 1, rule: { kind: 'runs', atLeast: 1 } }] } }];
+    const html = P.renderToStaticMarkup(P.createElement(P.ProfileSheet, { games, name: '', onClose() {} }));
+    assert.match(html, /아직 받은 스티커가 없어요/, 'a game that cannot earn stickers yet leaves the sticker book explained, not blank');
+  } finally { delete globalThis.localStorage; P.metaStore.resetForTests(); }
+});

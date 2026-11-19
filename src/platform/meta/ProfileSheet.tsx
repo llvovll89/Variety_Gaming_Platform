@@ -70,6 +70,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
         {TABS.map(t => <button key={t.id} type="button" role="tab" id={`${titleId}-${t.id}`} aria-selected={tab === t.id} aria-controls={`${titleId}-panel`} onClick={() => setTab(t.id)}>{t.label}</button>)}
       </div>
       <div id={`${titleId}-panel`} role="tabpanel" aria-labelledby={`${titleId}-${tab}`} className="hub-profile-panel">
+        {tab === 'stickers' && !kidsGames.length && <p className="kit-summary">아직 받은 스티커가 없어요. 아이 게임을 한 판 하면 여기에 모여요.</p>}
         {tab === 'stickers' && kidsGames.map(game => (
           <section key={game.id}>
             <h3>{game.title}</h3>
@@ -83,6 +84,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
             })}</ul>
           </section>
         ))}
+        {tab === 'achievements' && !otherGames.length && <p className="kit-summary">아직 업적이 없어요. 게임을 하다 보면 여기에 쌓여요.</p>}
         {tab === 'achievements' && otherGames.map(game => (
           <section key={game.id}>
             <h3>{game.title}</h3>
@@ -103,7 +105,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
           <tbody>{played.map(game => {
             const record = meta.games[game.id] as GameRecord;
             const best = bestOf(record, game.meta?.scoreOrder ?? 'high');
-            return <tr key={game.id}><th scope="row">{game.title}</th><td>{record.runs}</td><td>{best === null ? '-' : `${best.toLocaleString()}${game.meta?.scoreUnit ?? ''}`}</td><td>{record.playMs ? minutes(record.playMs) : '-'}</td></tr>;
+            return <tr key={game.id}><th scope="row">{game.title}</th><td>{record.runs || '-'}</td><td>{best === null ? '-' : `${best.toLocaleString()}${game.meta?.scoreUnit ?? ''}`}</td><td>{record.playMs ? minutes(record.playMs) : '-'}</td></tr>;
           })}</tbody>
         </table> : <p className="kit-summary">아직 기록이 없어요. 한 판 하고 오면 여기에 쌓여요.</p>)}
       </div>
