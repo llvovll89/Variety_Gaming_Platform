@@ -7,7 +7,7 @@ import { nextCss } from './kitCss';
  * Game result panels that are not kit dialogs yet still need to scroll on short screens. Each
  * selector goes away when its game moves to GameDialog, which scrolls on its own.
  */
-const legacyScrollCss = '.jump-dialog-panel:has(>.kit-next),.balloon-dialog:has(>.kit-next),.survivor-dialog:has(>.kit-next),.kf-result:has(>.kit-next),.maze-overlay>section:has(>.kit-next),.tk-result>div:has(>.kit-next){max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain}';
+const legacyScrollCss = '.jump-dialog-panel:has(>.kit-next),.balloon-dialog:has(>.kit-next),.kf-result:has(>.kit-next),.maze-overlay>section:has(>.kit-next),.tk-result>div:has(>.kit-next){max-height:calc(100dvh - 32px);overflow-y:auto;overscroll-behavior:contain}';
 
 export function ScoreFeedback({ score, previousBest, unit }: { score: number; previousBest: number; unit?: string }) {
   // arcade-score-feedback stays for game stylesheets written against the old name.
