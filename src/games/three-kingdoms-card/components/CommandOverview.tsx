@@ -4,6 +4,32 @@ import { HeroPortrait } from "./HeroVisual";
 import { number, type Tab } from "./tabs/shared";
 import { MILESTONES, milestoneProgress, RESEARCH, remainingTime } from "../lib/campaign";
 
+/**
+ * The first session in four steps (모집 → 편성 → 보충 → 출정), shown until the first battle.
+ * Each step is done by the state itself, so it never asks for something already done.
+ */
+function FirstSteps({ state, onNavigate }: { state: DemoState; onNavigate: (tab: Tab) => void }) {
+  const troops = state.troops.slice(0, troopSlots(state));
+  const steps: { label: string; detail: string; tab: Tab; done: boolean }[] = [
+    { label: "장수 모집", detail: "모집관에서 초빙장으로 첫 장수를 맞이합니다.", tab: "모집관", done: state.heroes.length > 0 },
+    { label: "부대 편성", detail: "부대 편성에서 주장 자리에 장수를 배치합니다.", tab: "부대 편성", done: troops.some(t => !!t.heroIds[0]) },
+    { label: "병력 보충", detail: "예비군과 식량으로 부대 병력을 채웁니다.", tab: "부대 편성", done: troops.some(t => !!t.heroIds[0] && t.currentTroops > 0) },
+    { label: "첫 출정", detail: "출정에서 가까운 거점을 토벌합니다.", tab: "출정", done: state.battles.length > 0 },
+  ];
+  const current = steps.findIndex(step => !step.done);
+  if (current < 0) return null;
+  return <section className="first-steps" aria-labelledby="first-steps-title">
+    <h2 id="first-steps-title">첫 출정까지 <small>{steps.filter(step => step.done).length} / {steps.length}</small></h2>
+    <ol>{steps.map((step, i) => <li key={step.label} data-state={step.done ? "done" : i === current ? "current" : "todo"}>
+      <button type="button" onClick={() => onNavigate(step.tab)} aria-current={i === current ? "step" : undefined}>
+        <span aria-hidden="true">{step.done ? "✓" : i + 1}</span>
+        <strong>{step.label}<span className="sr-only">{step.done ? " (완료)" : i === current ? " (지금 할 일)" : ""}</span></strong>
+        <small>{step.detail}</small>
+      </button>
+    </li>)}</ol>
+  </section>;
+}
+
 export default function CommandOverview({ state, onNavigate, onChallenge }: { state: DemoState; onNavigate: (tab: Tab) => void; onChallenge?: () => void }) {
   const troop = activeTroop(state);
   const commander = state.heroes.find(h => h.id === troop.heroIds[0]);
@@ -13,6 +39,7 @@ export default function CommandOverview({ state, onNavigate, onChallenge }: { st
   const job = state.campaign.researchJob;
   const goal = MILESTONES.find(m => !state.campaign.claimedMilestones.includes(m.id));
   return <div className="command-overview">
+    <FirstSteps state={state} onNavigate={onNavigate} />
     <div className="command-heading"><div><span className="command-seal" aria-hidden="true">軍令</span><div><h1>{state.castleName} 지휘소</h1><p>{state.lordName} 군주 · 제{state.stage}차 토벌</p></div></div><span className="command-date">출전 가능 {state.troops.slice(0, troopSlots(state)).filter(t => t.heroIds[0] && t.currentTroops > 0).length}개 부대</span></div>
     <div className="command-columns"><div className="campaign-map">
       <div className="map-caption"><strong>영지 주변 정세</strong><span>세 거점을 토벌하면 다음 전선 개방</span></div>
