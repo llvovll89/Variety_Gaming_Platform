@@ -11,6 +11,8 @@ export const SEGMENT_SCORE_UNIT = 14;
 export const MIN_SEGMENTS = 6;
 export const MAX_SEGMENTS = 260;
 export const START_SCORE = 8;
+/** Length of a score-attack run (seconds of actual play). */
+export const TIMED_RUN_SECONDS = 180;
 
 // Movement
 export const BASE_SPEED = 160; // world units / sec

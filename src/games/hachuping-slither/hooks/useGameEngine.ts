@@ -9,12 +9,13 @@ export function useGameEngine(
   bodyPaletteColors: string[],
   onDeath: (end: RunEnd) => void,
   onReady: (engine: GameEngine) => void,
+  timeLimit: number | null = null,
 ): void {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const engine = new GameEngine(canvas, playerName, characterImageUrl, onDeath, bodyPaletteColors);
+    const engine = new GameEngine(canvas, playerName, characterImageUrl, onDeath, bodyPaletteColors, timeLimit);
     onReady(engine);
 
     const resize = (): void => {

@@ -23,14 +23,18 @@ import { useBodyPalette } from "./useBodyPalette";
 import type { GameProps } from "../../platform/types";
 import type { GameEngine } from "./game/engine";
 import type { RunEnd } from "./game/types";
+import { TIMED_RUN_SECONDS } from "./game/constants";
 
 type Screen = "menu" | "playing" | "dead";
+/** Endless: grow until you crash. Timed: the longest you can get in three minutes. */
+type Mode = "endless" | "timed";
 
 const FALLBACK_SNAPSHOT = emptySnapshot();
 const formatTime = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
 
 export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
+  const [mode, setMode] = useState<Mode>("endless");
   const [playKey, setPlayKey] = useState(0);
   const [result, setResult] = useState<RunEnd | null>(null);
   const [rewards, setRewards] = useState<RunRewards | null>(null);
@@ -43,7 +47,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback((next?: Mode) => {
+    if (next) setMode(next);
     setEngine(null);
     setResult(null);
     setRewards(null);
@@ -61,12 +66,15 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   useEffect(() => {
     if (!result || reported.current === result) return;
     reported.current = result;
-    submitScore(result.score);
+    // The game's own best length stays the endless one; timed bests live in the arcade records.
+    if (mode === "endless") submitScore(result.score);
     setRewards(records.reportRun({
-      score: result.score, durationMs: Math.round(result.seconds * 1000), outcome: 'lose',
+      mode: mode === "timed" ? "timed" : undefined,
+      score: result.score, durationMs: Math.round(result.seconds * 1000), outcome: result.timedOut ? 'complete' : 'lose',
       stats: { kills: result.kills, survivalSec: Math.floor(result.seconds), level: result.level },
     }));
-  }, [result, records, submitScore]);
+  }, [result, records, submitScore, mode]);
+  const timed = mode === "timed";
 
   const handleMainMenu = useCallback(() => {
     setEngine(null);
@@ -87,6 +95,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {gameActive && (
         <GameCanvas
           key={playKey}
+          timeLimit={timed ? TIMED_RUN_SECONDS : null}
           playerName={profile.name}
           characterImageUrl={usePortrait ? profile.characterImage : ''}
           bodyPaletteColors={bodyPalette.colors}
@@ -114,7 +123,10 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
             profile={profile}
             bodyPaletteId={bodyPalette.paletteId}
             onSelectBodyPalette={bodyPalette.setPaletteId}
-            onStart={handleStart}
+            onStart={() => handleStart("endless")}
+            onStartTimed={() => handleStart("timed")}
+            timedBest={records.best("timed")}
+            daily={records.daily()?.label ?? null}
             usePortrait={usePortrait}
             onTogglePortrait={setUsePortrait}
           />
@@ -130,10 +142,14 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
       {screen === 'playing' && snapshot.status === 'playing' && snapshot.pendingUpgrades > 0 && engine && <UpgradeDialog snapshot={snapshot} onChoose={key => engine.upgrade(key)} />}
       {screen === "dead" && result && (
         <GameDialog className="slither-result slither-session-dialog" labelledBy="slither-result-title" dismissible={false} onClose={handleMainMenu}>
-          <span className="slither-kicker">JOURNEY ENDED</span><h2 id="slither-result-title">조금 더 자란 오늘.</h2><p>다음 정원에서는 더 멀리 가볼까요?</p>
+          {result.timedOut
+            ? <><span className="slither-kicker">TIME UP</span><h2 id="slither-result-title">3분 완주!</h2><p>끝까지 살아남았어요. 다음엔 더 길게 자라 볼까요?</p></>
+            : <><span className="slither-kicker">JOURNEY ENDED</span><h2 id="slither-result-title">조금 더 자란 오늘.</h2><p>{timed ? '3분 점수전이 끝났어요.' : '다음 정원에서는 더 멀리 가볼까요?'}</p></>}
           {snapshot.death && <DeathReport death={snapshot.death}/>}
           <div><span><strong>{result.score}</strong>최종 길이</span><span><strong>{result.kills}</strong>잡은 지렁이</span><span><strong>{formatTime(result.seconds)}</strong>생존 시간</span></div>
-          <p>내 최고 길이 {highScore.toLocaleString()} · LV {result.level}</p><ScoreFeedback score={result.score} previousBest={previousBest} unit=""/><RewardStrip rewards={rewards} audience="general"/><button {...AUTOFOCUS} className="slither-primary" onClick={handleStart}>다시 출발</button><button onClick={handleMainMenu}>게임 메뉴</button><NextGameActions/>
+          {timed
+            ? <><p>3분 점수전 최고 길이 {(rewards?.best ?? result.score).toLocaleString()} · LV {result.level}</p>{rewards && <ScoreFeedback score={result.score} previousBest={rewards.previousBest ?? 0} unit=""/>}</>
+            : <><p>내 최고 길이 {highScore.toLocaleString()} · LV {result.level}</p><ScoreFeedback score={result.score} previousBest={previousBest} unit=""/></>}<RewardStrip rewards={rewards} audience="general"/><button {...AUTOFOCUS} className="slither-primary" onClick={() => handleStart()}>{timed ? '3분 점수전 다시' : '다시 출발'}</button><button onClick={handleMainMenu}>게임 메뉴</button><NextGameActions/>
         </GameDialog>
       )}
     </div>

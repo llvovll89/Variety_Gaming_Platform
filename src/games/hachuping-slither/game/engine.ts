@@ -34,6 +34,9 @@ export class GameEngine {
   private uiTimer = 0;
   private wasPlayerAlive = true;
   private paused = false;
+  /** A timed run that reached its limit: the world stops, like a death without dying. */
+  private ended = false;
+  private timeLimit: number | null;
   private boostIntensity = 0;
   private onDeath: (end: RunEnd) => void;
 
@@ -43,7 +46,9 @@ export class GameEngine {
     characterImageUrl: string,
     onDeath: (end: RunEnd) => void,
     playerBodyPalette: string[] = [],
+    timeLimit: number | null = null,
   ) {
+    this.timeLimit = timeLimit;
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2D context unavailable");
@@ -99,7 +104,7 @@ export class GameEngine {
   }
 
   pause(): void {
-    if (this.paused || !this.world.player.alive) return;
+    if (this.paused || !this.world.player.alive || this.ended) return;
     this.paused = true;
     this.input.reset();
     this.uiStore.publish(this.buildSnapshot());
@@ -119,7 +124,7 @@ export class GameEngine {
   }
 
   upgrade(key: UpgradeKey): void {
-    if (this.paused || !this.world.player.alive || !chooseUpgrade(this.world.player, key)) return;
+    if (this.paused || !this.world.player.alive || this.ended || !chooseUpgrade(this.world.player, key)) return;
     this.uiStore.publish(this.buildSnapshot());
   }
 
@@ -136,7 +141,7 @@ export class GameEngine {
 
     if (this.paused) return;
 
-    if (this.world.player.alive) {
+    if (this.world.player.alive && !this.ended) {
       const inputState = this.input.getState();
       if (dt > SUBSTEP_DT_THRESHOLD) {
         this.world.update(dt / 2, inputState);
@@ -146,14 +151,16 @@ export class GameEngine {
       }
     }
 
-    if (this.wasPlayerAlive && !this.world.player.alive) {
+    const timeUp = this.timeLimit !== null && this.world.time >= this.timeLimit && this.world.player.alive;
+    if (this.wasPlayerAlive && (!this.world.player.alive || timeUp)) {
       this.wasPlayerAlive = false;
+      this.ended = timeUp;
       const player = this.world.player;
-      this.onDeath({ score: Math.floor(player.score), kills: this.world.playerKills, seconds: this.world.time, level: player.level });
+      this.onDeath({ score: Math.floor(player.score), kills: this.world.playerKills, seconds: Math.min(this.world.time, this.timeLimit ?? Infinity), level: player.level, timedOut: timeUp });
       this.uiStore.publish(this.buildSnapshot());
     }
 
-    if (this.world.player.alive) {
+    if (this.world.player.alive && !this.ended) {
       this.camera.follow(
         this.world.player.head,
         this.world.player.radius,
@@ -162,7 +169,7 @@ export class GameEngine {
       );
     }
 
-    const boostTarget = this.world.player.alive && this.world.player.boosting ? 1 : 0;
+    const boostTarget = this.world.player.alive && !this.ended && this.world.player.boosting ? 1 : 0;
     this.boostIntensity = lerp(
       this.boostIntensity,
       boostTarget,
@@ -182,11 +189,12 @@ export class GameEngine {
     const player = this.world.player;
     const stats = statsFor(player);
     const aliveSorted = [...this.world.getAliveSnakes()].sort((a, b) => b.score - a.score);
+    const over = !player.alive || this.ended;
     const rank = player.alive ? aliveSorted.findIndex((s) => s.id === player.id) + 1 : 0;
     const viewRect = this.camera.getViewRect(0);
 
     return {
-      status: !player.alive ? "dead" : this.paused ? "paused" : "playing",
+      status: over ? "dead" : this.paused ? "paused" : "playing",
       level: player.level,
       xp: player.xp,
       xpNext: xpForLevel(player.level),
@@ -199,7 +207,7 @@ export class GameEngine {
       rank,
       totalAlive: aliveSorted.length,
       boosting: player.boosting,
-      canBoost: player.score > BOOST_MIN_SCORE,
+      canBoost: !over && player.score > BOOST_MIN_SCORE,
       leaderboard: this.world.getLeaderboard(LEADERBOARD_SIZE).map((s) => ({
         id: s.id,
         name: s.name,
@@ -220,7 +228,9 @@ export class GameEngine {
           h: viewRect.maxY - viewRect.minY,
         },
       },
-      finalScore: player.alive ? null : Math.floor(player.score),
+      finalScore: over ? Math.floor(player.score) : null,
+      kills: this.world.playerKills,
+      timeLeft: this.timeLimit === null ? null : Math.max(0, this.timeLimit - this.world.time),
       death: this.world.playerDeath ? { ...this.world.playerDeath, position: { ...this.world.playerDeath.position } } : null,
     };
   }
