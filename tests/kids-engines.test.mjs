@@ -65,3 +65,12 @@ test('memory wrong input locks the turn immediately; pause freezes game-over del
   e.togglePause();tick(500);assert.equal(state.status,'game-over');assert.equal(timers.size,0);assert.equal(state.highScore,8);
   e.startGame();assert.equal(state.status,'playing');assert.equal(state.score,0);assert.equal(timers.size,1);e.destroy();
 }));
+
+test('the slow memory speed shows each card later and for longer',()=>withClock(({tick})=>{
+  const lit=e=>e.uiStore.getSnapshot().gameState.cards.some(c=>c.isRevealed);
+  const normal=new MemoryGameEngine(0,'normal');normal.startGame();tick(1100);assert.equal(lit(normal),true,'normal: 500 + 600 ms');normal.destroy();
+  const slow=new MemoryGameEngine(0,'slow');slow.startGame();tick(1100);assert.equal(lit(slow),false);
+  tick(360);assert.equal(lit(slow),true,'slow: 500 + 960 ms');
+  tick(470);assert.equal(lit(slow),true,'still lit (480 ms instead of 300)');
+  tick(10);assert.equal(lit(slow),false);slow.destroy();
+}));

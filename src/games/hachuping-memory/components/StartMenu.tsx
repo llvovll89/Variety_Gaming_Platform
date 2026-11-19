@@ -1,11 +1,15 @@
+import { DifficultyPicker } from '../../../shared/kit/DifficultyPicker';
+import { SPEEDS, type MemorySpeed } from '../game/constants';
 import { useCallback, useState } from "react";
 
 interface StartMenuProps {
   highScore: number;
   onStart: () => void;
+  speed: MemorySpeed;
+  onSpeedChange: (speed: MemorySpeed) => void;
 }
 
-export default function StartMenu({ highScore, onStart }: StartMenuProps) {
+export default function StartMenu({ highScore, onStart, speed, onSpeedChange }: StartMenuProps) {
   const [buttonHovered, setButtonHovered] = useState(false);
 
   const handleStart = useCallback(() => {
@@ -77,6 +81,14 @@ export default function StartMenu({ highScore, onStart }: StartMenuProps) {
           </p>
         </div>
       )}
+
+      <DifficultyPicker
+        legend="빠르기"
+        className="memory-speed"
+        value={speed}
+        onChange={onSpeedChange}
+        options={(Object.keys(SPEEDS) as MemorySpeed[]).map(id => ({ id, label: SPEEDS[id].label, note: SPEEDS[id].note }))}
+      />
 
       {/* 게임 시작 버튼 */}
       <button

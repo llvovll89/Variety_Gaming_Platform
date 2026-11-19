@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } f
 import { useRecords } from "../../platform/meta/api";
 import { hasRewards, RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
+import { settingsStore } from "../../shared/kit/settings";
+import { SPEEDS, type MemorySpeed } from "./game/constants";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
@@ -15,6 +17,7 @@ import { useHighScore } from "../../shared/hooks/useHighScore";
 import { MemoryGameEngine } from "./game/engine";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
+import "./memory.css";
 
 type Screen = "menu" | "playing";
 
@@ -46,6 +49,12 @@ const FALLBACK_SNAPSHOT = emptySnapshot({
 
 export default function HachupingMemoryApp({ onExit }: GameProps) {
   const [screen, setScreen] = useState<Screen>("menu");
+  // Remembered between visits, like the other games' difficulty.
+  const [speed, setSpeed] = useState<MemorySpeed>(() => {
+    const saved = settingsStore.get().games[GAME_ID]?.extra?.speed;
+    return typeof saved === "string" && Object.hasOwn(SPEEDS, saved) ? saved as MemorySpeed : "normal";
+  });
+  const chooseSpeed = (next: MemorySpeed) => { setSpeed(next); settingsStore.setGame(GAME_ID, { extra: { speed: next } }); };
   const [engine, setEngine] = useState<MemoryGameEngine | null>(null);
   const { highScore, previousBest, submitScore } = useHighScore(GAME_ID, ['hachuping-memory-highscore']);
   const resultTitle = useId();
@@ -67,18 +76,18 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
     reported.current = engine; // once per run, also under StrictMode
     // A memory run only ends on a mistake: 'lose', so a 3-second slip is not a win or a streak day.
     submitScore(snapshot.score);
-    setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'lose', stats: { stage: snapshot.gameState.stage } }));
+    setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'lose', difficulty: speed, stats: { stage: snapshot.gameState.stage } }));
   }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records]);
 
   const handleStart = useCallback(() => {
     engine?.destroy();
-    const newEngine = new MemoryGameEngine(highScore);
+    const newEngine = new MemoryGameEngine(highScore, speed);
     played.current = { ms: 0, since: 0 };
     setRewards(null);
     setEngine(newEngine);
     setScreen("playing");
     newEngine.startGame();
-  }, [engine, highScore]);
+  }, [engine, highScore, speed]);
 
   const handleMainMenu = useCallback(() => {
     setEngine(null);
@@ -159,7 +168,7 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
             <ArrowLeftIcon size={18} weight="bold" />
             허브로 🏠
           </button>
-          <StartMenu highScore={highScore} onStart={handleStart} />
+          <StartMenu highScore={highScore} onStart={handleStart} speed={speed} onSpeedChange={chooseSpeed} />
         </>
       )}
       {isPaused && (
@@ -169,7 +178,6 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
           onResume={handleTogglePause}
           onQuit={handleMainMenu}
           quitLabel="처음 화면으로"
-          showSettings={false}
         />
       )}
       {snapshot.status === 'game-over' && <GameDialog labelledBy={resultTitle} onClose={handleMainMenu}>
