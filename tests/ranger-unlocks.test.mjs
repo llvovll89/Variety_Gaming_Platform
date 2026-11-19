@@ -29,3 +29,9 @@ test('heroes and weapons from a loadout saved before unlocks stay open, once and
   assert.deepEqual([...U.readKept(get, set)], ['storm', 'shotgun'], 'decided on the first start only');
   assert.deepEqual([...U.readKept(() => null, () => { throw new Error('blocked'); })], [], 'a new player keeps nothing');
 });
+
+test('every screen change that has a sound names a real recipe', async () => {
+  const S = await loadBundle(`export * from './src/games/hachuping-dodge/survivor/sound.ts';`);
+  for (const status of ['upgrade', 'promotion', 'clear', 'victory', 'dead']) assert.ok(S.soundForStatus(status), status);
+  for (const status of ['playing', 'paused', 'menu']) assert.equal(S.soundForStatus(status), null, status);
+});

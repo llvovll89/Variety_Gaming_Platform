@@ -17,6 +17,7 @@ import Preparation, { Portrait } from './Preparation';
 import { ADVANCE_LEVELS, MAX_LEVEL, PATHS, promotionOptions, promotionTrait, skillDescription } from './classes';
 import { heroWeaponName } from './heroVisuals';
 import { readDifficulty, saveDifficulty, readBest } from './preferences';
+import { rangerSound, soundForStatus } from './sound';
 import { allowedLoadout, heroOpen, newlyOpened, readKept, weaponOpen, type UnlockProgress } from './unlocks';
 
 function readLoadout(): Loadout {
@@ -46,7 +47,7 @@ export default function SurvivorApp({onExit}:GameProps) {
   const [rewards,setRewards]=useState<RunRewards|null>(null);
   const publish=()=>setUi(structuredClone(world.current));
   const resetInput=()=>{keys.current.clear();pointer.current=null;};
-  const start=()=>{setRewards(null);setOpened([]);setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
+  const start=()=>{rangerSound.unlock();setRewards(null);setOpened([]);setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const mainMenu=()=>{world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const selectLoadout=(change:Partial<Loadout>)=>{if((change.hero&&!heroOpen(change.hero,unlocksRef.current,kept))||(change.weapon&&!weaponOpen(change.weapon,unlocksRef.current,kept)))return;world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
   const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;saveDifficulty(difficulty);bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
@@ -54,7 +55,7 @@ export default function SurvivorApp({onExit}:GameProps) {
   useEffect(()=>{
     const element=canvas.current; if(!element)return;
     const c=element.getContext('2d');if(!c)return;
-    let width=1,height=1,frame=0,last=0,published=0;
+    let width=1,height=1,frame=0,last=0,published=0,lastHurt=0,bossShown=false;
     const resize=()=>{const r=element.getBoundingClientRect();width=r.width;height=r.height;const dpr=Math.min(window.devicePixelRatio||1,2);element.width=Math.round(width*dpr);element.height=Math.round(height*dpr);c.setTransform(dpr,0,0,dpr,0,0);};
     const observer=new ResizeObserver(resize);observer.observe(element);resize();
     const blur=()=>{resetInput();if(world.current.status==='playing'){world.current.status='paused';publish();}};
@@ -77,8 +78,12 @@ export default function SurvivorApp({onExit}:GameProps) {
       let x=Number(keys.current.has('d')||keys.current.has('arrowright'))-Number(keys.current.has('a')||keys.current.has('arrowleft'));
       let y=Number(keys.current.has('s')||keys.current.has('arrowdown'))-Number(keys.current.has('w')||keys.current.has('arrowup'));
       if(pointer.current){const v=viewFor(width,height,w);x=(pointer.current.x-v.x)/v.scale-w.player.x;y=(pointer.current.y-v.y)/v.scale-w.player.y;if(Math.hypot(x,y)<8){x=0;y=0;}}
-      const len=Math.hypot(x,y);const previous=w.status;
+      const len=Math.hypot(x,y);const previous=w.status,hp=w.player.hp;
       stepWorld(w,dt,len?{x:x/len,y:y/len}:{x:0,y:0});
+      // Sound marks the moments: a hit (at most a few a second), a boss arriving, a new screen.
+      if(w.status==='playing'&&w.player.hp<hp&&now-lastHurt>280){lastHurt=now;rangerSound.play('hurt');}
+      const boss=w.enemies.some(e=>e.kind==='boss');if(boss&&!bossShown&&w.status==='playing')rangerSound.play('boss');bossShown=boss;
+      if(w.status!==previous){const cue=soundForStatus(w.status);if(cue)rangerSound.play(cue);}
       renderWorld(c,w,width,height);
       if(w.status!==previous){resetInput();
         if(w.status==='clear'||w.status==='dead'||w.status==='victory')recordsRef.current.reportProgress('region',w.stage+1+(w.status==='clear'?1:0));
