@@ -44,3 +44,8 @@ test('daily challenges fill every placeholder and stay reachable for a year', ()
     }
   }
 });
+
+test('a timed daily challenge always asks for less time than the run allows', async () => {
+  const { LEVELS } = await loadBundle(`export {LEVELS} from './src/games/echo-maze/engine.ts';`);
+  for (const t of metas['echo-maze'].daily) for (const d of t.difficulty) assert.ok(t.range[1] < LEVELS[d.id].seconds, `${t.id} goal under the ${d.id} time limit`);
+});

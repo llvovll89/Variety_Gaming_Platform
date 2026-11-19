@@ -2,6 +2,7 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
   "achievements": [
     {
       "id": "first",
@@ -19,17 +20,19 @@ export const meta: GameMeta = {
       "description": "CPU를 이기기",
       "tier": 1,
       "rule": {
-        "kind": "wins",
+        "kind": "total",
+        "stat": "cpuWins",
         "atLeast": 1
       }
     },
     {
       "id": "wins10",
       "title": "동네 챔피언",
-      "description": "열 번 이기기",
+      "description": "CPU를 열 번 이기기",
       "tier": 2,
       "rule": {
-        "kind": "wins",
+        "kind": "total",
+        "stat": "cpuWins",
         "atLeast": 10
       }
     },

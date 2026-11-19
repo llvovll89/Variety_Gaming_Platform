@@ -89,3 +89,10 @@ test('returning to an anchor left on the exit escapes once every seal is open',(
   assert.equal(locked.status,'playing','still locked while seals remain');
   assert.match(locked.message,/출구가 잠겨/);
 });
+test('today\'s maze is the same for everyone: one seed, one maze',async()=>{
+  const { loadBundle } = await import('./bundle.mjs');
+  const { mulberry32, MazeRun: Run } = await loadBundle(`export {mulberry32} from './src/platform/meta/daily.ts'; export {MazeRun} from './src/games/echo-maze/engine.ts';`);
+  const a=new Run('normal',mulberry32(12345)),b=new Run('normal',mulberry32(12345)),c=new Run('normal',mulberry32(54321));
+  assert.deepEqual(a.cells,b.cells);assert.deepEqual(a.exit,b.exit);assert.deepEqual([...a.seals],[...b.seals]);
+  assert.notDeepEqual(a.cells,c.cells,'another day, another maze');
+});

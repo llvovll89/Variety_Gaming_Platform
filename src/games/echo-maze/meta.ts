@@ -2,6 +2,7 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
   "scoreOrder": "low",
   "scoreUnit": "초",
   "achievements": [
@@ -71,30 +72,37 @@ export const meta: GameMeta = {
   ],
   "daily": [
     {
-      "id": "maze",
-      "label": "오늘의 {difficulty} 미로를 {n}초 안에 탈출",
+      "id": "maze-easy",
+      "label": "오늘의 쉬움 미로를 {n}초 안에 탈출",
       "stat": "score",
-      "range": [
-        90,
-        180
-      ],
-      "step": 30,
+      "range": [50, 80],
+      "step": 10,
       "compare": "atMost",
-      "difficulty": [
-        {
-          "id": "easy",
-          "label": "쉬움"
-        },
-        {
-          "id": "normal",
-          "label": "보통"
-        },
-        {
-          "id": "hard",
-          "label": "어려움"
-        }
-      ],
+      "mode": "daily",
+      "difficulty": [{ "id": "easy", "label": "쉬움" }],
+      "seeded": true
+    },
+    {
+      "id": "maze-normal",
+      "label": "오늘의 보통 미로를 {n}초 안에 탈출",
+      "stat": "score",
+      "range": [70, 100],
+      "step": 10,
+      "compare": "atMost",
+      "mode": "daily",
+      "difficulty": [{ "id": "normal", "label": "보통" }],
+      "seeded": true
+    },
+    {
+      "id": "maze-hard",
+      "label": "오늘의 어려움 미로를 {n}초 안에 탈출",
+      "stat": "score",
+      "range": [90, 130],
+      "step": 10,
+      "compare": "atMost",
+      "mode": "daily",
+      "difficulty": [{ "id": "hard", "label": "어려움" }],
       "seeded": true
     }
-  ]
+  ],
 };

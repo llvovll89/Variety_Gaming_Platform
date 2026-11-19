@@ -21,13 +21,33 @@ export type Fighter = {
   tap: { direction: number; time: number }; buffer: { move: Move; expires: number } | null;
 };
 export type HitEvent = { x: number; z: number; y: number; text: string; kind: 'hit' | 'block' | 'super'; weapon: Weapon; life: number };
+/**
+ * The CPU ladder: five opponents from gentle to sharp. 'easy' and 'normal' (the setup screen's
+ * choice) are steps 2 and 4, with the same values they always had.
+ */
+export type LadderStep = 1 | 2 | 3 | 4 | 5;
+export interface CpuLevel { think: number; guard: number; attack: number }
+export const LADDER: Record<LadderStep, CpuLevel & { name: string }> = {
+  1: { name: '동네 꼬마 요리사', think: .6, guard: .1, attack: .7 },
+  2: { name: '분식집 사장님', think: .48, guard: .2, attack: .55 },
+  3: { name: '호텔 주방 막내', think: .35, guard: .4, attack: .4 },
+  4: { name: '수석 셰프', think: .23, guard: .6, attack: .25 },
+  5: { name: '전설의 철판왕', think: .16, guard: .75, attack: .15 },
+};
+export function cpuLevel(difficulty: 'easy' | 'normal' | LadderStep): CpuLevel {
+  return LADDER[difficulty === 'easy' ? 2 : difficulty === 'normal' ? 4 : difficulty];
+}
+
 export class Fight {
   fighters: [Fighter, Fighter];
   phase: 'ready' | 'fight' | 'roundover' | 'matchover' = 'ready';
   time = 60; phaseTime = 1.6; round = 1; winner: number | null = null;
   effects: HitEvent[] = []; sounds: HitEvent[] = []; elapsed = 0; hitstop = 0;
   aiTime = .3;
-  constructor(public mode: 'cpu' | 'local', weapons: [Weapon, Weapon], public difficulty: 'easy' | 'normal' = 'normal', public random = Math.random) {
+  /** How the CPU plays: think interval (s), chance to guard a threat, roll needed to attack. */
+  private cpu: CpuLevel;
+  constructor(public mode: 'cpu' | 'local', weapons: [Weapon, Weapon], public difficulty: 'easy' | 'normal' | LadderStep = 'normal', public random = Math.random) {
+    this.cpu = cpuLevel(difficulty);
     this.fighters = weapons.map((weapon, i) => ({ x: i ? 735 : 345, z: 0, hp: 100, gauge: 0, weapon, facing: i ? -1 : 1,
       input: { x: 0, z: 0, guard: false, crouch: false }, action: null, stun: 0, air: 0, vy: 0, combo: 0, comboTime: 0, wins: 0,
       vx: 0, push: 0, gait: 0, dashTime: 0, dashDir: 0, sideTime: 0, sideDir: 0, jumping: false, lastJump: false, tap: { direction: 0, time: -1 }, buffer: null })) as [Fighter, Fighter];
@@ -69,11 +89,11 @@ export class Fight {
     const [p, f] = this.fighters; const dx = p.x - f.x;
     this.aiTime -= dt;
     if (this.aiTime > 0) return;
-    this.aiTime = this.difficulty === 'easy' ? .48 : .23;
+    this.aiTime = this.cpu.think;
     const r = this.random(); const danger = !!p.action && Math.abs(dx) < 230;
     f.input = { x: Math.abs(dx) > WEAPONS[f.weapon].range - 30 ? Math.sign(dx) : r < .15 ? -Math.sign(dx) : 0,
-      z: Math.abs(p.z - f.z) > 14 ? Math.sign(p.z - f.z) : 0, guard: danger && r < (this.difficulty === 'easy' ? .2 : .6), crouch: danger && p.action?.move === 'low' && r < .6 };
-    if (Math.abs(dx) < WEAPONS[f.weapon].range + 20 && !f.input.guard && r > (this.difficulty === 'easy' ? .55 : .25)) {
+      z: Math.abs(p.z - f.z) > 14 ? Math.sign(p.z - f.z) : 0, guard: danger && r < this.cpu.guard, crouch: danger && p.action?.move === 'low' && r < .6 };
+    if (Math.abs(dx) < WEAPONS[f.weapon].range + 20 && !f.input.guard && r > this.cpu.attack) {
       this.attack(1, f.gauge >= 100 && r > .45 ? 'ultimate' : r > .8 ? 'skill' : r > .6 ? 'heavy' : r > .4 ? 'low' : 'jab');
     }
   }
