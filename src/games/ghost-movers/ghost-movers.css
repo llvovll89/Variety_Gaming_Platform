@@ -179,3 +179,6 @@
 }
 /* The shortest sideways phones (SE-size): the delivery count is also on the docket below, so its strip gives way to the controls. */
 @media(orientation:landscape) and (max-height:400px){.gm-workspace>.gm-board-top{display:none}}
+
+/* Today's job: a cleared job to finish within par. */
+.gm-daily{display:flex;align-items:center;gap:12px;width:100%;max-width:420px;margin-top:18px;padding:12px 16px;background:#ffffff0d;border:1px solid #c6d5e840;border-radius:8px;color:#e8eef7;text-align:left}.gm-daily:hover{border-color:#9fdccb}.gm-daily>svg:first-child{color:#f2cf7a;flex-shrink:0}.gm-daily span{flex:1;min-width:0}.gm-daily strong{display:block;font-size:13px}.gm-daily small{display:block;font-size:11px;color:#b7c5d8;margin-top:3px}

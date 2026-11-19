@@ -73,6 +73,10 @@ export const meta: GameMeta = {
       }
     }
   ],
+  // Today's room: one the player has already escaped (chosen with the day's seed), within par.
+  daily: [
+    { id: 'par', label: '오늘의 방을 기준 되감기 안에 탈출 (별 {n}개)', stat: 'stars', range: [3, 3], step: 1, mode: 'daily', seeded: true },
+  ],
   legacy: {
     version: 1,
     read(get, parse) {

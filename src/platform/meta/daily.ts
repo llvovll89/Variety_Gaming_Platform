@@ -40,6 +40,14 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
+/**
+ * Today's pick from the player's own list (e.g. the levels they have cleared), for challenges that
+ * replay something already beaten. Same pick all day for the same list.
+ */
+export function pickDaily<T>(seed: number, items: readonly T[]): T | undefined {
+  return items.length ? items[seed % items.length] : undefined;
+}
+
 const pick = <T>(rng: () => number, items: readonly T[]): T => items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
 
 /** The day's challenge for one game, or null if the game has none. */

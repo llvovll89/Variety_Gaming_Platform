@@ -49,3 +49,13 @@ test('a timed daily challenge always asks for less time than the run allows', as
   const { LEVELS } = await loadBundle(`export {LEVELS} from './src/games/echo-maze/engine.ts';`);
   for (const t of metas['echo-maze'].daily) for (const d of t.difficulty) assert.ok(t.range[1] < LEVELS[d.id].seconds, `${t.id} goal under the ${d.id} time limit`);
 });
+
+test('puzzle par challenges only count runs started from the challenge', () => {
+  for (const id of ['ghost-movers', 'ten-seconds']) {
+    const [t] = metas[id].daily;
+    assert.equal(t.mode, 'daily', `${id}: a normal level clear does not complete the challenge`);
+    assert.equal(t.stat, 'stars');
+    assert.ok(t.range[1] <= 3, `${id}: at most three stars`);
+    assert.ok(metas[id].reportsRuns, `${id} reports runs`);
+  }
+});
