@@ -1,3 +1,4 @@
+import { keyOf } from '../../../shared/kit/keys';
 import { NextGameActions, ScoreFeedback } from '../../../platform/PlaySession';
 import { useEffect, useRef, useState } from 'react';
 import type { GameProps } from '../../../platform/types';
@@ -47,7 +48,7 @@ export default function SurvivorApp({onExit}:GameProps) {
     const blur=()=>{resetInput();if(world.current.status==='playing'){world.current.status='paused';publish();}};
     const visibility=()=>{if(document.hidden)blur();};
     const down=(event:KeyboardEvent)=>{
-      const k=event.key.toLowerCase();
+      const k=keyOf(event).toLowerCase();
       if(k==='tab'&&!['playing','menu'].includes(world.current.status)){
         const buttons=Array.from(element.parentElement?.querySelectorAll<HTMLButtonElement>('[role="dialog"] button:not(:disabled)')??[]);
         if(buttons.length){const index=buttons.indexOf(document.activeElement as HTMLButtonElement);event.preventDefault();buttons[(index+(event.shiftKey?-1:1)+buttons.length)%buttons.length].focus();}
@@ -58,7 +59,7 @@ export default function SurvivorApp({onExit}:GameProps) {
       if(world.current.status==='promotion'&&['1','2'].includes(k)&&!event.repeat){const option=promotionOptions(world.current.loadout.hero,world.current.job)[Number(k)-1];if(option){choosePromotion(world.current,option.id);resetInput();publish();}}
       else if(world.current.status==='upgrade'&&['1','2','3'].includes(k)&&!event.repeat){const key=world.current.choices[Number(k)-1];if(key){chooseUpgrade(world.current,key);resetInput();publish();}}
     };
-    const up=(event:KeyboardEvent)=>keys.current.delete(event.key.toLowerCase());
+    const up=(event:KeyboardEvent)=>keys.current.delete(keyOf(event).toLowerCase());
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',visibility);
     const loop=(now:number)=>{
       const w=world.current,dt=last?Math.min((now-last)/1000,.05):0;last=now;

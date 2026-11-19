@@ -1,3 +1,4 @@
+import { keyOf } from '../../shared/kit/keys';
 import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -51,13 +52,13 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   useEffect(()=>{
     const down=(e:KeyboardEvent)=>{
       if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName))return;
-      const k=e.key.length===1?e.key.toLowerCase():e.key;
+      const k=keyOf(e);
       if(k==='Escape'&&!e.repeat){e.preventDefault();if(helpOpen){closeHelp();}else if(mapOpen){setMapOpen(false);}else if(run?.status==='playing')pause();else if(run?.status==='paused'){run.start();update();}return;}
       if(!run||helpOpen||mapOpen||run.status!=='playing')return;
       if(k in directionKeys){e.preventDefault();held.current=directionKeys[k];if(!e.repeat){run.move(held.current);update();}}
       if(k==='r'&&!e.repeat){e.preventDefault();rewind();}
     };
-    const up=(e:KeyboardEvent)=>{const k=e.key.length===1?e.key.toLowerCase():e.key;if(directionKeys[k]===held.current)held.current=null;};
+    const up=(e:KeyboardEvent)=>{const k=keyOf(e);if(directionKeys[k]===held.current)held.current=null;};
     const hidden=()=>{if(document.hidden)pause();};
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',pause);document.addEventListener('visibilitychange',hidden);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',pause);document.removeEventListener('visibilitychange',hidden);held.current=null;};

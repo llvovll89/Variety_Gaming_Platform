@@ -1,3 +1,4 @@
+import { keyOf } from '../../shared/kit/keys';
 import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -52,7 +53,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   useEffect(()=>{
     const handler=(e:KeyboardEvent)=>{
       if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName))return;
-      const k=e.code==='Space'?' ':e.key.length===1?e.key.toLowerCase():e.key;
+      const k=e.code==='Space'?' ':keyOf(e);
       if((k===' '||k==='Enter')&&(e.target as HTMLElement).closest('button'))return;
       if(modal||!run)return;
       if(k==='Escape'){e.preventDefault();if(travel)setPlanned(null);else setPaused(true);return;}

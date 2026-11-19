@@ -1,3 +1,4 @@
+import { keyOf } from '../../../shared/kit/keys';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import {
   ENEMIES, SNACKS, STATUS_INFO, aliveEnemies, attackDamage, cardStats, checkPlay, checkSnack, cuesForFx, needsTarget,
@@ -270,7 +271,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target as HTMLElement;
       if (/INPUT|TEXTAREA|SELECT/.test(target.tagName) || document.querySelector('dialog[open]')) return;
-      const key = event.key.toLowerCase();
+      const key = keyOf(event).toLowerCase();
       if (key === 'escape' && (selected !== null || aimSnack !== null)) {
         event.preventDefault();
         event.stopPropagation();

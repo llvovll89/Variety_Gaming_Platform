@@ -1,3 +1,4 @@
+import { keyOf } from '../../shared/kit/keys';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Anchor, ArrowUUpLeft, Broadcast, Compass, Cube, Pause, Footprints, Diamond } from '@phosphor-icons/react';
@@ -52,11 +53,11 @@ export default function EchoMazeApp({ onExit, profile }: GameProps) {
     const directions: Record<string, number> = { ArrowUp:0, w:0, ArrowRight:1, d:1, ArrowDown:2, s:2, ArrowLeft:3, a:3 };
     const down = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA/.test((e.target as HTMLElement).tagName)) return;
-      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const k = keyOf(e);
       if (k in directions) { e.preventDefault(); if (!e.repeat) { held.current = directions[k]; run.move(directions[k]); lastMove.current = performance.now(); } }
       if (!e.repeat) { if (k==='e') run.action('anchor'); if (k==='r') run.action('return'); if (k===' ') { e.preventDefault(); run.action('pulse'); } if (k==='Escape') { run.paused = !run.paused; held.current=null; } }
     };
-    const up = (e: KeyboardEvent) => { const k=e.key.length===1?e.key.toLowerCase():e.key; if (directions[k]===held.current) held.current=null; };
+    const up = (e: KeyboardEvent) => { const k=keyOf(e); if (directions[k]===held.current) held.current=null; };
     window.addEventListener('keydown',down); window.addEventListener('keyup',up); window.addEventListener('blur',pause); document.addEventListener('visibilitychange',visibility);
     return () => { cancelAnimationFrame(frame); held.current=null; window.removeEventListener('keydown',down); window.removeEventListener('keyup',up); window.removeEventListener('blur',pause); document.removeEventListener('visibilitychange',visibility); };
   }, [run]);

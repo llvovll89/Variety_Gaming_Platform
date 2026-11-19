@@ -80,3 +80,17 @@ test('a game with its own audio follows the arcade mute and volume, live', async
   const direct = walk('src/games').filter(f => /\.tsx?$/.test(f) && /\.destination/.test(readFileSync(f, 'utf8').replace(/kitOutput\([^)]*\)/g, '')));
   assert.deepEqual(direct, [], 'no game connects straight to the speakers');
 });
+
+test('letter keys work with a Korean keyboard layout', async () => {
+  const { keyOf } = await loadBundle(`export {keyOf} from './src/shared/kit/keys.ts';`);
+  assert.equal(keyOf({ key: 'ㅈ', code: 'KeyW' }), 'w');
+  assert.equal(keyOf({ key: 'W', code: 'KeyW' }), 'w');
+  assert.equal(keyOf({ key: '!', code: 'Digit1' }), '1');
+  assert.equal(keyOf({ key: 'ArrowUp', code: 'ArrowUp' }), 'ArrowUp');
+  assert.equal(keyOf({ key: 'Escape', code: 'Escape' }), 'Escape');
+  assert.equal(keyOf({ key: 'a' }), 'a', 'synthetic events without a code still work');
+  const { readFileSync } = await import('node:fs');
+  for (const file of ['src/games/hachuping-whack-a-mole/hooks/useWhackAMoleEngine.ts', 'src/games/hachuping-dodge/survivor/SurvivorApp.tsx', 'src/games/echo-maze/EchoMazeApp.tsx', 'src/games/ghost-movers/GhostMoversApp.tsx', 'src/games/ten-seconds/TenSecondsApp.tsx', 'src/games/night-train/NightTrainApp.tsx', 'src/games/night-train/ui/CombatView.tsx']) {
+    assert.ok(!/\bkey\.toLowerCase\(\)|\be\.key\.length/.test(readFileSync(file, 'utf8')), `${file} reads letters by physical key`);
+  }
+});
