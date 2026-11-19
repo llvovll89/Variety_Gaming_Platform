@@ -20,12 +20,12 @@ export const meta: GameMeta = {
     { "id": "route", "label": "오늘의 노선에서 {n}번째 역까지 가기", "stat": "station", "range": [5, 11], "step": 1, "mode": "daily", "seeded": true }
   ],
   legacy: {
-    // v2: an old completed journey opens the first 운행 등급.
+    // v2: the old best mixed every seat, so it no longer goes into the normal-seat bucket.
     version: 2,
     read(get, parse) {
       const r = parse.json(get('arcade:night-train:records')) as any;
       if (!r || typeof r !== 'object') return {};
-      return { runs: parse.num(r.runs), wins: parse.num(r.wins), best: { 'default|-': parse.num(r.bestScore) }, progress: { station: parse.num(r.bestFloor), tierWon: parse.num(r.wins) > 0 ? 1 : 0 } };
+      return { runs: parse.num(r.runs), wins: parse.num(r.wins), best: { 'legacy|-': parse.num(r.bestScore) }, progress: { station: parse.num(r.bestFloor) } };
     },
   },
 };

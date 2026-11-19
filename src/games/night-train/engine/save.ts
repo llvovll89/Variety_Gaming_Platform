@@ -4,6 +4,7 @@ import { ENEMIES } from './enemies';
 import { EVENTS } from './events';
 import { RELICS } from './relics';
 import { SNACKS } from './snacks';
+import { MAX_TIER } from './tiers';
 import type { RunState } from './types';
 
 export const SAVE_KEY = 'arcade:night-train:run';
@@ -39,7 +40,7 @@ const node = z.object({
 export const runSchema = z.object({
   // Seeds are full 32-bit values (createRun uses the clock), so they must not share `count`'s cap.
   version: z.literal(1), seed: z.number().int().min(0).max(2 ** 32), rng: z.number().int().min(0).max(2 ** 32), mode: z.enum(['normal', 'easy']),
-  tier: z.number().int().min(0).max(3).optional(), daily: z.string().max(40).nullable().optional(),
+  tier: z.number().int().min(0).max(MAX_TIER).optional(), daily: z.string().max(40).nullable().optional(),
   phase: z.enum(['map', 'combat', 'reward', 'rest', 'shop', 'event', 'treasure', 'victory', 'defeat']),
   hp: count, maxHp: count.min(1), gold: count, deck: pile.min(1), relics: z.array(relicId).max(20), snacks: z.array(snackId).max(3).default([]), nextUid: count,
   map: z.array(node).min(2).max(80), path: z.array(z.string()).max(20),

@@ -439,3 +439,9 @@ test('today\'s route and the tier survive a save and load', () => {
   assert.equal(back.daily, '2026-11-19:night-train:route');
   assert.equal(loadRun(JSON.stringify({ ...run, tier: 7 })), null, 'an impossible tier is rejected');
 });
+
+test('the intent tag and the hit agree on a tiered run', () => {
+  assert.equal(E.enemyHitBase({}, 6), 6);
+  assert.equal(E.enemyHitBase({ tier: 3 }, 6), 9);
+  assert.equal(E.enemyHitBase({ tier: 99 }, 6), 6 + E.MAX_TIER);
+});

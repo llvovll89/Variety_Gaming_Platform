@@ -109,7 +109,8 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const [tier, setTier] = useState(0);
   const [panel, setPanel] = useState<Panel>(null);
   const [saveError, setSaveError] = useState(false);
-  const [confirmNew, setConfirmNew] = useState(false);
+  // The new journey waiting for confirmation (a saved one would be replaced), or null.
+  const [confirmNew, setConfirmNew] = useState<null | { mode: Mode; tier?: number; daily?: { id: string; seed: number } | null }>(null);
   const [peek, setPeek] = useState<MapNode | null>(null);
   const [aimSnack, setAimSnack] = useState<number | null>(null);
   // A run loaded from a save should not replay a fight that already ended.
@@ -119,10 +120,14 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const arcade = useRecords();
   const [rewards, setRewards] = useState<RunRewards | null>(null);
   // Real time spent riding (pauses and hidden tabs excluded), for the arcade records.
-  const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel;
+  // A resumed journey counts only the time since it was reopened (earlier sessions are not saved).
+  const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
+  useEffect(() => { const update = () => setHidden(document.hidden); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
+  const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel && !hidden;
   const clock = usePlayClock(playing);
-  // 운행 등급 opened so far: one past the highest step completed (an old win counts for the first step).
-  const tiersOpen = Math.min(MAX_TIER, Math.max(arcade.record()?.progress.tierWon ?? 0, records.wins > 0 ? 1 : 0));
+  // 운행 등급 opened so far: one past the highest step completed on normal seats. Old records do not
+  // say which seat a win was on, so tiers count only journeys finished since they were added.
+  const tiersOpen = Math.min(MAX_TIER, arcade.record()?.progress.tierWon ?? 0);
   const pickedTier = Math.min(tier, tiersOpen);
   // Today's route: the same map for everyone today, from the day's seed.
   const today = arcade.daily();
@@ -203,7 +208,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     clock.reset();
     setRewards(null);
     recorded.current = null;
-    setConfirmNew(false);
+    setConfirmNew(null);
     setPanel(null);
     setOutroDone(null);
     const seed = options.daily ? options.daily.seed : (Date.now() ^ Math.floor(Math.random() * 2 ** 31)) >>> 0;
@@ -308,12 +313,12 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
                 </div>
                 <div className="nt-pass-stub">
                   <small>{mode === 'easy' ? '침대석 · 여유' : `일반석 · ${TIERS[pickedTier].name}`}</small>
-                  <button type="button" className="nt-btn nt-btn-ink" onClick={() => (hasSave ? setConfirmNew(true) : start(mode, { tier: pickedTier }))}><Glyph name="play" size={16} />출발</button>
+                  <button type="button" className="nt-btn nt-btn-ink" onClick={() => (hasSave ? setConfirmNew({ mode, tier: pickedTier }) : start(mode, { tier: pickedTier }))}><Glyph name="play" size={16} />출발</button>
                 </div>
               </div>
               <div className="nt-title-more">
                 {hasSave && <button type="button" className="nt-btn nt-btn-brass" onClick={resume}><Glyph name="retry" size={18} />이어서 타기</button>}
-                {today && !hasSave && <button type="button" className="nt-btn nt-btn-paper-line nt-daily" onClick={() => start('normal', { daily: today })}><Glyph name="play" size={16} />오늘의 노선<small>{today.label}</small></button>}
+                {today && <button type="button" className="nt-btn nt-btn-paper-line nt-daily" onClick={() => (hasSave ? setConfirmNew({ mode: 'normal', daily: today }) : start('normal', { daily: today }))}><Glyph name="play" size={16} />오늘의 노선<small>{today.label}</small></button>}
                 <button type="button" className="nt-text-btn" onClick={() => setPanel('help')}>게임 방법</button>
                 <button type="button" role="switch" aria-checked={soundSettings.ambient} className="nt-text-btn" onClick={toggleAmbient}>기차 주행음 {soundSettings.ambient ? '켬' : '끔'}</button>
               </div>
@@ -399,7 +404,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
           <ScoreFeedback score={runScore(run)} previousBest={previousBest} />
           <RewardStrip rewards={rewards} audience="general" />
           <div className="nt-modal-actions">
-            <button type="button" className="nt-btn nt-btn-ink" onClick={() => start(run.mode, { tier: tierOf(run) })}><Glyph name="retry" size={18} />새 승차권으로 출발</button>
+            <button type="button" className="nt-btn nt-btn-ink" onClick={() => (run.daily && today?.id === run.daily ? start('normal', { daily: today }) : start(run.mode, { tier: tierOf(run) }))}><Glyph name="retry" size={18} />{run.daily && today?.id === run.daily ? '오늘의 노선 다시 타기' : '새 승차권으로 출발'}</button>
             <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => setPanel('deck')}>마지막 덱 보기</button>
           </div>
           <NextGameActions />
@@ -427,13 +432,13 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
           onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onRelics={() => setPanel('relics')} onTitle={toTitle} onExit={onExit} />
       )}
       {confirmNew && (
-        <Modal label="새 여행 확인" onClose={() => setConfirmNew(false)}>
+        <Modal label="새 여행 확인" onClose={() => setConfirmNew(null)}>
           <p className="nt-modal-kicker">아직 쓰지 않은 승차권이 있어요</p>
-          <h2>새로 출발할까요?</h2>
+          <h2>{confirmNew.daily ? '오늘의 노선으로 출발할까요?' : '새로 출발할까요?'}</h2>
           <p>지금 저장된 여행은 사라져요.</p>
           <div className="nt-modal-actions">
-            <button type="button" className="nt-btn nt-btn-ink" onClick={() => start(mode, { tier: pickedTier })}>새로 출발</button>
-            <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => { setConfirmNew(false); resume(); }}>이어서 타기</button>
+            <button type="button" className="nt-btn nt-btn-ink" onClick={() => start(confirmNew.mode, confirmNew)}>새로 출발</button>
+            <button type="button" className="nt-btn nt-btn-paper-line" onClick={() => { setConfirmNew(null); resume(); }}>이어서 타기</button>
           </div>
         </Modal>
       )}
