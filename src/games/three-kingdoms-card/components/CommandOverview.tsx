@@ -9,17 +9,17 @@ import { MILESTONES, milestoneProgress, RESEARCH, remainingTime } from "../lib/c
  * Each step is done by the state itself, so it never asks for something already done.
  */
 function FirstSteps({ state, onNavigate }: { state: DemoState; onNavigate: (tab: Tab) => void }) {
-  const troop = activeTroop(state);
+  const troops = state.troops.slice(0, troopSlots(state));
   const steps: { label: string; detail: string; tab: Tab; done: boolean }[] = [
     { label: "장수 모집", detail: "모집관에서 초빙장으로 첫 장수를 맞이합니다.", tab: "모집관", done: state.heroes.length > 0 },
-    { label: "부대 편성", detail: "부대 편성에서 주장 자리에 장수를 배치합니다.", tab: "부대 편성", done: !!troop.heroIds[0] },
-    { label: "병력 보충", detail: "예비군과 식량으로 부대 병력을 채웁니다.", tab: "부대 편성", done: troop.currentTroops > 0 },
+    { label: "부대 편성", detail: "부대 편성에서 주장 자리에 장수를 배치합니다.", tab: "부대 편성", done: troops.some(t => !!t.heroIds[0]) },
+    { label: "병력 보충", detail: "예비군과 식량으로 부대 병력을 채웁니다.", tab: "부대 편성", done: troops.some(t => !!t.heroIds[0] && t.currentTroops > 0) },
     { label: "첫 출정", detail: "출정에서 가까운 거점을 토벌합니다.", tab: "출정", done: state.battles.length > 0 },
   ];
   const current = steps.findIndex(step => !step.done);
   if (current < 0) return null;
   return <section className="first-steps" aria-labelledby="first-steps-title">
-    <h2 id="first-steps-title">첫 출정까지 <small>{current} / {steps.length}</small></h2>
+    <h2 id="first-steps-title">첫 출정까지 <small>{steps.filter(step => step.done).length} / {steps.length}</small></h2>
     <ol>{steps.map((step, i) => <li key={step.label} data-state={step.done ? "done" : i === current ? "current" : "todo"}>
       <button type="button" onClick={() => onNavigate(step.tab)} aria-current={i === current ? "step" : undefined}>
         <span aria-hidden="true">{step.done ? "✓" : i + 1}</span>

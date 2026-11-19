@@ -9,13 +9,15 @@ interface Props {
   startTurn: number;
   turn: number;
   onClose: () => void;
+  /** Hidden (not unmounted) while 조작 안내 is open, so finished steps stay checked. */
+  hidden?: boolean;
 }
 
 /**
  * The first three turns of a new campaign, one thing to learn each: a city order, an army in the
  * field, and passing ten days. A step stays checked once done, even after the order has run.
  */
-export function FirstTurns({ state, factionId, startTurn, turn, onClose }: Props) {
+export function FirstTurns({ state, factionId, startTurn, turn, onClose, hidden }: Props) {
   const mine = new Set(citiesOf(state, factionId).map(c => c.id));
   const ordered = state.internalOrders.some(o => mine.has(o.cityId));
   const marching = Object.values(state.units).some(u => u.faction === factionId);
@@ -33,7 +35,7 @@ export function FirstTurns({ state, factionId, startTurn, turn, onClose }: Props
   ];
   const current = steps.findIndex(s => !s.done);
   return (
-    <section className="tk-help-panel tk-first-turns" aria-label="첫 세 순 안내">
+    <section className="tk-help-panel tk-first-turns" aria-label="첫 세 순 안내" hidden={hidden}>
       {steps.map((s, i) => (
         <div key={s.title} data-state={s.done ? "done" : i === current ? "current" : "todo"}>
           <b>{s.done ? "✓ " : ""}{s.title}{i === current && <small> 지금 할 일</small>}</b>

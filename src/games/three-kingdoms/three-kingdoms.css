@@ -361,3 +361,4 @@
 /* Phones: only the step to do now keeps its explanation. */
 @media(max-width:960px){.tk-first-turns [data-state="todo"] p,.tk-first-turns [data-state="done"] p{display:none;}}
 .tk-result{--kit-surface:#f4eddc;--kit-ink:#2b2a24;--kit-accent:#8a2a1f;}
+.tk-first-turns[hidden]{display:none;}

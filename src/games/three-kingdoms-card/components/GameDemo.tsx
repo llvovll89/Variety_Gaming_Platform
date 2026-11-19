@@ -77,7 +77,11 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
   const [battleMode, setBattleMode] = useState<"토벌" | ChallengeView>("토벌");
   const [message, setMessage] = useState(""); const [error, setError] = useState(false);
   const records = useRecords();
-  const [rewards, setRewards] = useState<RunRewards | null>(null);
+  // Rewards belong to the message they arrived with, so a later toast never shows old badges.
+  const [rewardNote, setRewardNote] = useState<{ message: string; rewards: RunRewards } | null>(null);
+  const rewards = rewardNote && rewardNote.message === message ? rewardNote.rewards : null;
+  // Recruiting shows the summon reveal instead of a toast: its achievements wait until it closes.
+  const pendingRewards = useRef<RunRewards | null>(null);
   const [storageWarning, setStorageWarning] = useState(false);
   const [selectedBattle, setSelectedBattle] = useState<string | null>(null);
   const [reveal, setReveal] = useState<DemoHero[] | null>(null);
@@ -88,7 +92,7 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     if (!message || error) return;
     // New achievements stay up a little longer, so there is time to read them.
-    const timer = setTimeout(() => { setMessage(""); setRewards(null); }, hasRewards(rewards) ? 7000 : 4200);
+    const timer = setTimeout(() => { setMessage(""); setRewardNote(null); }, hasRewards(rewards) ? 7000 : 4200);
     return () => clearTimeout(timer);
   }, [message, error, rewards]);
 
@@ -199,9 +203,12 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
     if (!current.current || summonLock.current || !canChange()) return;
     try {
       const result = actDemo(current.current, action, Date.now(), Math.random, crypto.randomUUID());
-      persist(result.state); setMessage(result.message); setError(false); setRewards(report(action, result.state));
+      const earned = report(action, current.current, result.state);
+      persist(result.state); setMessage(result.message); setError(false);
+      setRewardNote(earned ? { message: result.message, rewards: earned } : null);
       if (action.type === "draw") {
         summonLock.current = true; setReveal(result.state.heroes.slice(-(action.amount ?? 1))); setMessage("");
+        pendingRewards.current = hasRewards(earned) ? earned : null;
       }
       if (action.type === "battle" || action.type === "battleAll") setSelectedBattle(result.state.battles[0].id);
       return result.state;
@@ -210,25 +217,33 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
   /**
    * A battle (토벌, 연무탑, 요일 전장) is the arcade's "run": its result feeds the play streak and the
    * achievements. How far the domain has come (stage, tower floor, heroes) goes in as progress.
+   * Battles resolve at once, so they add no play time (durationMs 0); a won battle still counts for the streak.
    */
-  function report(action: DemoAction, next: DemoState): RunRewards | null {
-    const fight = action.type === "battle" || action.type === "battleAll" ? { mode: "sortie", battle: next.battles[0] }
-      : action.type === "challenge" ? { mode: action.mode === "tower" ? "tower" : "trial", battle: next.warRoom.lastReport }
-      : null;
-    const progress = (): UnlockedAchievement[] => [
+  function report(action: DemoAction, before: DemoState, next: DemoState): RunRewards | null {
+    const seen = new Set(before.battles.map(b => b.id));
+    // 전군 출정 fights with every ready troop: each new battle is its own run.
+    const fights = action.type === "battle" || action.type === "battleAll" ? next.battles.filter(b => !seen.has(b.id)).reverse().map(battle => ({ mode: "sortie", battle }))
+      : action.type === "challenge" && next.warRoom.lastReport ? [{ mode: action.mode === "tower" ? "tower" : "trial", battle: next.warRoom.lastReport }]
+      : [];
+    if (!fights.length && action.type !== "draw") return null;
+    let run: RunRewards | null = null;
+    const unlocked: UnlockedAchievement[] = [
       ...records.reportProgress("stage", next.stage), ...records.reportProgress("tower", next.warRoom.towerFloor),
       ...records.reportProgress("heroes", next.heroes.length),
     ];
-    if (!fight?.battle) return action.type === "draw" || action.type === "start" ? withProgress(null, progress()) : null;
-    const run = records.reportRun({ mode: fight.mode, durationMs: 0, outcome: fight.battle.winner === "ATTACKER" ? "win" : "lose", stats: { turns: fight.battle.turns } });
-    return withProgress(run, progress());
-  }
-  function withProgress(run: RunRewards | null, unlocked: UnlockedAchievement[]): RunRewards | null {
+    for (const { mode, battle } of fights) {
+      run = records.reportRun({ mode, durationMs: 0, outcome: battle.winner === "ATTACKER" ? "win" : "lose", stats: { turns: battle.turns } });
+      unlocked.push(...run.unlocked);
+    }
     if (!run && !unlocked.length) return null;
     const base = run ?? { newBest: false, previousBest: null, best: null, unlocked: [], streak: { days: 0, extendedToday: false } };
-    return { ...base, unlocked: [...unlocked, ...base.unlocked] };
+    return { ...base, unlocked };
   }
-  function closeReveal() { summonLock.current = false; setReveal(null); }
+  function closeReveal() {
+    summonLock.current = false; setReveal(null);
+    const earned = pendingRewards.current; pendingRewards.current = null;
+    if (earned) { const note = "새 업적을 달성했습니다."; setMessage(note); setError(false); setRewardNote({ message: note, rewards: earned }); }
+  }
   function reset() {
     if (!canChange()) return;
     if (!window.confirm("현재 군주와 모든 진행 기록을 지우고 새로 시작할까요? 필요한 기록은 먼저 백업하세요.")) return;
@@ -289,7 +304,7 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
 
   return <>{exitButton}<div className="game-shell" ref={contentRef}><aside className="side-rail"><a className="brand-lockup" href="#main"><span className="brand-seal">三</span><span>삼국 영지<small>장수 · 군략 · 영지</small></span></a><div className="lord-profile"><span>{state.lordName.slice(0, 1)}</span><div><strong>{state.lordName}</strong><small>{state.castleName}의 군주</small></div></div><nav aria-label="게임 메뉴">{menus.map(menu => <button key={menu.name} aria-current={tab === menu.name ? "page" : undefined} onClick={() => { setTab(menu.name); setMessage(""); }}><span className="nav-symbol" aria-hidden="true">{menu.symbol}</span><span>{menu.name}{menu.name === "군정" && campaignReady > 0 && <b className="nav-count" aria-label={`수령 가능한 보상 ${campaignReady}건`}>{campaignReady}</b>}<small>{menu.caption}</small></span></button>)}</nav><div className="rail-bottom"><div className="local-indicator"><i />로컬 자동 저장</div><SaveControls blocked={conflict} onBackup={backup} onRestore={restore} onReset={reset} /></div></aside>
     <div className="game-body"><header className="resource-header"><div className="current-location"><span>{state.castleName}</span><small>나의 영지</small></div><div className="resource-items">{(["gold", "food", "reserves"] as const).map((key, i) => <div className="resource" key={key}><span className={`resource-symbol symbol-${key}`} aria-hidden="true">{["金", "糧", "兵"][i]}</span><div><small>{["금", "식량", "예비군"][i]}</small><strong title={number(state.castle[key])} aria-label={number(state.castle[key])}>{resourceNumber(state.castle[key])}</strong></div><span className="resource-rate">+{rates[key].toFixed(1)}/분</span></div>)}</div><div className="ticket-count"><span aria-hidden="true">令</span><small>초빙장</small><strong>{state.recruitmentTickets}</strong></div></header>
-    <main id="main" className="game-main">{savePanel}<fieldset className="game-progress-fields" disabled={conflict}>{message && <div className={`toast ${error ? "toast-error" : ""}`} role={error ? "alert" : "status"}><div className="toast-body">{message}{!error && <RewardStrip rewards={rewards} audience="general" />}</div><button aria-label="알림 닫기" onClick={() => { setMessage(""); setRewards(null); }}>×</button></div>}{storageWarning && <p className="error-text" role="alert">저장소를 사용할 수 없습니다. 종료 전에 백업 파일을 내려받으세요.</p>}
+    <main id="main" className="game-main">{savePanel}<fieldset className="game-progress-fields" disabled={conflict}>{message && <div className={`toast ${error ? "toast-error" : ""}`} role={error ? "alert" : "status"}><div className="toast-body">{message}{!error && <RewardStrip rewards={rewards} audience="general" />}</div><button aria-label="알림 닫기" onClick={() => { setMessage(""); setRewardNote(null); }}>×</button></div>}{storageWarning && <p className="error-text" role="alert">저장소를 사용할 수 없습니다. 종료 전에 백업 파일을 내려받으세요.</p>}
 
     {tab === "모집관" && <RecruitTab state={state} act={act} onShowCatalog={() => { setShowCatalog(true); setTab("장수 명부"); }} onPreview={preview} />}
 

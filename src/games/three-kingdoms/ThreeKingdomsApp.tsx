@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRecords } from "../../platform/meta/api";
 import { usePlayClock } from "../../shared/kit/usePlayClock";
-import type { RunRewards } from "../../platform/meta/types";
+import type { RunRewards, UnlockedAchievement } from "../../platform/meta/types";
 import { FirstTurns } from "./components/FirstTurns";
 import type { GameProps } from "../../platform/types";
 import { useExitGuard } from "../../platform/exitGuard";
@@ -44,6 +44,8 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
   const records = useRecords();
   const [rewards, setRewards] = useState<RunRewards | null>(null);
   const reported = useRef<GameEngine | null>(null);
+  // Achievements earned mid-campaign (출사표, 성 n개) are shown on the result screen with the rest.
+  const earnedOnTheWay = useRef<UnlockedAchievement[]>([]);
   const { elapsed, reset: resetClock } = usePlayClock(!!engine && snapshot.result === "playing");
 
   const handleReady = useCallback((next: GameEngine) => {
@@ -64,6 +66,7 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     clearSave();
     resumeRef.current = null;
     setRewards(null);
+    earnedOnTheWay.current = [];
     resetClock();
     setEngine(null);
     setFactionId(null);
@@ -83,9 +86,9 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
   }, [tutorial, engine, snapshot.turn]);
   // How far the campaign has come, every turn: cities held is progress (it only ever counts the peak).
   useEffect(() => {
-    if (engine && snapshot.player && snapshot.result === "playing") {
-      records.reportProgress("started", 1);
-      records.reportProgress("cities", snapshot.player.cities);
+    // Also on the deciding turn, so the cities taken in it still count.
+    if (engine && snapshot.player) {
+      earnedOnTheWay.current.push(...records.reportProgress("started", 1), ...records.reportProgress("cities", snapshot.player.cities));
     }
   }, [engine, snapshot.turn, snapshot.player?.cities, snapshot.result, records]);
   // A campaign that ends (통일 or 멸망) is the run, reported once.
@@ -93,8 +96,10 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     if (!engine || snapshot.result === "playing" || reported.current === engine) return;
     reported.current = engine;
     const won = snapshot.result === "victory";
-    setRewards(records.reportRun({ durationMs: elapsed(), outcome: won ? "win" : "lose", score: won ? snapshot.turn : undefined,
-      stats: { turns: snapshot.turn, cities: snapshot.player?.cities ?? 0, officers: snapshot.player?.officers ?? 0 } }));
+    const run = records.reportRun({ durationMs: elapsed(), outcome: won ? "win" : "lose", score: won ? snapshot.turn : undefined,
+      stats: { turns: snapshot.turn, cities: snapshot.player?.cities ?? 0, officers: snapshot.player?.officers ?? 0 } });
+    setRewards({ ...run, unlocked: [...earnedOnTheWay.current, ...run.unlocked] });
+    earnedOnTheWay.current = [];
   }, [engine, snapshot.result, snapshot.turn, snapshot.player, records, elapsed]);
 
   // Leaving saves first and stays only if that save fails.
@@ -121,8 +126,8 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
         onSave={() => engine?.save()}
         onExit={leave}
       />
-      {tutorial && tutorial.startTurn > 0 && state && snapshot.turn < tutorial.startTurn + 3 && snapshot.result === "playing" && !help &&
-        <FirstTurns state={state} factionId={factionId} startTurn={tutorial.startTurn} turn={snapshot.turn} onClose={() => setTutorial(null)} />}
+      {tutorial && tutorial.startTurn > 0 && state && snapshot.turn < tutorial.startTurn + 3 && snapshot.result === "playing" &&
+        <FirstTurns hidden={help} state={state} factionId={factionId} startTurn={tutorial.startTurn} turn={snapshot.turn} onClose={() => setTutorial(null)} />}
       {help && <div className="tk-help-panel"><div><b>一 · 도시 관리</b><p>내 도시 선택 → 내정·군사·건설 분류 → 담당 무장 선택 → 명령. 명령은 다음 순에 실행됩니다.</p></div><div><b>二 · 전장 지휘</b><p>군사 → 부대 편성·출진. 부대를 선택한 뒤 파란 칸으로 이동하고 붉은 적을 눌러 공격합니다.</p></div><div><b>三 · 시간 진행</b><p>명령을 마치면 10일 진행. 진행 중 가속 버튼으로 연출을 건너뛸 수 있습니다.</p></div><button onClick={()=>setHelp(false)}>닫기</button></div>}
       <div className="tk-war-room">
       <aside className="tk-domain-rail" aria-label="군주와 영지">
