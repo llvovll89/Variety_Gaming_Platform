@@ -49,3 +49,11 @@ test('a timed daily challenge always asks for less time than the run allows', as
   const { LEVELS } = await loadBundle(`export {LEVELS} from './src/games/echo-maze/engine.ts';`);
   for (const t of metas['echo-maze'].daily) for (const d of t.difficulty) assert.ok(t.range[1] < LEVELS[d.id].seconds, `${t.id} goal under the ${d.id} time limit`);
 });
+
+test('삼국 영지 brings in its stage and heroes from the save, not just the tower', () => {
+  const save = JSON.stringify({ stage: 3, heroes: [{}, {}, {}, {}], warRoom: { towerFloor: 7 } });
+  const parse = { num: raw => { const n = Number(raw); return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0; }, json: raw => { try { return raw === null ? null : JSON.parse(raw); } catch { return null; } } };
+  const found = metas['three-kingdoms-card'].legacy.read(key => key === 'three-kingdoms-local-v2' ? save : null, parse);
+  assert.deepEqual(found.progress, { tower: 7, stage: 3, heroes: 4 });
+  assert.deepEqual(metas['three-kingdoms-card'].legacy.read(() => null, parse).progress, { tower: 0, stage: 0, heroes: 0 });
+});
