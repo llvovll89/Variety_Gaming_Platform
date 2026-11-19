@@ -1,3 +1,4 @@
+import { tierOf } from './tiers';
 import { cardName, cardStats, needsTarget } from './cards';
 import { ENEMIES } from './enemies';
 import { random, randInt, shuffle } from './rng';
@@ -127,6 +128,7 @@ export function startCombat(run: RunState, enemyIds: readonly string[], kind: Co
     const def = ENEMIES[defId];
     let maxHp = randInt(run, def.hp[0], def.hp[1]);
     if (run.mode === 'easy') maxHp = Math.max(1, Math.round(maxHp * 0.75));
+    if (run.tier) maxHp = Math.round(maxHp * (1 + 0.15 * tierOf(run)));
     return { uid, defId, hp: maxHp, maxHp, block: 0, statuses: {}, intent: '', history: [] };
   });
   const combat: CombatState = {
@@ -301,7 +303,7 @@ function enemyAct(run: RunState, combat: CombatState, enemy: EnemyState) {
       case 'attack':
         for (let hit = 0; hit < (effect.times ?? 1); hit++) {
           if (enemy.hp <= 0 || run.hp <= 0) break;
-          damagePlayer(run, combat, attackDamage(effect.n, enemy.statuses, combat.player.statuses));
+          damagePlayer(run, combat, attackDamage(effect.n + tierOf(run), enemy.statuses, combat.player.statuses));
           const thorns = combat.player.statuses.thorns ?? 0;
           if (thorns > 0) damageEnemy(run, combat, enemy, thorns, true);
         }

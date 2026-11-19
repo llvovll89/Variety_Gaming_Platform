@@ -158,6 +158,10 @@ export interface RunState {
   seed: number;
   rng: number;
   mode: Mode;
+  /** 운행 등급 0–3 (normal seats only): enemies get tougher at each step. Missing in older saves = 0. */
+  tier?: number;
+  /** Set when the run is today's route (the daily challenge id), so it is reported for that day. */
+  daily?: string | null;
   phase: Phase;
   hp: number;
   maxHp: number;

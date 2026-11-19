@@ -879,3 +879,11 @@ nav.nt-pause-section .nt-pause-link:first-child { border-top: 0; }
   .nt-app *, .nt-modal * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
   .nt-fx { opacity: 1; transform: translate(-50%, -24px); }
 }
+
+/* 운행 등급 (opened by completed journeys) and today's route on the ticket. */
+.nt-tiers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+.nt-tiers button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px;border:1px dashed currentColor;border-radius:6px;background:transparent;color:inherit;text-align:left;font:inherit}
+.nt-tiers button b{font-size:12px}.nt-tiers button small{font-size:11px;opacity:.75;line-height:1.35}
+.nt-tiers button[aria-checked="true"]{border-style:solid;box-shadow:inset 0 0 0 1px currentColor}
+.nt-tiers button:disabled{opacity:.6;cursor:not-allowed}
+.nt-daily{display:inline-flex;align-items:center;gap:8px}.nt-daily small{font-size:11px;opacity:.75;margin-left:4px}
