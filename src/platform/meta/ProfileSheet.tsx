@@ -29,7 +29,7 @@ export function cardProgress(game: GameDefinition, meta: MetaState): { best: str
   const defs = game.meta?.achievements ?? [];
   const earned = defs.filter(a => meta.achievements[achievementKey(game.id, a.id)]).length;
   if (!record && !earned) return null;
-  const best = record ? bestOf(record, game.meta?.scoreOrder ?? 'high') : null;
+  const best = record ? bestOf(record, game.meta?.scoreOrder ?? 'high', game.meta?.bestMode) : null;
   const unit = game.meta?.scoreUnit ?? '';
   const noun = audienceOf(game) === 'kids' ? '스티커' : '업적';
   return {
@@ -104,7 +104,7 @@ export function ProfileSheet({ games, name, onClose }: { games: readonly GameDef
           <thead><tr><th scope="col">게임</th><th scope="col">판</th><th scope="col">최고</th><th scope="col">시간</th></tr></thead>
           <tbody>{played.map(game => {
             const record = meta.games[game.id] as GameRecord;
-            const best = bestOf(record, game.meta?.scoreOrder ?? 'high');
+            const best = bestOf(record, game.meta?.scoreOrder ?? 'high', game.meta?.bestMode);
             return <tr key={game.id}><th scope="row">{game.title}</th><td>{record.runs || '-'}</td><td>{best === null ? '-' : `${best.toLocaleString()}${game.meta?.scoreUnit ?? ''}`}</td><td>{record.playMs ? minutes(record.playMs) : '-'}</td></tr>;
           })}</tbody>
         </table> : <p className="kit-summary">아직 기록이 없어요. 한 판 하고 오면 여기에 쌓여요.</p>)}

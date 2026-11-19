@@ -7,6 +7,7 @@ import StartMenu from "./components/StartMenu";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useRecords } from "../../platform/meta/api";
+import { GAME_DURATION_SECONDS } from "./game/constants";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
 import { emptySnapshot } from "./game/uiStore";
@@ -29,14 +30,14 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
   if (reported.current) return;
   reported.current = true;
   submitScore(snapshot.score);
-  setRewards(records.reportRun({ score: snapshot.score, durationMs: 60_000, outcome: "complete", stats: { popped: snapshot.score } }));
+  setRewards(records.reportRun({ score: snapshot.score, durationMs: GAME_DURATION_SECONDS * 1000, outcome: "complete", stats: { popped: snapshot.score } }));
  }, [snapshot.status, snapshot.score, submitScore, records]);
  useEffect(() => { engine?.setMuted(muted); }, [engine, muted]);
  useEffect(() => {
   if (playing && snapshot.status === "playing") document.querySelector<HTMLCanvasElement>(".balloon-app canvas")?.focus({ preventScroll: true });
  }, [playing, snapshot.status]);
- const start = useCallback(() => { setEngine(null); setPlaying(true); setPlayKey(k => k + 1); }, []);
- const menu = () => { setEngine(null); setPlaying(false); };
+ const start = useCallback(() => { setRewards(null); setEngine(null); setPlaying(true); setPlayKey(k => k + 1); }, []);
+ const menu = () => { setRewards(null); setEngine(null); setPlaying(false); };
  useEffect(() => {
   const key = (e: KeyboardEvent) => { if(e.key === "Escape" && playing) engine?.togglePause(); };
   window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
