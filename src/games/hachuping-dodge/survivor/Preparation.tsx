@@ -4,15 +4,16 @@ import { DIFFICULTIES, HEROES, TINTS, WEAPONS, type Difficulty, type Hero, type 
 import { ADVANCE_LEVELS, MAX_LEVEL, HERO_STATS, PATHS, type Promotion } from './classes';
 import { HERO_VISUALS, heroWeaponName } from './heroVisuals';
 import './preparation.css';
-import { ArrowLeftIcon, CheckIcon, SwordIcon, CrosshairIcon, ArrowRightIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, CheckIcon, SwordIcon, CrosshairIcon, ArrowRightIcon, LockSimpleIcon } from '@phosphor-icons/react';
+import { HERO_NEEDS, WEAPON_NEEDS, heroOpen, weaponOpen, type Kept, type UnlockProgress } from './unlocks';
 
 export function Portrait({loadout,appearance}: {loadout:Loadout;appearance?:Promotion}) {
   const ref=useRef<HTMLCanvasElement>(null);
   useEffect(()=>{const c=ref.current?.getContext('2d');if(!c)return;c.clearRect(0,0,720,600);drawUnit(c,'hero',310,395,5.2,0,-.22,2,loadout,appearance);},[loadout.hero,loadout.weapon,loadout.tint,appearance?.id]);
   return <canvas ref={ref} width={720} height={600} className="survivor-portrait" role="img" aria-label={`${appearance?.name??HEROES[loadout.hero]} · ${heroWeaponName(loadout)} 외형 미리보기`}/>;
 }
-interface Props { loadout:Loadout; difficulty:Difficulty; best:number; onSelect:(change:Partial<Loadout>)=>void; onDifficulty:(difficulty:Difficulty)=>void; onStart:()=>void; onExit:()=>void }
-export default function Preparation({loadout,difficulty,best,onSelect,onDifficulty,onStart,onExit}:Props) {
+interface Props { loadout:Loadout; difficulty:Difficulty; best:number; unlocks:UnlockProgress; kept:Kept; onSelect:(change:Partial<Loadout>)=>void; onDifficulty:(difficulty:Difficulty)=>void; onStart:()=>void; onExit:()=>void }
+export default function Preparation({loadout,difficulty,best,unlocks,kept,onSelect,onDifficulty,onStart,onExit}:Props) {
   const [tab,setTab]=useState<'hero'|'weapon'>('hero');
   const hero=HERO_STATS[loadout.hero],visual=HERO_VISUALS[loadout.hero];
   const paths=Object.values(PATHS).filter(path=>path.hero===loadout.hero);
@@ -26,11 +27,13 @@ export default function Preparation({loadout,difficulty,best,onSelect,onDifficul
           <button id="weapon-tab" role="tab" tabIndex={tab==='weapon'?0:-1} aria-selected={tab==='weapon'} aria-controls="weapon-panel" onClick={()=>setTab('weapon')}><SwordIcon size={17}/> 무기</button>
         </div>
         <div id="hero-panel" role="tabpanel" aria-labelledby="hero-tab" hidden={tab!=='hero'}>
-          <div className="prep-heroes">{(Object.keys(HEROES) as Hero[]).map(key=><button key={key} aria-pressed={loadout.hero===key} onClick={()=>onSelect({hero:key,weapon:HERO_STATS[key].weapon})}><Portrait loadout={{...loadout,hero:key,weapon:HERO_STATS[key].weapon}}/><strong>{HEROES[key]}</strong><small>{HERO_VISUALS[key].role}</small></button>)}</div>
+          <div className="prep-heroes">{(Object.keys(HEROES) as Hero[]).map(key=>{const open=heroOpen(key,unlocks,kept);
+            // A locked hero keeps its preview but cannot be picked; its condition says how to open it.
+            return <button key={key} className={open?undefined:'is-locked'} aria-disabled={open?undefined:true} aria-pressed={loadout.hero===key} onClick={()=>{if(open)onSelect({hero:key,weapon:HERO_STATS[key].weapon});}}><Portrait loadout={{...loadout,hero:key,weapon:HERO_STATS[key].weapon}}/><strong>{!open&&<LockSimpleIcon size={14} weight="bold" aria-label="잠김"/>}{HEROES[key]}</strong><small>{open?HERO_VISUALS[key].role:HERO_NEEDS[key]!.label}</small></button>;})}</div>
           <fieldset className="prep-tints"><legend>장비 장식색</legend>{(Object.keys(TINTS) as Tint[]).map((tint,i)=><button key={tint} aria-label={['영웅 고유색','금색 장식','자주색 장식','적갈색 장식'][i]} aria-pressed={loadout.tint===tint} style={{background:[visual.cloth,'#9b8050','#72617f','#926554'][i]}} onClick={()=>onSelect({tint})}>{loadout.tint===tint?<CheckIcon size={15} weight="bold"/>:null}</button>)}<small>영웅을 선택하면 숙련 무기를 장착합니다.</small></fieldset>
         </div>
         <div id="weapon-panel" role="tabpanel" aria-labelledby="weapon-tab" hidden={tab!=='weapon'}>
-          <div className="prep-weapons">{(Object.keys(WEAPONS) as Weapon[]).map(weapon=><button key={weapon} aria-pressed={loadout.weapon===weapon} onClick={()=>onSelect({weapon})}><strong>{heroWeaponName({...loadout,weapon})}{hero.weapon===weapon&&<em>숙련 무기</em>}</strong><p>{WEAPONS[weapon].description}</p><small>{WEAPONS[weapon].name} 계열<br/>사거리 {WEAPONS[weapon].range} · 피해 ×{WEAPONS[weapon].damage} · 공격 간격 ×{WEAPONS[weapon].interval}</small></button>)}</div>
+          <div className="prep-weapons">{(Object.keys(WEAPONS) as Weapon[]).map(weapon=>{const open=weaponOpen(weapon,unlocks,kept);return <button key={weapon} className={open?undefined:'is-locked'} aria-disabled={open?undefined:true} aria-pressed={loadout.weapon===weapon} onClick={()=>{if(open)onSelect({weapon});}}>{!open&&<span className="prep-lock"><LockSimpleIcon size={14} weight="bold" aria-hidden="true"/> {WEAPON_NEEDS[weapon]!.label}</span>}<strong>{heroWeaponName({...loadout,weapon})}{hero.weapon===weapon&&<em>숙련 무기</em>}</strong><p>{WEAPONS[weapon].description}</p><small>{WEAPONS[weapon].name} 계열<br/>사거리 {WEAPONS[weapon].range} · 피해 ×{WEAPONS[weapon].damage} · 공격 간격 ×{WEAPONS[weapon].interval}</small></button>;})}</div>
           <p className="prep-note">모든 캐릭터가 모든 무기를 사용할 수 있습니다. 숙련 무기는 고유 보너스를 받습니다.</p>
         </div>
       </section>

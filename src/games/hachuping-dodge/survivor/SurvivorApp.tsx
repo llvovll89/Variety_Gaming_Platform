@@ -17,6 +17,7 @@ import Preparation, { Portrait } from './Preparation';
 import { ADVANCE_LEVELS, MAX_LEVEL, PATHS, promotionOptions, promotionTrait, skillDescription } from './classes';
 import { heroWeaponName } from './heroVisuals';
 import { readDifficulty, saveDifficulty, readBest } from './preferences';
+import { allowedLoadout, heroOpen, newlyOpened, readKept, weaponOpen, type UnlockProgress } from './unlocks';
 
 function readLoadout(): Loadout {
   try { const v=JSON.parse(localStorage.getItem('rune-ranger-loadout')||'null');
@@ -27,7 +28,13 @@ function readLoadout(): Loadout {
 const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
 const upgradeIcons={damage:SwordIcon,haste:LightningIcon,vitality:HeartIcon,speed:WindIcon,multishot:StackIcon,magnet:MagnetIcon};
 export default function SurvivorApp({onExit}:GameProps) {
-  const [initialWorld]=useState(()=>createWorld('menu',readDifficulty(),readLoadout()));
+  const records=useRecords(),recordsRef=useRef(records);recordsRef.current=records;
+  // What the arcade record has opened so far (best kills on any difficulty, completions, furthest region).
+  const progressOf=():UnlockProgress=>{const r=recordsRef.current.record();return {best:recordsRef.current.best()??0,wins:r?.wins??0,region:r?.progress.region??0};};
+  const [kept]=useState(()=>readKept(key=>localStorage.getItem(key),(key,value)=>localStorage.setItem(key,value)));
+  const [unlocks,setUnlocks]=useState(progressOf),unlocksRef=useRef(unlocks);unlocksRef.current=unlocks;
+  const [opened,setOpened]=useState<string[]>([]);
+  const [initialWorld]=useState(()=>createWorld('menu',readDifficulty(),allowedLoadout(readLoadout(),unlocks,kept)));
   const world=useRef<World>(initialWorld);
   const canvas=useRef<HTMLCanvasElement>(null);
   const keys=useRef(new Set<string>());
@@ -36,13 +43,12 @@ export default function SurvivorApp({onExit}:GameProps) {
   const [best,setBest]=useState(()=>readBest(initialWorld.difficulty));
   const [previousBest, setPreviousBest] = useState(best);
   const bestRef=useRef(best);
-  const records=useRecords(),recordsRef=useRef(records);recordsRef.current=records;
   const [rewards,setRewards]=useState<RunRewards|null>(null);
   const publish=()=>setUi(structuredClone(world.current));
   const resetInput=()=>{keys.current.clear();pointer.current=null;};
-  const start=()=>{setRewards(null);setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
+  const start=()=>{setRewards(null);setOpened([]);setPreviousBest(bestRef.current);world.current=createWorld('playing',world.current.difficulty,world.current.loadout);resetInput();publish();};
   const mainMenu=()=>{world.current=createWorld('menu',world.current.difficulty,world.current.loadout);resetInput();publish();};
-  const selectLoadout=(change:Partial<Loadout>)=>{world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
+  const selectLoadout=(change:Partial<Loadout>)=>{if((change.hero&&!heroOpen(change.hero,unlocksRef.current,kept))||(change.weapon&&!weaponOpen(change.weapon,unlocksRef.current,kept)))return;world.current.loadout={...world.current.loadout,...change};try{localStorage.setItem('rune-ranger-loadout',JSON.stringify(world.current.loadout));}catch{/* Storage can be disabled. */}publish();};
   const selectDifficulty=(difficulty:Difficulty)=>{world.current.difficulty=difficulty;saveDifficulty(difficulty);bestRef.current=readBest(difficulty);setBest(bestRef.current);publish();};
   const pause=()=>{ const w=world.current; if(w.status==='playing')w.status='paused';else if(w.status==='paused')w.status='playing';resetInput();publish();};
   useEffect(()=>{
@@ -78,7 +84,8 @@ export default function SurvivorApp({onExit}:GameProps) {
         if(w.status==='clear'||w.status==='dead'||w.status==='victory')recordsRef.current.reportProgress('region',w.stage+1+(w.status==='clear'?1:0));
         if(w.status==='dead'||w.status==='victory'){const record=Math.max(bestRef.current,w.kills);bestRef.current=record;setBest(record);try{localStorage.setItem(`rune-ranger-best-${w.difficulty}`,String(record));}catch{/* Storage can be disabled. */}
           // The expedition is the run: kills are the score, per difficulty.
-          setRewards(recordsRef.current.reportRun({difficulty:w.difficulty,score:w.kills,durationMs:Math.round(w.time*1000),outcome:w.status==='victory'?'win':'lose',stats:{kills:w.kills,level:w.level,region:w.stage+1}}));}}
+          setRewards(recordsRef.current.reportRun({difficulty:w.difficulty,score:w.kills,durationMs:Math.round(w.time*1000),outcome:w.status==='victory'?'win':'lose',stats:{kills:w.kills,level:w.level,region:w.stage+1}}));
+          const after=progressOf();setOpened(newlyOpened(unlocksRef.current,after,kept));setUnlocks(after);}}
       if(now-published>100||w.status!==previous){publish();published=now;}
       frame=requestAnimationFrame(loop);
     };
@@ -97,7 +104,7 @@ export default function SurvivorApp({onExit}:GameProps) {
       onPointerDown={e=>{if(world.current.status!=='playing')return;e.currentTarget.setPointerCapture(e.pointerId);const r=e.currentTarget.getBoundingClientRect();pointer.current={x:e.clientX-r.left,y:e.clientY-r.top};}}
       onPointerMove={e=>{if(pointer.current){const r=e.currentTarget.getBoundingClientRect();pointer.current={x:e.clientX-r.left,y:e.clientY-r.top};}}}
       onPointerUp={()=>{pointer.current=null;}} onPointerCancel={()=>{pointer.current=null;}} onLostPointerCapture={()=>{pointer.current=null;}}/>
-    {menu?<Preparation loadout={ui.loadout} difficulty={ui.difficulty} best={best} onSelect={selectLoadout} onDifficulty={selectDifficulty} onStart={start} onExit={onExit}/>:<>
+    {menu?<Preparation loadout={ui.loadout} difficulty={ui.difficulty} best={best} unlocks={unlocks} kept={kept} onSelect={selectLoadout} onDifficulty={selectDifficulty} onStart={start} onExit={onExit}/>:<>
       <header className="survivor-hud"><div className="survivor-stage"><span>지역 {ui.stage+1} / {STAGES.length} · {DIFFICULTIES[ui.difficulty].name}</span><strong>{stage.name}</strong></div><div className="survivor-tally"><span>{clock(ui.time)}</span><strong>{ui.kills} <small>처치</small></strong></div><button onClick={pause} disabled={!['playing','paused'].includes(ui.status)} aria-label={ui.status==='paused'?'계속하기':'일시정지'}>{ui.status==='paused'?<PlayIcon size={20} weight="fill"/>:<PauseIcon size={20} weight="fill"/>}</button></header>
       <div className="survivor-progress"><div className="survivor-level">LV <strong>{ui.level}</strong><small> / {MAX_LEVEL}</small></div><div className="survivor-vitals"><div className="survivor-bar-label"><span>HP {Math.ceil(p.hp)} / {p.maxHp}</span><span>{ui.level>=MAX_LEVEL?'EXP MAX':`EXP ${Math.floor(ui.xp)} / ${ui.xpNext}`}</span></div><div className="survivor-health"><i style={{width:`${p.hp/p.maxHp*100}%`}}/></div><div className="survivor-exp"><i style={{width:`${ui.level>=MAX_LEVEL?100:Math.min(100,ui.xp/ui.xpNext*100)}%`}}/></div></div>
       </div>
@@ -110,7 +117,7 @@ export default function SurvivorApp({onExit}:GameProps) {
       ui.status==='upgrade'?<><span className="survivor-kicker">레벨 {ui.level}</span><h2 id="ranger-dialog-title">룬을 새겨 힘을 얻으세요</h2><p>능력 하나를 선택하세요. 선택하는 동안 전투가 멈춥니다.</p><div className="survivor-upgrades">{ui.choices.map((key,i)=>{const Icon=upgradeIcons[key];return <button {...(i===0?AUTOFOCUS:{})} key={key} onClick={()=>{chooseUpgrade(world.current,key);resetInput();publish();}}><span className="survivor-upgrade-symbol"><Icon size={26} weight="duotone"/></span><small>{ui.upgrades[key]>0?`강화 ${ui.upgrades[key]+1}단계`:'새로운 능력'}</small><strong>{UPGRADES[key].name}</strong><p>{UPGRADES[key].description}</p><span className="survivor-upgrade-select">선택하기 <kbd>{i+1}</kbd></span></button>;})}</div><small>모든 레벨업은 체력 10을 회복합니다.</small></>:
       ui.status==='paused'?<><span className="survivor-kicker">원정 일시정지</span><h2 id="ranger-dialog-title">잠시 쉬어가기</h2><p>{DIFFICULTIES[ui.difficulty].name} · LV {ui.level} · {ui.kills} 처치 · {clock(ui.time)}</p><button {...AUTOFOCUS} className="survivor-primary" onClick={pause}>계속하기</button><button onClick={mainMenu}>원정 종료 · 메뉴로</button></>:
       ui.status==='clear'?<><span className="survivor-kicker">지역 탈환</span><h2 id="ranger-dialog-title">{stage.name} 탈환!</h2><p>능력치는 유지되고 체력이 모두 회복됩니다.<br/>다음 목적지: {STAGES[ui.stage+1].name}</p><button {...AUTOFOCUS} className="survivor-primary" onClick={()=>{nextStage(world.current);resetInput();publish();}}>다음 지역으로</button></>:
-      <><span className="survivor-kicker">{ui.status==='victory'?'원정 완료':'원정 종료'}</span><h2 id="ranger-dialog-title">{ui.status==='victory'?'왕좌를 되찾았습니다.':'다음 원정을 기약하며.'}</h2><p>{DIFFICULTIES[ui.difficulty].name} · {ui.status==='victory'?`${STAGES.length}개 지역의 보스를 모두 쓰러뜨렸습니다.`:`${stage.name}에서 원정이 끝났습니다.`}</p><div className="survivor-results"><div><strong>{ui.kills}</strong><span>몬스터 처치</span></div><div><strong>{ui.level}</strong><span>도달 레벨</span></div><div><strong>{clock(ui.time)}</strong><span>생존 시간</span></div></div><p>이 난이도 최고 기록 {best}처치</p><ScoreFeedback score={ui.kills} previousBest={previousBest} unit="처치"/><RewardStrip rewards={rewards} audience="general"/><button {...AUTOFOCUS} className="survivor-primary" onClick={start}>새 원정 시작</button><button onClick={mainMenu}>게임 메뉴</button><NextGameActions/></>}
+      <><span className="survivor-kicker">{ui.status==='victory'?'원정 완료':'원정 종료'}</span><h2 id="ranger-dialog-title">{ui.status==='victory'?'왕좌를 되찾았습니다.':'다음 원정을 기약하며.'}</h2><p>{DIFFICULTIES[ui.difficulty].name} · {ui.status==='victory'?`${STAGES.length}개 지역의 보스를 모두 쓰러뜨렸습니다.`:`${stage.name}에서 원정이 끝났습니다.`}</p><div className="survivor-results"><div><strong>{ui.kills}</strong><span>몬스터 처치</span></div><div><strong>{ui.level}</strong><span>도달 레벨</span></div><div><strong>{clock(ui.time)}</strong><span>생존 시간</span></div></div><p>이 난이도 최고 기록 {best}처치</p><ScoreFeedback score={ui.kills} previousBest={previousBest} unit="처치"/><RewardStrip rewards={rewards} audience="general"/>{opened.length>0&&<p className="survivor-opened">새로 열렸어요 · <b>{opened.join(', ')}</b><br/><small>원정 준비에서 고를 수 있어요.</small></p>}<button {...AUTOFOCUS} className="survivor-primary" onClick={start}>새 원정 시작</button><button onClick={mainMenu}>게임 메뉴</button><NextGameActions/></>}
     </GameDialog>}
     <span className="sr-only">전장 크기 {WIDTH} × {HEIGHT}</span>
   </div>;

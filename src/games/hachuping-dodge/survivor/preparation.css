@@ -30,3 +30,10 @@
 @media(max-width:767px){.prep-launch .prep-difficulty-hint{font-size:10px}}
 /* Readable floor: nothing on screen below 11px, on phones included. */
 .survivor-preparation :is(.prep-heroes small,.prep-tints small,.prep-weapons em,.prep-weapons small,.prep-careers h3 span,.prep-careers>div>span,.prep-careers>p,.prep-launch small,.prep-launch>p,.prep-launch kbd,.prep-difficulty button,.prep-hero-effect,.prep-launch .prep-difficulty-hint),.survivor-preparation .survivor-nav{font-size:11px}
+
+/* Heroes and weapons opened by the arcade record: locked ones stay visible with their condition. */
+.prep-heroes button.is-locked,.prep-weapons button.is-locked{cursor:not-allowed;opacity:.62}
+.prep-heroes button.is-locked .survivor-portrait{filter:grayscale(1) brightness(.6)}
+.prep-heroes button.is-locked strong{display:inline-flex;align-items:center;gap:4px}
+.prep-heroes button.is-locked small{line-height:1.4}
+.prep-lock{display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:6px;opacity:.9}
