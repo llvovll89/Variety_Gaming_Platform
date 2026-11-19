@@ -145,7 +145,8 @@ export class GameEngine {
       const inputState = this.input.getState();
       if (dt > SUBSTEP_DT_THRESHOLD) {
         this.world.update(dt / 2, inputState);
-        if (this.world.player.alive) this.world.update(dt / 2, inputState);
+        // A timed run that runs out in the first half ends there, not with a crash after the bell.
+        if (this.world.player.alive && !(this.timeLimit !== null && this.world.time >= this.timeLimit)) this.world.update(dt / 2, inputState);
       } else {
         this.world.update(dt, inputState);
       }

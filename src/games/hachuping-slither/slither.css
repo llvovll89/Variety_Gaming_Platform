@@ -53,3 +53,5 @@
 .slither-daily{max-width:340px;margin:12px 0 0;font-size:12px;line-height:1.6;color:#bcc8d8}.slither-daily strong{color:#b6d477;margin-right:6px}
 .slither-time-left{font-size:15px;color:#e0e4ed}.slither-time-left strong{font-size:18px;margin-left:4px}
 @media(max-width:767px){.slither-timed{max-width:none}}
+/* Kit pieces (reward badges) read these: light text on the dark dialogs. */
+.slither{--kit-surface:#152130;--kit-ink:#e5e9f0;--kit-muted:#a6b3c5;--kit-accent:#b6d477;--kit-on-accent:#182317}

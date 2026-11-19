@@ -39,3 +39,5 @@
 
 /* Today's room: an escaped room to clear within par. */
 .ts-daily{display:flex;align-items:center;gap:12px;width:100%;max-width:440px;margin-top:16px;padding:12px 16px;background:#ffffff0a;border:1px solid #ede4c640;border-radius:8px;color:#ede4c6;text-align:left}.ts-daily:hover{border-color:#73ddd1}.ts-daily>svg:first-child{color:#ffbf78;flex-shrink:0}.ts-daily span{flex:1;min-width:0}.ts-daily b{display:block;font-size:13px}.ts-daily small{display:block;font-size:11px;opacity:.75;margin-top:3px}
+/* Kit pieces (reward badges) read these: light text on the dark dialogs. */
+.ts-app{--kit-surface:#1c2f37;--kit-ink:#ede4c6;--kit-muted:#b9c2b8;--kit-accent:#73ddd1;--kit-on-accent:#10232a}

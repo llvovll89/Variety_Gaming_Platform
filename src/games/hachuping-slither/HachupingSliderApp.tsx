@@ -42,6 +42,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const reported = useRef<RunEnd | null>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
   const { highScore, previousBest, submitScore } = useHighScore("hachuping-slither");
+  const submitScoreRef = useRef(submitScore);
+  submitScoreRef.current = submitScore;
   const bodyPalette = useBodyPalette();
   const [usePortrait, setUsePortrait] = useState(false);
 
@@ -57,7 +59,12 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   }, []);
 
   // The engine keeps the handler it was created with, so this one only stores the result.
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const handleDeath = useCallback((end: RunEnd) => {
+    // In the same batch as the result, so the first result frame already compares with the old best.
+    // The game's own best length stays the endless one; timed bests live in the arcade records.
+    if (modeRef.current === "endless") submitScoreRef.current(end.score);
     setResult(end);
     setScreen("dead");
   }, []);
@@ -66,14 +73,12 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   useEffect(() => {
     if (!result || reported.current === result) return;
     reported.current = result;
-    // The game's own best length stays the endless one; timed bests live in the arcade records.
-    if (mode === "endless") submitScore(result.score);
     setRewards(records.reportRun({
       mode: mode === "timed" ? "timed" : undefined,
       score: result.score, durationMs: Math.round(result.seconds * 1000), outcome: result.timedOut ? 'complete' : 'lose',
       stats: { kills: result.kills, survivalSec: Math.floor(result.seconds), level: result.level },
     }));
-  }, [result, records, submitScore, mode]);
+  }, [result, records, mode]);
   const timed = mode === "timed";
 
   const handleMainMenu = useCallback(() => {

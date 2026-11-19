@@ -5,9 +5,9 @@ import { GameDialog } from '../../shared/kit/GameDialog';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
 import { useRecords } from '../../platform/meta/api';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
-import { pickDaily } from '../../platform/meta/daily';
+import { localDateKey, pickDaily } from '../../platform/meta/daily';
 import type { DailyChallenge, RunRewards } from '../../platform/meta/types';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, ArrowUUpLeft, ArrowCounterClockwise, ArrowsClockwise, Ghost, House, Lightbulb, MapTrifold, Pause, Play, Question, SpeakerHigh, SpeakerSlash, Star, X, Check, Package, SignOut } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
 import { LEVELS, FURNITURE, chapterOf, SAVE_KEY, act, createState, stars, loadProgress, completeLevel, type State, type Command, type Direction } from './engine';
@@ -35,7 +35,8 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   const modal=panel!==null||paused||!!run&&run.status!=='playing';
   const records=useRecords(),[rewards,setRewards]=useState<RunRewards|null>(null);
   // Today's job: a cleared one picked with the day's seed (the first job until one is cleared).
-  const [today]=useState(()=>{const c=records.daily();return c?{challenge:c,level:pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b))??0}:null;});
+  const dayKey=localDateKey();
+  const today=useMemo(()=>{const c=records.daily();return c?{challenge:c,level:pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b))??0}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(!!run&&run.status==='playing'&&!modal);
   const [planned,setPlanned]=useState<{source:State;plan:TravelPlan}|null>(null);

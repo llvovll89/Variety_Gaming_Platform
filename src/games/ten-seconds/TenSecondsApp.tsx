@@ -4,7 +4,7 @@ import { NextGameActions } from '../../platform/PlaySession';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
 import { useRecords } from '../../platform/meta/api';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
-import { pickDaily } from '../../platform/meta/daily';
+import { localDateKey, pickDaily } from '../../platform/meta/daily';
 import type { DailyChallenge, RunRewards } from '../../platform/meta/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUp, ArrowRight, ArrowDown, ArrowCounterClockwise, Clock, Ghost, Play, Pause, Lock, Star, MapTrifold, SpeakerHigh, SpeakerSlash, ArrowUUpLeft, Sparkle, X } from '@phosphor-icons/react';
@@ -42,8 +42,10 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   const preview=useMemo(()=>{const p=new TimeRun(0);p.player.direction=2;p.echoes=[Array.from({length:600},()=>({x:3,y:3,direction:2 as Direction}))];return p;},[]),held=useRef<Direction|null>(null),page=useRef<HTMLElement>(null),dialog=useRef<HTMLDivElement>(null),wonRun=useRef<TimeRun|null>(null),audio=useRef<AudioContext|null>(null);
   const update=()=>refresh(n=>n+1);
   const records=useRecords(),[rewards,setRewards]=useState<RunRewards|null>(null);
-  // Today's room: an escaped one picked with the day's seed (the first room until one is escaped).
-  const [today]=useState(()=>{const c=records.daily();return c?{challenge:c,level:pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b))??0}:null;});
+  // Today's room: an escaped one picked with the day's seed. None until a room is escaped, so the
+  // first room keeps its no-limit practice run.
+  const dayKey=localDateKey();
+  const today=useMemo(()=>{const c=records.daily(),level=c?pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b)):undefined;return c&&level!==undefined?{challenge:c,level}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(run?.status==='playing'&&!helpOpen&&!mapOpen);
   const tone=(frequency=520)=>{if(!sound)return;try{const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(frequency,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(frequency*.65,ctx.currentTime+.18);gain.gain.setValueAtTime(.07,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);osc.connect(gain);gain.connect(kitOutput(ctx,'ten-seconds'));osc.start();osc.stop(ctx.currentTime+.23);}catch{/* Sound is optional. */}};
