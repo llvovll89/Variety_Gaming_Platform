@@ -129,3 +129,16 @@ test('a challenge run that ends after midnight keeps today\'s results', () => {
   assert.equal(s.daily['2026-11-18'].memory.done, true, 'today stays');
   assert.equal(s.daily['2026-11-17'].mole.done, true, 'yesterday is recorded');
 });
+
+test('an old challenge day is kept with its completion, so it is never counted twice', () => {
+  let s = M.emptyMeta();
+  for (let d = 1; d <= 20; d++) {
+    const date = `2026-04-${String(d).padStart(2, '0')}`;
+    s.daily = { ...s.daily, [date]: { other: { done: false, best: null } } };
+  }
+  const old = { id: 'o', date: '2026-04-02', gameId: 'mole', label: '', stat: 'score', goal: 1, compare: 'atLeast', seed: 1, seeded: false };
+  s = M.addDailyRun(s, old, { score: 5, durationMs: 1, outcome: 'complete' }, '2026-04-20').state;
+  s = M.addDailyRun(s, old, { score: 5, durationMs: 1, outcome: 'complete' }, '2026-04-20').state;
+  assert.equal(s.games.mole.dailyDone, 1);
+  assert.equal(Object.keys(s.daily).length, 14);
+});

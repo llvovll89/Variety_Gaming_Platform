@@ -166,11 +166,14 @@ let followingSettings = false;
 function applyOutputs() {
   const settings = settingsStore.get();
   for (const [ctx, out] of outputs) {
+    // Games close their context when they unmount; drop it so it can be garbage-collected.
+    if (ctx.state === 'closed') { outputs.delete(ctx); continue; }
     try { out.gain.gain.setTargetAtTime(effectiveAudio(settings, out.gameId).volume, ctx.currentTime, 0.02); } catch { /* closed context */ }
   }
 }
 
 export function kitOutput(ctx: AudioContext, gameId: string): AudioNode {
+  for (const [old] of outputs) if (old.state === 'closed') outputs.delete(old);
   let out = outputs.get(ctx);
   if (!out) {
     const gain = ctx.createGain();

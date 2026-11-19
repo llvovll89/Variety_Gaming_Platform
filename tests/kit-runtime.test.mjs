@@ -74,6 +74,13 @@ test('a game with its own audio follows the arcade mute and volume, live', async
     assert.equal(gain.value, 0);
     assert.equal(isGameMuted('balloon'), true);
     assert.equal(kitOutput(ctx, 'balloon'), node, 'one output per audio context');
+    ctx.state = 'closed';
+    let created = 0;
+    const next = { currentTime: 0, destination: {}, createGain: () => { created++; return { gain: { value: 1, setTargetAtTime() {} }, connect() {} }; } };
+    kitOutput(next, 'balloon');
+    gain.value = 'untouched';
+    settingsStore.set({ muted: false });
+    assert.equal(gain.value, 'untouched', 'a closed context is forgotten, not updated forever');
   } finally { delete globalThis.localStorage; settingsStore.resetForTests(); }
   // Every game's sound goes through the arcade output, so the hub's sound switch reaches it.
   const walk = dir => readdirSync(dir).flatMap(f => statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]);
@@ -85,7 +92,9 @@ test('letter keys work with a Korean keyboard layout', async () => {
   const { keyOf } = await loadBundle(`export {keyOf} from './src/shared/kit/keys.ts';`);
   assert.equal(keyOf({ key: 'ㅈ', code: 'KeyW' }), 'w');
   assert.equal(keyOf({ key: 'W', code: 'KeyW' }), 'w');
-  assert.equal(keyOf({ key: '!', code: 'Digit1' }), '1');
+  assert.equal(keyOf({ key: '!', code: 'Digit1' }), '!', 'Shift+1 is not 1');
+  assert.equal(keyOf({ key: 'r', code: 'KeyO' }), 'r', 'Dvorak: the printed letter, not the QWERTY position');
+  assert.equal(keyOf({ key: 'Process', code: 'KeyQ' }), 'q', 'IME composing');
   assert.equal(keyOf({ key: 'ArrowUp', code: 'ArrowUp' }), 'ArrowUp');
   assert.equal(keyOf({ key: 'Escape', code: 'Escape' }), 'Escape');
   assert.equal(keyOf({ key: 'a' }), 'a', 'synthetic events without a code still work');

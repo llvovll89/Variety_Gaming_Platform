@@ -1,5 +1,5 @@
 import { keyOf } from '../../../shared/kit/keys';
-﻿import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import { WhackAMoleEngine } from '../game/engine';
 import { MoleScene, type TargetPoint } from '../game/renderer';
 import { MOLE_KEYS, type DifficultyLevel } from '../game/constants';

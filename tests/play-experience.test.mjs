@@ -63,6 +63,8 @@ test('the card game offers to resume only a land that has a lord', async () => {
     values.set('three-kingdoms-local-v2', JSON.stringify({ ...createDemo(now), savedAt: now }));
     assert.equal(await savedProgressLabel('three-kingdoms-card'), null, 'opened but never named a lord');
     values.set('three-kingdoms-local-v2', JSON.stringify({ ...createDemo(now), lordName: '유비', castleName: '신야', savedAt: now }));
-    assert.equal(await savedProgressLabel('three-kingdoms-card'), '신야 영지로 돌아가기');
+    assert.equal(await savedProgressLabel('three-kingdoms-card'), '신야로 돌아가기');
+    values.set('three-kingdoms-local-v2', JSON.stringify({ ...createDemo(now), lordName: '조조', castleName: '낙양성', savedAt: now }));
+    assert.equal(await savedProgressLabel('three-kingdoms-card'), '낙양성으로 돌아가기');
   } finally { delete globalThis.localStorage; }
 });

@@ -68,7 +68,13 @@ export default function App() {
 
   // Most games still save only to their own keys, so bring those records in whenever the hub shows
   // (first load and every return from a game). Old keys are only read; with nothing new, nothing is written.
-  useEffect(() => { if (!activeGameId) importLegacyRecords(GAMES, safeGetItem); }, [activeGameId]);
+  const importedOnce = useRef(false);
+  useEffect(() => {
+    // Also on first load straight into a game (a /play/<id> link), so its old best counts from the first run.
+    if (activeGameId && importedOnce.current) return;
+    importedOnce.current = true;
+    importLegacyRecords(GAMES, safeGetItem);
+  }, [activeGameId]);
 
   const selectGame = useCallback((gameId: string, intent: Intent = "start") => {
     const game = getGameById(gameId);

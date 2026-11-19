@@ -97,8 +97,8 @@ export function meetsChallenge(challenge: DailyChallenge, run: RunReport): { mat
   return { matches: true, value, done: challenge.compare === 'atMost' ? value <= challenge.goal : value >= challenge.goal };
 }
 
-/** Records a run against today's challenge. Old days are dropped. */
 /**
+ * Records a run against a day's challenge and keeps the 14 most recent days.
  * `today` is the real date now. It differs from challenge.date when a run started before midnight
  * ends after it; days after `today` (a clock that was once ahead) are the only ones dropped.
  */
@@ -116,7 +116,9 @@ export function addDailyRun(state: MetaState, challenge: DailyChallenge, run: Ru
   // Keep the 14 most recent days up to today (and the challenge day itself).
   const daily: MetaState['daily'] = {};
   const latest = challenge.date > today ? challenge.date : today;
-  const dates = [...new Set([...Object.keys(state.daily).filter(date => date <= latest), challenge.date])].sort().slice(-DAILY_KEEP_DAYS);
+  // The challenge day itself always stays, so a completion is never counted twice.
+  const others = Object.keys(state.daily).filter(date => date <= latest && date !== challenge.date).sort().slice(-(DAILY_KEEP_DAYS - 1));
+  const dates = [...others, challenge.date].sort();
   for (const date of dates) daily[date] = date === challenge.date ? { ...dayEntries, [challenge.gameId]: entry } : state.daily[date];
   let games = state.games;
   if (justCompleted) {
