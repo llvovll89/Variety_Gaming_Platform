@@ -11,7 +11,7 @@ const games = ids.map((id, i) => ({ id, meta: M[`m${i}`] }));
 
 // Exactly the shapes the games write today.
 const OLD = {
-  'arcade:hachuping-whack-a-mole:normal:highScore': '620',
+  'arcade:hachuping-whack-a-mole:normal:highScore': '820',
   'arcade:hachuping-whack-a-mole:hard:highScore': '410',
   'arcade:hachuping-whack-a-mole:highScore': '500',
   'arcade:hachuping-color-match:easy:highScore': '0',
@@ -34,17 +34,17 @@ test('old records come in once, read-only, and unlock what they already earned',
   try {
     M.importLegacyRecords(games, k => store.get(k) ?? null, 5);
     const s = M.metaStore.get();
-    assert.deepEqual(s.games['hachuping-whack-a-mole'].best, { 'default|normal': 620, 'default|hard': 410, 'legacy|-': 500 });
+    assert.deepEqual(s.games['hachuping-whack-a-mole'].best, { 'default|normal': 820, 'default|hard': 410, 'legacy|-': 500 });
     assert.equal(s.games['hachuping-color-match'], undefined, 'a 0 high score means never played: no record at all');
-    assert.equal(s.games['hachuping-memory'].best['default|-'], 9, 'the older memory key wins when higher');
+    assert.equal(s.games['hachuping-memory'].best['default|normal'], 9, 'the older memory key wins when higher, and counts as the normal speed');
     assert.equal(s.games['hachuping-slither'], undefined, 'garbage is skipped');
     assert.equal(s.games['hachuping-dodge'].best['default|nightmare'], 612);
     assert.deepEqual([s.games['night-train'].runs, s.games['night-train'].wins, s.games['night-train'].progress.station], [12, 2, 13]);
     assert.deepEqual(s.games['ghost-movers'].progress, { cleared: 2, stars: 5 }, 'out-of-range levels ignored');
     assert.deepEqual(s.games['ten-seconds'].progress, { cleared: 2, stars: 4 });
     assert.equal(s.games['fantasy-tactics']?.progress.chapter, undefined, 'a broken save is skipped, not fatal');
-    assert.ok(s.achievements['hachuping-whack-a-mole/normal300'], 'a legacy best of 620 meets the 500-point goal');
-    assert.equal(s.achievements['hachuping-whack-a-mole/hard400'], undefined, '410 is short of 700');
+    assert.ok(s.achievements['hachuping-whack-a-mole/normal300'], 'a legacy best of 820 meets the 800-point goal');
+    assert.equal(s.achievements['hachuping-whack-a-mole/hard400'], undefined, '410 is short of 1,000');
     assert.ok(s.achievements['hachuping-dodge/nightmare'] && s.achievements['night-train/win1']);
     assert.ok(s.achievements['hachuping-jump/best500']);
     for (const [key, value] of Object.entries(OLD)) assert.equal(store.get(key), value, `${key} untouched`);

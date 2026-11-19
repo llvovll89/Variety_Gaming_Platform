@@ -14,7 +14,7 @@ export default function GameCanvas({bestScore,onGameOver,onReady,difficulty,engi
       {targets.map(t=><button key={t.id} className="mole-target" aria-label={`${t.id+1}번 구멍${activeMoles.includes(t.id)?', 두더지 등장':''}`} data-active={activeMoles.includes(t.id)}
         style={{left:t.x,top:t.y,width:t.radius*2,height:t.radius*2}}
         onPointerDown={e=>{if(e.button!==0)return; e.preventDefault(); engine?.hitMole(t.id);}}
-        onClick={e=>{if(e.detail===0)engine?.hitMole(t.id);}}><kbd>{MOLE_KEYS[t.id].toUpperCase()}</kbd>{(engine?.getMoleHitFlashAlpha(t.id)??0)>0&&<span className="mole-hit-label" aria-hidden="true">+10</span>}</button>)}
+        onClick={e=>{if(e.detail===0)engine?.hitMole(t.id);}}><kbd>{MOLE_KEYS[t.id].toUpperCase()}</kbd>{(engine?.getMoleHitFlashAlpha(t.id)??0)>0&&<span className="mole-hit-label" aria-hidden="true">+{engine?.getHitPoints(t.id)??10}</span>}</button>)}
     </div>
     {error && <div className="mole-render-error" role="alert"><h2>게임 화면을 열지 못했어요</h2><p>브라우저의 하드웨어 가속을 켜고 다시 시도해 주세요.</p><button className="mole-primary" onClick={onBack}>메뉴로 돌아가기</button></div>}
   </div>;

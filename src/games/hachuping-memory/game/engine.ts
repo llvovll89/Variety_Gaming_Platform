@@ -1,6 +1,7 @@
 import { UIStore } from "./uiStore";
 import type { GameState, MemoryCard, AnimalType } from "./types";
-import { GAME_CONFIG, ANIMALS } from "./constants";
+import { GAME_CONFIG, ANIMALS, SPEEDS, type MemorySpeed } from "./constants";
+import { playCard, playCorrect, playStage, playWrong } from "./sound";
 type Task = { run: () => void; remaining: number; startedAt: number; timer: ReturnType<typeof setTimeout> | null };
 
 export class MemoryGameEngine {
@@ -9,7 +10,9 @@ export class MemoryGameEngine {
   private tasks = new Set<Task>();
   private destroyed = false;
 
-  constructor(bestScore = 0) {
+  private readonly pace: number;
+  constructor(bestScore = 0, speed: MemorySpeed = 'normal') {
+    this.pace = SPEEDS[speed]?.factor ?? 1;
     this.state = {
       stage: 1,
       sequence: [],
@@ -106,14 +109,15 @@ export class MemoryGameEngine {
     const cardIndex = this.state.sequence[index];
     this.schedule(() => {
       this.state.cards[cardIndex].isRevealed = true;
+      playCard(cardIndex);
       this.uiStore.publish(this.state);
       this.schedule(() => {
         this.state.cards[cardIndex].isRevealed = false;
         this.uiStore.publish(this.state);
         if (index + 1 < this.state.sequence.length) this.playSequence(index + 1);
         else this.beginPlayerTurn();
-      }, GAME_CONFIG.cardAnimationDuration);
-    }, GAME_CONFIG.sequenceDelay);
+      }, GAME_CONFIG.cardAnimationDuration * this.pace);
+    }, GAME_CONFIG.sequenceDelay * this.pace);
   }
 
   private beginPlayerTurn(): void {
@@ -144,13 +148,17 @@ export class MemoryGameEngine {
     const expectedIndex = this.state.sequence[this.state.playerSequence.length];
     this.state.playerSequence.push(cardIndex);
     this.state.cards[cardIndex].isRevealed = true;
+    if (cardIndex === expectedIndex) playCard(cardIndex); else playWrong();
     this.uiStore.publish(this.state);
 
-    // 카드를 잠깐 보여줬다가 숨기기
-    this.schedule(() => {
+    // 카드를 잠깐 보여줬다가 숨기기 (같은 카드를 또 누르면 숨기는 시점을 다시 잡음)
+    this.cancelTask(this.hideTasks.get(cardIndex));
+    const hide = this.schedule(() => {
+      this.hideTasks.delete(cardIndex);
       this.state.cards[cardIndex].isRevealed = false;
       this.uiStore.publish(this.state);
-    }, GAME_CONFIG.cardAnimationDuration);
+    }, GAME_CONFIG.cardAnimationDuration * this.pace);
+    if (hide) this.hideTasks.set(cardIndex, hide);
 
     // 틀린 경우
     if (cardIndex !== expectedIndex) {
@@ -170,6 +178,7 @@ export class MemoryGameEngine {
         "🏆 대단해! 계속해봐!",
       ];
       this.state.message = winMessages[Math.floor(Math.random() * winMessages.length)];
+      playCorrect();
       this.uiStore.publish(this.state);
       
       // 다음 라운드로
@@ -187,6 +196,7 @@ export class MemoryGameEngine {
       this.state.cards = this.generateCards(GAME_CONFIG.cardCounts[this.state.stage - 1]);
       this.state.sequence = [];
       this.state.message = `🎉 레벨 ${this.state.stage} 시작!`;
+      playStage();
     } else {
       this.state.message = "다음 패턴...";
     }
@@ -235,12 +245,21 @@ export class MemoryGameEngine {
     this.uiStore.publish(this.state);
   }
 
-  private schedule(run: () => void, remaining: number): void {
-    if (this.destroyed) return;
+  private schedule(run: () => void, remaining: number): Task | null {
+    if (this.destroyed) return null;
     const task: Task = { run, remaining, startedAt: Date.now(), timer: null };
     this.tasks.add(task);
     if (this.state.status === 'playing') this.arm(task);
+    return task;
   }
+
+  private cancelTask(task: Task | undefined): void {
+    if (!task || !this.tasks.delete(task)) return;
+    if (task.timer !== null) clearTimeout(task.timer);
+  }
+
+  /** The pending "hide" per card: a second tap on the same card restarts it instead of being cut short. */
+  private hideTasks = new Map<number, Task>();
 
   private arm(task: Task): void {
     task.startedAt = Date.now();
@@ -253,6 +272,7 @@ export class MemoryGameEngine {
   private cancelTasks(): void {
     for (const task of this.tasks) if (task.timer !== null) clearTimeout(task.timer);
     this.tasks.clear();
+    this.hideTasks.clear();
   }
 
   destroy(): void { this.destroyed = true; this.cancelTasks(); }

@@ -1,6 +1,6 @@
 ﻿import type { UISnapshot } from './types';
 export function emptySnapshot(): UISnapshot {
-  return {status: 'idle', score: 0, timeRemaining: 30, countdown: 3, round: 1, totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, finalScore: null, bestScore: 0, difficulty: 'normal', activeMoles: []};
+  return {status: 'idle', score: 0, timeRemaining: 30, countdown: 3, round: 1, totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, lastPoints: 0, finalScore: null, bestScore: 0, difficulty: 'normal', activeMoles: []};
 }
 export class UIStore {
   private snapshot = emptySnapshot();

@@ -65,3 +65,24 @@ test('memory wrong input locks the turn immediately; pause freezes game-over del
   e.togglePause();tick(500);assert.equal(state.status,'game-over');assert.equal(timers.size,0);assert.equal(state.highScore,8);
   e.startGame();assert.equal(state.status,'playing');assert.equal(state.score,0);assert.equal(timers.size,1);e.destroy();
 }));
+
+test('the slow memory speed shows each card later and for longer',()=>withClock(({tick})=>{
+  const lit=e=>e.uiStore.getSnapshot().gameState.cards.some(c=>c.isRevealed);
+  const normal=new MemoryGameEngine(0,'normal');normal.startGame();tick(1100);assert.equal(lit(normal),true,'normal: 500 + 600 ms');normal.destroy();
+  const slow=new MemoryGameEngine(0,'slow');slow.startGame();tick(1100);assert.equal(lit(slow),false);
+  tick(360);assert.equal(lit(slow),true,'slow: 500 + 960 ms');
+  tick(470);assert.equal(lit(slow),true,'still lit (480 ms instead of 300)');
+  tick(10);assert.equal(lit(slow),false);slow.destroy();
+}));
+
+test('tapping the same memory card twice keeps the second flash for its full time',()=>withClock(({tick})=>{
+  const e=new MemoryGameEngine(0,'normal');e.startGame();
+  tick(1100+300);const state=e.uiStore.getSnapshot().gameState;
+  assert.equal(state.isPlayerTurn,true);
+  const card=state.sequence[0];
+  // Make the sequence [card, card] so a double tap is the right answer.
+  state.sequence.push(card);
+  e.playerClickCard(card);tick(200);e.playerClickCard(card);
+  tick(150);assert.equal(e.uiStore.getSnapshot().gameState.cards[card].isRevealed,true,'the first tap no longer hides the second');
+  e.destroy();
+}));

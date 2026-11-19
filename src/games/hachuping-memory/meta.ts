@@ -105,9 +105,11 @@ export const meta: GameMeta = {
     }
   ],
   legacy: {
-    version: 1,
+    version: 2,
     read(get, parse) {
-      return { best: { 'default|-': Math.max(parse.num(get('arcade:hachuping-memory:highScore')), parse.num(get('hachuping-memory-highscore'))) } };
+      // Bests from before speeds existed were all played at the normal speed.
+      const normal = Math.max(parse.num(get('arcade:hachuping-memory:normal:highScore')), parse.num(get('arcade:hachuping-memory:highScore')), parse.num(get('hachuping-memory-highscore')));
+      return { best: { 'default|normal': normal, 'default|slow': parse.num(get('arcade:hachuping-memory:slow:highScore')) } };
     },
   },
 };

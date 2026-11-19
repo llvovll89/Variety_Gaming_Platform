@@ -18,6 +18,8 @@ export interface GameState {
   attempts: number;
   combo: number;
   bestCombo: number;
+  /** Points the last hit scored (combo multiplier included), for the "+15" label. */
+  lastPoints: number;
   gameOver: boolean;
   finalScore: number | null;
   difficulty: DifficultyLevel;

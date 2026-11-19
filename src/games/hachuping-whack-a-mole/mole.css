@@ -31,3 +31,7 @@
 /* Game kit theme: kit pieces (settings rows, dialogs) take the mole palette. */
 .mole-game{--kit-surface:#f0f5ed;--kit-ink:#183e35;--kit-muted:#557368;--kit-line:#b6cbb9;--kit-accent:#264f3c;--kit-on-accent:#fff;--kit-radius:24px}
 .mole-pause-panel .kit-settings{margin-top:22px;padding-top:16px;border-top:1px solid #ccdacb;text-align:left;font-size:13px}
+.mole-multiplier{font-style:normal;color:#c46a12;font-weight:900}
+.mole-round{position:absolute;left:50%;top:96px;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:#264f3c;color:#fff;font-size:13px;font-weight:800;pointer-events:none;animation:mole-round 1.6s ease-out forwards}
+@keyframes mole-round{0%{opacity:0;transform:translate(-50%,-6px)}15%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.mole-round{animation:none}}

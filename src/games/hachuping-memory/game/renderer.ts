@@ -107,9 +107,12 @@ export class MemoryGameRenderer {
       this.ctx.fillStyle = "#ffffff"; // 흰색
     }
 
-    // 카드 배경 (라운드 사각형)
+    // 카드 배경 (라운드 사각형). 켜진 카드는 분홍빛으로 빛나 패턴을 따라가기 쉽게
+    this.ctx.save();
+    if (card.isRevealed) { this.ctx.shadowColor = "rgba(255, 111, 165, 0.75)"; this.ctx.shadowBlur = 26; }
     this.drawRoundRect(x, y, this.cardSize, this.cardSize, radius);
     this.ctx.fill();
+    this.ctx.restore();
 
     // 카드 테두리 (깔끔하게)
     this.ctx.strokeStyle = card.isRevealed ? "#ff9fb5" : "#d0d0d0";

@@ -1,7 +1,8 @@
 import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
-// Achievement ids are stored keys: keep them when goals change (normal300/hard400 now ask 500/700).
+// Achievement ids are stored keys: keep them when goals change (normal300/hard400 now ask 800/1,000,
+// sized for combo scoring).
 export const meta: GameMeta = {
   reportsRuns: true,
   "scoreUnit": "점",
@@ -52,12 +53,12 @@ export const meta: GameMeta = {
     },
     {
       "id": "normal300",
-      "title": "보통 500점",
-      "description": "보통에서 500점",
+      "title": "보통 800점",
+      "description": "보통에서 800점",
       "tier": 2,
       "rule": {
         "kind": "best",
-        "atLeast": 500,
+        "atLeast": 800,
         "difficulty": "normal"
       },
       "kids": {
@@ -67,12 +68,12 @@ export const meta: GameMeta = {
     },
     {
       "id": "hard400",
-      "title": "어려움 700점",
-      "description": "어려움에서 700점",
+      "title": "어려움 1,000점",
+      "description": "어려움에서 1,000점",
       "tier": 2,
       "rule": {
         "kind": "best",
-        "atLeast": 700,
+        "atLeast": 1000,
         "difficulty": "hard"
       },
       "kids": {
@@ -97,28 +98,28 @@ export const meta: GameMeta = {
   ],
   "daily": [
     {
-      "id": "score",
-      "label": "{difficulty}에서 {n}점 넘기",
+      "id": "score-easy",
+      "label": "쉬움에서 {n}점 넘기",
       "stat": "score",
-      "range": [
-        300,
-        600
-      ],
+      "range": [250, 500],
       "step": 50,
-      "difficulty": [
-        {
-          "id": "easy",
-          "label": "쉬움"
-        },
-        {
-          "id": "normal",
-          "label": "보통"
-        },
-        {
-          "id": "hard",
-          "label": "어려움"
-        }
-      ]
+      "difficulty": [{ "id": "easy", "label": "쉬움" }]
+    },
+    {
+      "id": "score-normal",
+      "label": "보통에서 {n}점 넘기",
+      "stat": "score",
+      "range": [400, 800],
+      "step": 50,
+      "difficulty": [{ "id": "normal", "label": "보통" }]
+    },
+    {
+      "id": "score-hard",
+      "label": "어려움에서 {n}점 넘기",
+      "stat": "score",
+      "range": [500, 1000],
+      "step": 50,
+      "difficulty": [{ "id": "hard", "label": "어려움" }]
     },
     {
       "id": "combo",
