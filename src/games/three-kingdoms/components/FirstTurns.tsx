@@ -27,7 +27,7 @@ export function FirstTurns({ state, factionId, startTurn, turn, onClose }: Props
   }, [ordered, marching, passed]);
 
   const steps = [
-    { done: done.ordered, title: "一 · 내정 명령", text: "왼쪽 '내 도시'에서 도시를 고르고, 내정 분류에서 담당 무장과 명령을 정하세요." },
+    { done: done.ordered, title: "一 · 내정 명령", text: "'내 도시'에서 도시를 고르고, 내정 분류에서 담당 무장과 명령을 정하세요." },
     { done: done.marching, title: "二 · 부대 출진", text: "군사 → 부대 편성·출진으로 부대를 내보내세요. 파란 칸으로 이동하고 붉은 적을 눌러 공격합니다." },
     { done: done.passed, title: "三 · 10일 진행", text: "명령을 마쳤으면 위쪽의 '10일 진행'을 누르세요. 명령은 그때 실행됩니다." },
   ];
