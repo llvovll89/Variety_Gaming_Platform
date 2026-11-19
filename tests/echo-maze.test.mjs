@@ -78,3 +78,14 @@ test('remaining seals tracks real pickups, locked exit and newly opened exit',()
  assert.equal(r.sealsRemaining,1);r.move(1);assert.equal(r.status,'playing');assert.equal(r.sealsRemaining,1);
  r.move(1);assert.equal(r.sealsRemaining,0);assert.equal(r.sealsCollected,1);r.move(3);assert.equal(r.status,'won');assert.equal(r.sealsRemaining,0);
 });
+test('returning to an anchor left on the exit escapes once every seal is open',()=>{
+  const run=new MazeRun('easy');
+  run.player={...run.exit};run.action('anchor');
+  run.player={x:1,y:1};run.seals.clear();
+  run.action('return');
+  assert.equal(run.status,'won');
+  const locked=new MazeRun('easy');locked.player={...locked.exit};locked.action('anchor');locked.player={x:1,y:1};
+  locked.action('return');
+  assert.equal(locked.status,'playing','still locked while seals remain');
+  assert.match(locked.message,/출구가 잠겨/);
+});
