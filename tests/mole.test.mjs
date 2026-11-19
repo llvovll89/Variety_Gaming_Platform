@@ -62,3 +62,14 @@ test('each 10-second round makes moles faster',()=>{
   assert.equal(s.round,3);
   for(let i=0;i<40;i++){e.update(.05);for(const m of s.moles.filter(m=>m.isActive&&m.activeSince===0))assert.ok(m.duration<=c.moleActiveDurationMax*ROUND_SPEED[2]+1e-9);}
 });
+test('a restart begins at round-1 speed, and each hole shows the points its own hit scored',()=>{
+  const e=make('normal');play(e);const s=e.getGameState(),c=DIFFICULTY_CONFIGS.normal;
+  for(let i=0;i<500;i++)e.update(.05);
+  e.startGame();
+  for(const m of e.getGameState().moles)assert.ok(m.duration>=c.moleInactiveDurationMin-1e-9,'no round-3 speed-up carried over');
+  e.update(3);const t=e.getGameState();
+  for(let i=0;i<4;i++){t.moles[0].isActive=true;e.hitMole(0);}
+  t.moles[1].isActive=true;e.hitMole(1);
+  assert.equal(e.getHitPoints(0),10);assert.equal(e.getHitPoints(1),15,'the 5th hit in a row, on hole 1');
+  e.destroy();void s;
+});

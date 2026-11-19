@@ -4,6 +4,7 @@ import { hasRewards, RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
 import { settingsStore } from "../../shared/kit/settings";
 import { SPEEDS, type MemorySpeed } from "./game/constants";
+import { memorySound } from "./game/sound";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/icons/ArrowLeft";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
@@ -48,15 +49,23 @@ const FALLBACK_SNAPSHOT = emptySnapshot({
 });
 
 export default function HachupingMemoryApp({ onExit }: GameProps) {
-  const [screen, setScreen] = useState<Screen>("menu");
   // Remembered between visits, like the other games' difficulty.
   const [speed, setSpeed] = useState<MemorySpeed>(() => {
     const saved = settingsStore.get().games[GAME_ID]?.extra?.speed;
     return typeof saved === "string" && Object.hasOwn(SPEEDS, saved) ? saved as MemorySpeed : "normal";
   });
   const chooseSpeed = (next: MemorySpeed) => { setSpeed(next); settingsStore.setGame(GAME_ID, { extra: { speed: next } }); };
+  // Score hooks load on mount, so each speed gets its own session and its own best.
+  return <MemorySession key={speed} onExit={onExit} speed={speed} chooseSpeed={chooseSpeed} />;
+}
+
+/** Bests from before speeds existed were all played at the normal speed. */
+const LEGACY_BEST_KEYS: Record<MemorySpeed, string[]> = { normal: ["arcade:hachuping-memory:highScore", "hachuping-memory-highscore"], slow: [] };
+
+function MemorySession({ onExit, speed, chooseSpeed }: Pick<GameProps, "onExit"> & { speed: MemorySpeed; chooseSpeed: (speed: MemorySpeed) => void }) {
+  const [screen, setScreen] = useState<Screen>("menu");
   const [engine, setEngine] = useState<MemoryGameEngine | null>(null);
-  const { highScore, previousBest, submitScore } = useHighScore(GAME_ID, ['hachuping-memory-highscore']);
+  const { highScore, previousBest, submitScore } = useHighScore(`${GAME_ID}:${speed}`, LEGACY_BEST_KEYS[speed]);
   const resultTitle = useId();
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
@@ -77,10 +86,12 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
     // A memory run only ends on a mistake: 'lose', so a 3-second slip is not a win or a streak day.
     submitScore(snapshot.score);
     setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'lose', difficulty: speed, stats: { stage: snapshot.gameState.stage } }));
-  }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records]);
+  }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records, speed]);
 
   const handleStart = useCallback(() => {
     engine?.destroy();
+    // Start is a tap: wake the audio here, or strict browsers (iOS) stay silent for the first pattern.
+    memorySound.unlock();
     const newEngine = new MemoryGameEngine(highScore, speed);
     played.current = { ms: 0, since: 0 };
     setRewards(null);

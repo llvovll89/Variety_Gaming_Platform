@@ -151,11 +151,14 @@ export class MemoryGameEngine {
     if (cardIndex === expectedIndex) playCard(cardIndex); else playWrong();
     this.uiStore.publish(this.state);
 
-    // 카드를 잠깐 보여줬다가 숨기기
-    this.schedule(() => {
+    // 카드를 잠깐 보여줬다가 숨기기 (같은 카드를 또 누르면 숨기는 시점을 다시 잡음)
+    this.cancelTask(this.hideTasks.get(cardIndex));
+    const hide = this.schedule(() => {
+      this.hideTasks.delete(cardIndex);
       this.state.cards[cardIndex].isRevealed = false;
       this.uiStore.publish(this.state);
     }, GAME_CONFIG.cardAnimationDuration * this.pace);
+    if (hide) this.hideTasks.set(cardIndex, hide);
 
     // 틀린 경우
     if (cardIndex !== expectedIndex) {
@@ -242,12 +245,21 @@ export class MemoryGameEngine {
     this.uiStore.publish(this.state);
   }
 
-  private schedule(run: () => void, remaining: number): void {
-    if (this.destroyed) return;
+  private schedule(run: () => void, remaining: number): Task | null {
+    if (this.destroyed) return null;
     const task: Task = { run, remaining, startedAt: Date.now(), timer: null };
     this.tasks.add(task);
     if (this.state.status === 'playing') this.arm(task);
+    return task;
   }
+
+  private cancelTask(task: Task | undefined): void {
+    if (!task || !this.tasks.delete(task)) return;
+    if (task.timer !== null) clearTimeout(task.timer);
+  }
+
+  /** The pending "hide" per card: a second tap on the same card restarts it instead of being cut short. */
+  private hideTasks = new Map<number, Task>();
 
   private arm(task: Task): void {
     task.startedAt = Date.now();
@@ -260,6 +272,7 @@ export class MemoryGameEngine {
   private cancelTasks(): void {
     for (const task of this.tasks) if (task.timer !== null) clearTimeout(task.timer);
     this.tasks.clear();
+    this.hideTasks.clear();
   }
 
   destroy(): void { this.destroyed = true; this.cancelTasks(); }

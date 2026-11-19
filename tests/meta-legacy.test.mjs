@@ -36,7 +36,7 @@ test('old records come in once, read-only, and unlock what they already earned',
     const s = M.metaStore.get();
     assert.deepEqual(s.games['hachuping-whack-a-mole'].best, { 'default|normal': 820, 'default|hard': 410, 'legacy|-': 500 });
     assert.equal(s.games['hachuping-color-match'], undefined, 'a 0 high score means never played: no record at all');
-    assert.equal(s.games['hachuping-memory'].best['default|-'], 9, 'the older memory key wins when higher');
+    assert.equal(s.games['hachuping-memory'].best['default|normal'], 9, 'the older memory key wins when higher, and counts as the normal speed');
     assert.equal(s.games['hachuping-slither'], undefined, 'garbage is skipped');
     assert.equal(s.games['hachuping-dodge'].best['default|nightmare'], 612);
     assert.deepEqual([s.games['night-train'].runs, s.games['night-train'].wins, s.games['night-train'].progress.station], [12, 2, 13]);

@@ -7,6 +7,8 @@ export class WhackAMoleEngine {
   readonly uiStore = new UIStore();
   private gameState: GameState;
   private hitTimers = new Map<number, number>();
+  /** Points each hole's last hit scored, for its own "+N" label. */
+  private hitPoints = new Map<number, number>();
   private rafId: number | null = null;
   private lastTime: number | null = null;
   private resumeStatus: 'ready' | 'playing' = 'playing';
@@ -14,17 +16,17 @@ export class WhackAMoleEngine {
   constructor(private bestScore: number, private onGameOver: (score: number, state: GameState) => void, private difficulty: DifficultyLevel = DEFAULT_DIFFICULTY) {
     this.gameState = this.initialState(); this.publish();
   }
-  private duration(active: boolean): number {
+  private duration(active: boolean, round = this.gameState?.round ?? 1): number {
     const c = DIFFICULTY_CONFIGS[this.difficulty];
     const min = active ? c.moleActiveDurationMin : c.moleInactiveDurationMin;
     const max = active ? c.moleActiveDurationMax : c.moleInactiveDurationMax;
-    const speed = ROUND_SPEED[(this.gameState?.round ?? 1) - 1] ?? 1;
+    const speed = ROUND_SPEED[round - 1] ?? 1;
     return (min + Math.random() * (max - min)) * speed;
   }
   private initialState(): GameState {
     return { status: 'idle', score: 0, timeRemaining: GAME_TOTAL_TIME, countdown: 3, round: 1,
       totalMolesHit: 0, attempts: 0, combo: 0, bestCombo: 0, lastPoints: 0, gameOver: false, finalScore: null, difficulty: this.difficulty,
-      moles: Array.from({length: MOLE_GRID_COLS * MOLE_GRID_ROWS}, (_, id) => ({id, gridX: id % MOLE_GRID_COLS, gridY: Math.floor(id / MOLE_GRID_COLS), isActive: false, activeSince: 0, duration: this.duration(false)})) };
+      moles: Array.from({length: MOLE_GRID_COLS * MOLE_GRID_ROWS}, (_, id) => ({id, gridX: id % MOLE_GRID_COLS, gridY: Math.floor(id / MOLE_GRID_COLS), isActive: false, activeSince: 0, duration: this.duration(false, 1)})) };
   }
   startGame = () => {
     this.destroy(); this.gameState = this.initialState(); this.gameState.status = 'ready';
@@ -54,7 +56,7 @@ export class WhackAMoleEngine {
     s.totalMolesHit++; s.combo++; s.bestCombo = Math.max(s.bestCombo, s.combo);
     s.lastPoints = Math.round(POINTS_PER_HIT * comboMultiplier(s.combo)); s.score += s.lastPoints;
     mole.isActive = false; mole.activeSince = 0; mole.duration = this.duration(false);
-    this.hitTimers.set(id, HIT_FLASH_DURATION);
+    this.hitTimers.set(id, HIT_FLASH_DURATION); this.hitPoints.set(id, s.lastPoints);
     playHit(); this.publish(); return true;
   };
   private loop = (now: number) => {
@@ -101,6 +103,7 @@ export class WhackAMoleEngine {
     this.uiStore.publish({...state, bestScore: this.bestScore, activeMoles: moles.filter(m => m.isActive).map(m => m.id)});
   }
   getMoleHitFlashAlpha = (id: number) => (this.hitTimers.get(id) ?? 0) / HIT_FLASH_DURATION;
+  getHitPoints = (id: number) => this.hitPoints.get(id) ?? POINTS_PER_HIT;
   getGameState = () => this.gameState;
   destroy = () => { if (this.rafId !== null) cancelAnimationFrame(this.rafId); this.rafId = null; };
 }

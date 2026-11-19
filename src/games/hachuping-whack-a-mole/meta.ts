@@ -98,28 +98,28 @@ export const meta: GameMeta = {
   ],
   "daily": [
     {
-      "id": "score",
-      "label": "{difficulty}에서 {n}점 넘기",
+      "id": "score-easy",
+      "label": "쉬움에서 {n}점 넘기",
       "stat": "score",
-      "range": [
-        400,
-        900
-      ],
+      "range": [250, 500],
       "step": 50,
-      "difficulty": [
-        {
-          "id": "easy",
-          "label": "쉬움"
-        },
-        {
-          "id": "normal",
-          "label": "보통"
-        },
-        {
-          "id": "hard",
-          "label": "어려움"
-        }
-      ]
+      "difficulty": [{ "id": "easy", "label": "쉬움" }]
+    },
+    {
+      "id": "score-normal",
+      "label": "보통에서 {n}점 넘기",
+      "stat": "score",
+      "range": [400, 800],
+      "step": 50,
+      "difficulty": [{ "id": "normal", "label": "보통" }]
+    },
+    {
+      "id": "score-hard",
+      "label": "어려움에서 {n}점 넘기",
+      "stat": "score",
+      "range": [500, 1000],
+      "step": 50,
+      "difficulty": [{ "id": "hard", "label": "어려움" }]
     },
     {
       "id": "combo",
