@@ -8,6 +8,9 @@ import GameOverWithLeaderboard from "./components/GameOverWithLeaderboard";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useLeaderboard, type LeaderboardEntry } from "../../shared/hooks/useLeaderboard";
+import { useRecords } from "../../platform/meta/api";
+import { RewardStrip } from "../../platform/meta/RewardStrip";
+import type { RunRewards } from "../../platform/meta/types";
 import { gameStorageKey, safeGetItem, safeSetItem } from "../../shared/storage";
 import { emptySnapshot } from "./game/uiStore";
 import { ColorMatchEngine } from "./game/engine";
@@ -72,16 +75,25 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
   // The engine reports game over from inside its loop; keep the latest callbacks without restarting it.
+  const records = useRecords();
+  const [rewards, setRewards] = useState<RunRewards | null>(null);
   const finish = useRef<(score: number) => void>(() => {});
   finish.current = (score: number) => {
     setFinalScore(score);
     submitScore(score);
+    const final = engine?.uiStore.getSnapshot();
+    const tries = final ? final.totalCorrect + final.totalWrong : 0;
+    setRewards(records.reportRun({
+      difficulty: prefs.difficulty, score, durationMs: DIFFICULTY_CONFIGS[prefs.difficulty].duration * 1000, outcome: "complete",
+      stats: final ? { correct: final.totalCorrect, streak: final.bestStreak, accuracy: tries ? Math.round(final.totalCorrect / tries * 100) : 0 } : undefined,
+    }));
     setPlayerRank(submitToLeaderboard(score));
     setScreen("game-over");
   };
 
   const begin = useCallback(() => {
     setPlayerRank(null);
+    setRewards(null);
     const next = new ColorMatchEngine(highScore, (score) => finish.current(score), prefs.difficulty);
     setEngine(next);
     setScreen("playing");
@@ -161,6 +173,7 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
           snapshot={snapshot}
           leaderboard={leaderboard}
           difficultyName={DIFFICULTY_CONFIGS[prefs.difficulty].name}
+          rewards={<RewardStrip rewards={rewards} audience="kids" />}
           playerRank={playerRank}
           onRestart={begin}
           onMainMenu={toMenu}

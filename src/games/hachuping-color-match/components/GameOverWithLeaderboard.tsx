@@ -10,12 +10,14 @@ interface GameOverProps {
   leaderboard: LeaderboardEntry[];
   /** Records are kept per difficulty, so the board says whose they are. */
   difficultyName: string;
+  /** Stickers and today's challenge earned this run. */
+  rewards?: React.ReactNode;
   playerRank: number | null; // rank if entered top 10, null otherwise
   onRestart: () => void;
   onMainMenu: () => void;
 }
 
-export default function GameOverWithLeaderboard({ finalScore, previousBest, snapshot, leaderboard, difficultyName, playerRank, onRestart, onMainMenu }: GameOverProps) {
+export default function GameOverWithLeaderboard({ finalScore, previousBest, snapshot, leaderboard, difficultyName, rewards, playerRank, onRestart, onMainMenu }: GameOverProps) {
   const tries = snapshot.totalCorrect + snapshot.totalWrong;
   const accuracy = tries ? Math.round((snapshot.totalCorrect / tries) * 100) : 0;
   return (
@@ -25,6 +27,7 @@ export default function GameOverWithLeaderboard({ finalScore, previousBest, snap
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--cm-muted)" }}>시간 끝!</p>
           <h2 id="cm-result-title" className="cm-num" style={{ margin: "2px 0 0", fontSize: 56, lineHeight: 1.1 }}>{finalScore}<span style={{ fontSize: 22, marginLeft: 4 }}>점</span></h2>
           <ScoreFeedback score={finalScore} previousBest={previousBest} unit="점" />
+          {rewards}
           {playerRank && <p style={{ margin: "4px 0 0", fontSize: 14, fontWeight: 800, color: "var(--cm-ok)" }}>{difficultyName} 기록 {playerRank}위에 올랐어요</p>}
         </div>
 
