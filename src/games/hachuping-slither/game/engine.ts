@@ -13,7 +13,7 @@ import { InputController } from "./input";
 import { renderWorld } from "./renderer";
 import { UIStore } from "./uiStore";
 import { World } from "./world";
-import type { UISnapshot } from "./types";
+import type { RunEnd, UISnapshot } from "./types";
 import { lerp, sampleEvenly } from "../../../utils/math";
 import { chooseUpgrade, pendingUpgrades, statsFor, xpForLevel, type UpgradeKey } from "./progression";
 
@@ -35,13 +35,13 @@ export class GameEngine {
   private wasPlayerAlive = true;
   private paused = false;
   private boostIntensity = 0;
-  private onDeath: (finalScore: number) => void;
+  private onDeath: (end: RunEnd) => void;
 
   constructor(
     canvas: HTMLCanvasElement,
     playerName: string,
     characterImageUrl: string,
-    onDeath: (finalScore: number) => void,
+    onDeath: (end: RunEnd) => void,
     playerBodyPalette: string[] = [],
   ) {
     this.canvas = canvas;
@@ -148,7 +148,8 @@ export class GameEngine {
 
     if (this.wasPlayerAlive && !this.world.player.alive) {
       this.wasPlayerAlive = false;
-      this.onDeath(Math.floor(this.world.player.score));
+      const player = this.world.player;
+      this.onDeath({ score: Math.floor(player.score), kills: this.world.playerKills, seconds: this.world.time, level: player.level });
       this.uiStore.publish(this.buildSnapshot());
     }
 

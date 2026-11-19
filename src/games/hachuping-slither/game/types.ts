@@ -61,6 +61,15 @@ export interface DeathSummary {
   position: Vector2;
 }
 
+/** How a run ended, handed to the app once. */
+export interface RunEnd {
+  score: number;
+  kills: number;
+  /** Time actually played (pauses excluded). */
+  seconds: number;
+  level: number;
+}
+
 export interface UISnapshot {
   death: DeathSummary | null;
   status: "menu" | "playing" | "paused" | "dead";

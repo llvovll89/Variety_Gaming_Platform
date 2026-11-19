@@ -57,6 +57,8 @@ export class World {
 
   lastDeaths: DeathInfo[] = [];
   playerDeath: DeathSummary | null = null;
+  /** Rivals the player took out this run (they ran into the player). */
+  playerKills = 0;
   time = 0;
 
   constructor(playerName: string, playerBodyPalette: string[] = []) {
@@ -223,6 +225,7 @@ export class World {
         };
       }
       const killer = death.killerId !== null ? byId.get(death.killerId) ?? null : null;
+      if (!victim.isPlayer && killer?.isPlayer) this.playerKills++;
       this.lastDeaths.push({ snake: victim, killerName: killer?.name ?? null });
       this.scatterDeathStars(victim);
       if (!victim.isPlayer) {

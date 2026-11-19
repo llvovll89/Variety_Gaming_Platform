@@ -1,12 +1,13 @@
 import { useEffect, type RefObject } from "react";
 import { GameEngine } from "../game/engine";
+import type { RunEnd } from "../game/types";
 
 export function useGameEngine(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   playerName: string,
   characterImageUrl: string,
   bodyPaletteColors: string[],
-  onDeath: (finalScore: number) => void,
+  onDeath: (end: RunEnd) => void,
   onReady: (engine: GameEngine) => void,
 ): void {
   useEffect(() => {

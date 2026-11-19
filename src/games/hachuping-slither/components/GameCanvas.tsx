@@ -1,12 +1,13 @@
 import { useRef } from "react";
 import { useGameEngine } from "../hooks/useGameEngine";
 import type { GameEngine } from "../game/engine";
+import type { RunEnd } from "../game/types";
 
 interface GameCanvasProps {
   playerName: string;
   characterImageUrl: string;
   bodyPaletteColors: string[];
-  onDeath: (finalScore: number) => void;
+  onDeath: (end: RunEnd) => void;
   onReady: (engine: GameEngine) => void;
 }
 
