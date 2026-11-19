@@ -1,4 +1,5 @@
 import { CARDS, STARTER_DECK } from './cards';
+import { MAX_TIER, tierOf } from './tiers';
 import { aliveEnemies, checkPlay, checkSnack, endTurn, playCard, startCombat, useSnack } from './combat';
 import { ENCOUNTERS } from './enemies';
 import { EVENTS } from './events';
@@ -10,9 +11,11 @@ import type { CardInstance, Command, Mode, Rarity, RunState } from './types';
 
 export const START_HP = { normal: 70, easy: 85 } as const;
 
-export function createRun(seed: number, mode: Mode = 'normal'): RunState {
+export function createRun(seed: number, mode: Mode = 'normal', options: { tier?: number; daily?: string | null } = {}): RunState {
+  const tier = mode === 'easy' ? 0 : Math.max(0, Math.min(MAX_TIER, Math.floor(options.tier ?? 0)));
   const run: RunState = {
     version: 1, seed: seed >>> 0, rng: seed >>> 0, mode, phase: 'map',
+    ...(tier ? { tier } : {}), ...(options.daily ? { daily: options.daily } : {}),
     hp: START_HP[mode], maxHp: START_HP[mode], gold: 99,
     deck: [], relics: ['lantern'], snacks: ['star-candy'], nextUid: 1, map: [], path: [],
     combat: null, reward: null, shop: null, event: null, rest: null, treasure: null,
@@ -331,5 +334,5 @@ export function currentFloor(run: RunState) {
 /** Simple, stable score for records: stations passed, elites beaten and a big bonus for reaching dawn. */
 export function runScore(run: RunState) {
   const cleared = run.phase === 'victory' ? run.path.length : Math.max(0, run.path.length - 1);
-  return cleared * 10 + run.stats.elites * 25 + (run.phase === 'victory' ? 200 : 0) + Math.floor(run.gold / 10);
+  return cleared * 10 + run.stats.elites * 25 + (run.phase === 'victory' ? 200 + 100 * tierOf(run) : 0) + Math.floor(run.gold / 10);
 }

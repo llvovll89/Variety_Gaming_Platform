@@ -1,7 +1,7 @@
 import { keyOf } from '../../../shared/kit/keys';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import {
-  ENEMIES, SNACKS, STATUS_INFO, aliveEnemies, attackDamage, cardStats, checkPlay, checkSnack, cuesForFx, needsTarget,
+  ENEMIES, SNACKS, STATUS_INFO, aliveEnemies, attackDamage, enemyHitBase, cardStats, checkPlay, checkSnack, cuesForFx, needsTarget,
   type CardInstance, type Command, type Fx, type Frame, type RunState, type StatusId,
 } from '../engine';
 import { sound } from './sound';
@@ -304,7 +304,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   const playableCount = combat.hand.filter(card => cardStats(card).cost <= player.energy).length;
   const incoming = alive.reduce((sum, enemy) => {
     const move = ENEMIES[enemy.defId].moves[enemy.intent];
-    return sum + (move?.effects ?? []).reduce((s, e) => s + (e.k === 'attack' ? attackDamage(e.n, enemy.statuses, player.statuses) * (e.times ?? 1) : 0), 0);
+    return sum + (move?.effects ?? []).reduce((s, e) => s + (e.k === 'attack' ? attackDamage(enemyHitBase(run, e.n), enemy.statuses, player.statuses) * (e.times ?? 1) : 0), 0);
   }, 0);
   const fxFor = (target: 'player' | number) => view.fx.filter(item => item.target === target);
   const lastHit = (target: 'player' | number) => [...view.fx].reverse().find(item => item.target === target && item.kind === 'damage')?.id;
@@ -349,7 +349,7 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
               const acting = frame?.actor === enemy.uid;
               return (
                 <div key={enemy.uid} className={`nt-fighter nt-enemy nt-enemy-${def.kind}${dead ? ' is-dead' : ''}${(wantsTarget || aiming) && !dead ? ' is-targetable' : ''}${isFocused ? ' is-focused' : ''}${acting ? ' is-acting' : ''}`}>
-                  {!dead && <IntentTag enemy={enemy} damageTo={base => attackDamage(base, enemy.statuses, view.statuses)} />}
+                  {!dead && <IntentTag enemy={enemy} damageTo={base => attackDamage(enemyHitBase(run, base), enemy.statuses, view.statuses)} />}
                   <button type="button" className="nt-enemy-button" disabled={dead || busy} data-enemy-uid={enemy.uid}
                     ref={el => { if (el) enemyRefs.current.set(enemy.uid, el); else enemyRefs.current.delete(enemy.uid); }}
                     aria-label={`${def.name}, 체력 ${enemy.hp} / ${enemy.maxHp}${enemy.block ? `, 방어 ${enemy.block}` : ''}${wantsTarget ? '. 눌러서 대상으로 지정' : ''}`}

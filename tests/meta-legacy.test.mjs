@@ -51,7 +51,7 @@ test('old records come in once, read-only, and unlock what they already earned',
     const runsBefore = s.games['night-train'].runs;
     M.importLegacyRecords(games, k => store.get(k) ?? null, 6);
     assert.equal(M.metaStore.get().games['night-train'].runs, runsBefore, 'a second start does not count twice');
-    assert.equal(M.metaStore.get().importedLegacy['night-train'], 1);
+    assert.equal(M.metaStore.get().importedLegacy['night-train'], 2);
     // Games still save to their old keys until they report to the arcade store, so a newer score
     // set after the first import comes in on the next start.
     store.set('arcade:hachuping-jump:highScore', '900');

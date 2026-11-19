@@ -416,3 +416,32 @@ test('real-world saves with clock-based 32-bit seeds load again', () => {
     assert.equal(loaded.seed, run.seed);
   }
 });
+
+test('운행 등급: same route as the base run, tougher enemies, a bigger dawn bonus; easy seats stay at 0', () => {
+  const base = E.createRun(99), hard = E.createRun(99, 'normal', { tier: 2 });
+  assert.deepEqual(hard.map, base.map, 'the tier changes the fight, not the route');
+  assert.equal(E.tierOf(hard), 2);
+  assert.equal(E.tierOf(E.createRun(99, 'easy', { tier: 3 })), 0);
+  assert.equal(E.tierOf(E.createRun(99, 'normal', { tier: 9 })), E.MAX_TIER);
+  assert.ok(!('tier' in base) && !('daily' in base), 'a plain run keeps the old save shape');
+  const enemy = Object.keys(ENEMIES)[0];
+  const hp = run => { E.startCombat(run, [enemy], 'normal'); return run.combat.enemies[0].maxHp; };
+  const a = E.createRun(5), b = E.createRun(5, 'normal', { tier: 3 });
+  assert.ok(hp(b) > hp(a), 'more enemy health');
+  for (const run of [base, hard]) { run.phase = 'victory'; run.path = ['x']; run.map.push({ id: 'x', floor: 0, x: 0, type: 'battle', next: [] }); }
+  assert.equal(runScore(hard) - runScore(base), 200);
+});
+
+test('today\'s route and the tier survive a save and load', () => {
+  const run = E.createRun(1234, 'normal', { tier: 1, daily: '2026-11-19:night-train:route' });
+  const back = loadRun(JSON.stringify(run));
+  assert.equal(back.tier, 1);
+  assert.equal(back.daily, '2026-11-19:night-train:route');
+  assert.equal(loadRun(JSON.stringify({ ...run, tier: 7 })), null, 'an impossible tier is rejected');
+});
+
+test('the intent tag and the hit agree on a tiered run', () => {
+  assert.equal(E.enemyHitBase({}, 6), 6);
+  assert.equal(E.enemyHitBase({ tier: 3 }, 6), 9);
+  assert.equal(E.enemyHitBase({ tier: 99 }, 6), 6 + E.MAX_TIER);
+});
