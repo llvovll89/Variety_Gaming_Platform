@@ -2,6 +2,9 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  reportsRuns: true,
+  // Runs started from a later world are their own mode; only full journeys count as records.
+  bestMode: "full",
   "scoreUnit": "점",
   "achievements": [
     {
@@ -32,7 +35,8 @@ export const meta: GameMeta = {
       "tier": 1,
       "rule": {
         "kind": "best",
-        "atLeast": 500
+        "atLeast": 500,
+        "mode": "full"
       }
     },
     {
@@ -63,8 +67,7 @@ export const meta: GameMeta = {
       "description": "여섯 세계를 모두 통과",
       "tier": 3,
       "rule": {
-        "kind": "wins",
-        "atLeast": 1
+        "kind": "manual"
       }
     }
   ],
@@ -73,6 +76,7 @@ export const meta: GameMeta = {
       "id": "score",
       "label": "한 판에 {n}점 넘기",
       "stat": "score",
+      "mode": "full",
       "range": [
         200,
         800
@@ -81,9 +85,10 @@ export const meta: GameMeta = {
     }
   ],
   legacy: {
-    version: 1,
+    version: 2,
     read(get, parse) {
-      return { best: { 'default|-': parse.num(get('arcade:hachuping-jump:highScore')) } };
+      // The old best was always a full journey.
+      return { best: { 'full|-': parse.num(get('arcade:hachuping-jump:highScore')) } };
     },
   },
 };

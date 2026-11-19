@@ -59,7 +59,7 @@ test('old records come in once, read-only, and unlock what they already earned',
     store.set('three-kingdoms-local-v2', JSON.stringify({ warRoom: { towerFloor: 16 } }));
     M.importLegacyRecords(games, k => store.get(k) ?? null, 7);
     const later = M.metaStore.get();
-    assert.equal(later.games['hachuping-jump'].best['default|-'], 900);
+    assert.equal(later.games['hachuping-jump'].best['full|-'], 900);
     assert.equal(later.games['fantasy-tactics'].progress.chapter, 6, 'the final chapter, won, counts as finished');
     assert.ok(later.achievements['fantasy-tactics/ch6'] && later.achievements['three-kingdoms-card/tower15']);
     const raw = store.get('arcade:meta:v1');

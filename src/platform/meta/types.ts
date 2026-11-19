@@ -111,6 +111,8 @@ export interface GameMeta {
   reportsRuns?: boolean;
   scoreOrder?: ScoreOrder;
   scoreUnit?: string;
+  /** The mode whose best is "the" best on cards and in the profile (e.g. full runs only). */
+  bestMode?: string;
   achievements: AchievementDef[];
   daily?: DailyTemplate[];
   legacy?: LegacyAdapter;

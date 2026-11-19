@@ -1,11 +1,15 @@
 import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeftIcon, PauseIcon, SpeakerHighIcon, SpeakerSlashIcon } from "@phosphor-icons/react";
 import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
 import { useHighScore } from "../../shared/hooks/useHighScore";
+import { useRecords } from "../../platform/meta/api";
+import { GAME_DURATION_SECONDS } from "./game/constants";
+import { RewardStrip } from "../../platform/meta/RewardStrip";
+import type { RunRewards } from "../../platform/meta/types";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
 import type { BalloonEngine } from "./game/engine";
@@ -17,13 +21,23 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
  const [muted, setMuted] = useState(false);
  const { highScore, previousBest, submitScore } = useHighScore("hachuping-balloon");
  const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK);
- useEffect(() => { if(snapshot.status === "gameover") submitScore(snapshot.score); }, [snapshot.status, snapshot.score, submitScore]);
+ const records = useRecords();
+ const [rewards, setRewards] = useState<RunRewards | null>(null);
+ // Once per run: the arcade records (bests, stickers, today's challenge) come back for the result screen.
+ const reported = useRef(false);
+ useEffect(() => {
+  if (snapshot.status !== "gameover") { reported.current = false; return; }
+  if (reported.current) return;
+  reported.current = true;
+  submitScore(snapshot.score);
+  setRewards(records.reportRun({ score: snapshot.score, durationMs: GAME_DURATION_SECONDS * 1000, outcome: "complete", stats: { popped: snapshot.score } }));
+ }, [snapshot.status, snapshot.score, submitScore, records]);
  useEffect(() => { engine?.setMuted(muted); }, [engine, muted]);
  useEffect(() => {
   if (playing && snapshot.status === "playing") document.querySelector<HTMLCanvasElement>(".balloon-app canvas")?.focus({ preventScroll: true });
  }, [playing, snapshot.status]);
- const start = useCallback(() => { setEngine(null); setPlaying(true); setPlayKey(k => k + 1); }, []);
- const menu = () => { setEngine(null); setPlaying(false); };
+ const start = useCallback(() => { setRewards(null); setEngine(null); setPlaying(true); setPlayKey(k => k + 1); }, []);
+ const menu = () => { setRewards(null); setEngine(null); setPlaying(false); };
  useEffect(() => {
   const key = (e: KeyboardEvent) => { if(e.key === "Escape" && playing) engine?.togglePause(); };
   window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key);
@@ -46,7 +60,7 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
  <h2 id="balloon-dialog-title">{paused ? "잠깐 쉬어가요" : "하늘 가득 팡팡!"}</h2>
  <p>{paused ? "풍선들도 기다리고 있어요." : "60초 동안 터뜨린 풍선"}</p>
  <strong className="balloon-result">{snapshot.score}<small>개</small></strong>
- {ended && <><p>내 최고 기록 {Math.max(highScore, snapshot.score)}개</p><ScoreFeedback score={snapshot.score} previousBest={previousBest} unit="개"/></>}
+ {ended && <><p>내 최고 기록 {Math.max(highScore, snapshot.score)}개</p><ScoreFeedback score={snapshot.score} previousBest={previousBest} unit="개"/><RewardStrip rewards={rewards} audience="kids"/></>}
  <button autoFocus className="balloon-primary" onClick={paused ? () => engine?.resume() : start}>{paused ? "계속 놀기" : "한 번 더 놀기"}</button>
  <button className="balloon-secondary" onClick={menu}>처음 화면으로</button>{ended && <NextGameActions/>}
  </section></div>}

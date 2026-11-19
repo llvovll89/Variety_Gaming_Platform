@@ -56,14 +56,16 @@ export class JumpEngine {
   private paused = false;
   private practice: FlightPractice | null;
   private bestScoreAtStart: number;
-  private onDeath: (finalScore: number, cleared?: boolean) => void;
+  private onDeath: (finalScore: number, cleared: boolean, stage: number) => void;
 
   constructor(
     canvas: HTMLCanvasElement,
     characterImageUrl: string,
     bestScore: number,
-    onDeath: (finalScore: number, cleared?: boolean) => void,
+    onDeath: (finalScore: number, cleared: boolean, stage: number) => void,
     practice = false,
+    /** Start from a world already reached (0-based), instead of the first one. */
+    startStage = 0,
   ) {
     this.canvas = canvas;
     const ctx = canvas.getContext("2d");
@@ -74,6 +76,9 @@ export class JumpEngine {
     this.practice = practice ? new FlightPractice() : null;
     this.bestScoreAtStart = bestScore;
     this.onDeath = onDeath;
+    const stage = Math.max(0, Math.min(STAGES.length - 1, Math.floor(startStage)));
+    this.journey.stage = stage;
+    this.rewards.gates = stage * GATES_PER_STAGE; // gates count across the journey
 
     this.playerImage = new Image();
     this.playerImage.src = characterImageUrl;
@@ -183,7 +188,7 @@ export class JumpEngine {
 
     if (this.wasAlive && !this.player.alive) {
       this.wasAlive = false;
-      this.onDeath(this.rewards.score);
+      this.onDeath(this.rewards.score, false, this.journey.stage);
       this.uiStore.publish(this.buildSnapshot());
     }
 
@@ -272,7 +277,7 @@ export class JumpEngine {
       this.rewards.shieldTime = Math.max(this.rewards.shieldTime, 3);
     } else if (transition === 'complete') {
       this.uiStore.publish(this.buildSnapshot());
-      this.onDeath(this.rewards.score, true);
+      this.onDeath(this.rewards.score, true, this.journey.stage);
       return;
     }
     if (transition !== 'none') this.uiStore.publish(this.buildSnapshot());
