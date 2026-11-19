@@ -6,13 +6,14 @@ interface GameCanvasProps {
   characterImageUrl: string;
   bestScore: number;
   practice?: boolean;
-  onDeath: (finalScore: number, cleared?: boolean) => void;
+  startStage?: number;
+  onDeath: (finalScore: number, cleared: boolean, stage: number) => void;
   onReady: (engine: JumpEngine) => void;
 }
 
-export default function GameCanvas({ characterImageUrl, bestScore, onDeath, onReady, practice = false }: GameCanvasProps) {
+export default function GameCanvas({ characterImageUrl, bestScore, onDeath, onReady, practice = false, startStage = 0 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  useJumpEngine(canvasRef, characterImageUrl, bestScore, onDeath, onReady, practice);
+  useJumpEngine(canvasRef, characterImageUrl, bestScore, onDeath, onReady, practice, startStage);
 
   return (
     <div className="absolute inset-0 overflow-hidden">

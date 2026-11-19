@@ -6,7 +6,7 @@ import CharacterPicker from '../../../shared/profile/CharacterPicker';
 import type { Profile } from '../../../shared/profile/useProfile';
 import { ITEMS, ITEM_ORDER } from '../game/items';
 import { GATES_PER_STAGE, STAGES } from '../game/stages';
-export default function StartMenu({ profile, bestScore, onStart, onPractice }: { profile: Profile; bestScore: number; onStart: () => void; onPractice: () => void }) {
+export default function StartMenu({ profile, bestScore, onStart, onPractice, worldsReached, onStartWorld }: { profile: Profile; bestScore: number; onStart: () => void; onPractice: () => void; worldsReached: number; onStartWorld: (stage: number) => void }) {
   return <div className="jump-menu"><div className="jump-menu-layout">
     <section className="jump-world" aria-label="별빛 점프의 구름 세계">
       <div className="jump-world-copy"><h1>구름 위<br/>별빛 점프</h1><p>떠 있는 섬 사이로, 파란 새와 함께 날아요.</p></div>
@@ -20,6 +20,10 @@ export default function StartMenu({ profile, bestScore, onStart, onPractice }: {
       <div className="jump-how"><span><kbd>Space</kbd> 또는 화면 탭</span><b>누를 때마다 폴짝!</b><p>공중 섬과 장애물을 피하고 황금별을 모아요.</p></div>
       <button onClick={onStart} className="jump-button jump-button-primary"><PlayIcon size={19} weight="fill"/>시작하기</button>
       <button onClick={onPractice} className="jump-button">탭 타이밍 연습</button>
+      {worldsReached > 1 && <div className="jump-worlds" role="group" aria-label="도착했던 세계부터 날기">
+        <p>도착했던 세계부터 날기 <small>(최고 기록에는 처음부터 난 기록만 남아요)</small></p>
+        <div>{STAGES.slice(1, worldsReached).map((stage, i) => <button key={stage.name} type="button" className="jump-button" onClick={() => onStartWorld(i + 1)}><b>{i + 2}</b>{stage.name}</button>)}</div>
+      </div>}
       <div className="jump-record"><TrophyIcon size={18} weight="duotone"/><span>최고 기록</span><b>{bestScore.toLocaleString()}점</b></div>
       <details className="jump-guide"><summary>모험 안내와 아이템</summary><div className="jump-guide-content"><p>황금별 +10점 / 관문 통과 +1점<br/>관문 {GATES_PER_STAGE}개마다 다음 세계로, 클리어 +100점</p><div className="jump-items">{ITEM_ORDER.map(kind => <div key={kind}><b>{ITEMS[kind].symbol} {ITEMS[kind].name}</b><p>{ITEMS[kind].description}</p></div>)}</div><p>약 4~5분의 여행</p><ol>{STAGES.map(s => <li key={s.name}>{s.name}</li>)}</ol></div></details>
     </section>
