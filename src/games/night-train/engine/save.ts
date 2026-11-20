@@ -13,16 +13,16 @@ export const RECORD_KEY = 'arcade:night-train:records';
 const count = z.number().int().min(0).max(1_000_000);
 const statusIds = ['strength', 'weak', 'vulnerable', 'burn', 'thorns', 'plating', 'drawUp', 'kindle'] as const;
 const statuses = z.partialRecord(z.enum(statusIds), z.number().int().min(-99).max(999));
-const cardId = z.string().refine(id => id in CARDS, '알 수 없는 카드');
-const relicId = z.string().refine(id => id in RELICS, '알 수 없는 유물');
-const snackId = z.string().refine(id => id in SNACKS, '알 수 없는 간식');
+const cardId = z.string().refine(id => Object.hasOwn(CARDS, id), '알 수 없는 카드');
+const relicId = z.string().refine(id => Object.hasOwn(RELICS, id), '알 수 없는 유물');
+const snackId = z.string().refine(id => Object.hasOwn(SNACKS, id), '알 수 없는 간식');
 const card = z.object({ uid: count, id: cardId, up: z.boolean() });
 const pile = z.array(card).max(200);
 
 const enemy = z.object({
-  uid: count, defId: z.string().refine(id => id in ENEMIES, '알 수 없는 적'), hp: count, maxHp: count.min(1), block: count,
+  uid: count, defId: z.string().refine(id => Object.hasOwn(ENEMIES, id), '알 수 없는 적'), hp: count, maxHp: count.min(1), block: count,
   statuses, intent: z.string(), history: z.array(z.string()).max(500), enraged: z.boolean().optional(),
-}).refine(e => e.intent in ENEMIES[e.defId].moves || e.hp === 0, '알 수 없는 행동');
+}).refine(e => Object.hasOwn(ENEMIES[e.defId].moves, e.intent) || e.hp === 0, '알 수 없는 행동');
 
 const combat = z.object({
   kind: z.enum(['normal', 'elite', 'boss']), turn: count, enemies: z.array(enemy).min(1).max(5),
@@ -52,7 +52,7 @@ export const runSchema = z.object({
     snacks: z.array(z.object({ id: snackId, price: count, sold: z.boolean() })).max(4).default([]),
     removePrice: count, removed: z.boolean(),
   }).nullable(),
-  event: z.object({ id: z.string().refine(id => id in EVENTS, '알 수 없는 사건'), result: z.string().nullable() }).nullable(),
+  event: z.object({ id: z.string().refine(id => Object.hasOwn(EVENTS, id), '알 수 없는 사건'), result: z.string().nullable() }).nullable(),
   rest: z.object({ done: z.boolean() }).nullable(),
   treasure: z.object({ relic: relicId.nullable(), gold: count, opened: z.boolean() }).nullable(),
   seenEvents: z.array(z.string()).max(20),

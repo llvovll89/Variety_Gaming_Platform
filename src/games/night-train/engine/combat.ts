@@ -274,7 +274,8 @@ export function useSnack(run: RunState, index: number, requested?: number) {
   if (!check.ok) return;
   const snack = SNACKS[run.snacks[index]];
   run.snacks.splice(index, 1);
-  if (!run.combat) {
+  // 전투가 끝난 뒤(보상 화면, 종료 연출 중)에는 전투 기록을 건드리지 않는다.
+  if (run.phase !== 'combat' || !run.combat) {
     for (const effect of snack.effects) if (effect.k === 'heal') run.hp = Math.min(run.maxHp, run.hp + effect.n);
     return;
   }
@@ -286,16 +287,19 @@ export function useSnack(run: RunState, index: number, requested?: number) {
   resolveEffects(run, combat, snack.effects, target);
 }
 
-function enemyAct(run: RunState, combat: CombatState, enemy: EnemyState) {
+/** 적 차례 한 번의 진행 상황: 이미 행동한 적, 모든 적이 행동한 뒤 걸 버프. */
+interface EnemyRound { acted: Set<number>; later: (() => void)[] }
+
+function enemyAct(run: RunState, combat: CombatState, enemy: EnemyState, round: EnemyRound) {
   const def = ENEMIES[enemy.defId];
-  enemy.block = 0;
+  // 화상으로 보스가 폭주 조건을 넘어도 이번 차례는 표시된 의도대로 행동한다.
+  const move = def.moves[enemy.intent];
   const burn = enemy.statuses.burn ?? 0;
   if (burn > 0) {
     damageEnemy(run, combat, enemy, burn, true);
     addStatus(enemy.statuses, 'burn', -1);
     if (enemy.hp <= 0) return '화상';
   }
-  const move = def.moves[enemy.intent];
   enemy.history.push(move.id);
   log(combat, `${def.name}: ${move.name}`);
   for (const effect of move.effects) {
@@ -324,8 +328,11 @@ function enemyAct(run: RunState, combat: CombatState, enemy: EnemyState) {
         break;
       case 'buffAll':
         for (const ally of aliveEnemies(combat)) {
-          addStatus(ally.statuses, effect.status, effect.n);
-          fx(run, combat, ally.uid, 'status', effect.n, effect.status);
+          // 아직 행동하지 않은 동료는 이번 차례가 끝난 뒤에 받는다. 그래야 표시된 의도대로 공격한다.
+          const { status, n } = effect;
+          if (ally === enemy || round.acted.has(ally.uid)) addStatus(ally.statuses, status, n);
+          else round.later.push(() => { if (ally.hp > 0) addStatus(ally.statuses, status, n); });
+          fx(run, combat, ally.uid, 'status', n, status);
         }
         break;
       case 'debuff':
@@ -334,6 +341,8 @@ function enemyAct(run: RunState, combat: CombatState, enemy: EnemyState) {
         break;
     }
     if (run.hp <= 0) return move.name;
+    // 가시 반격으로 쓰러진 적은 남은 효과를 걸지 않는다.
+    if (enemy.hp <= 0) break;
   }
   for (const status of DECAYING) if (enemy.statuses[status]) addStatus(enemy.statuses, status, -1);
   if (enemy.hp > 0) rollIntent(run, enemy);
@@ -355,13 +364,18 @@ export function endTurn(run: RunState) {
   }
   const before = { weak: player.statuses.weak ?? 0, vulnerable: player.statuses.vulnerable ?? 0 };
 
+  // 적의 방어는 적 차례가 시작될 때 한꺼번에 사라진다. 동료가 이번 차례에 준 방어는 내 턴까지 남는다.
+  for (const enemy of aliveEnemies(combat)) enemy.block = 0;
+  const round: EnemyRound = { acted: new Set(), later: [] };
   for (const enemy of combat.enemies) {
     if (enemy.hp <= 0) continue;
     since = combat.fx.length;
-    const label = enemyAct(run, combat, enemy);
+    const label = enemyAct(run, combat, enemy, round);
+    round.acted.add(enemy.uid);
     frame(run, combat, enemy.uid, label, since);
     if (run.hp <= 0) return lose(run);
   }
+  round.later.forEach(apply => apply());
   // A cleared board is settled by the run module (rewards live there, not in combat rules).
   if (aliveEnemies(combat).length === 0) return;
   // Debuffs the enemies applied this round last a full round before they start to wear off.
