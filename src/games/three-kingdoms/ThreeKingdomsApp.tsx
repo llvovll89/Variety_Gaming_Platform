@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRecords } from "../../platform/meta/api";
+import { usePlayReport } from "../../shared/kit/usePlayReport";
 import { usePlayClock } from "../../shared/kit/usePlayClock";
 import type { RunRewards, UnlockedAchievement } from "../../platform/meta/types";
 import { FirstTurns } from "./components/FirstTurns";
@@ -46,7 +47,10 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
   const reported = useRef<GameEngine | null>(null);
   // Achievements earned mid-campaign (출사표, 성 n개) are shown on the result screen with the rest.
   const earnedOnTheWay = useRef<UnlockedAchievement[]>([]);
-  const { elapsed, reset: resetClock } = usePlayClock(!!engine && snapshot.result === "playing");
+  const clock = usePlayClock(!!engine && snapshot.result === "playing");
+  const { elapsed } = clock;
+  // 저장하고 나간 날도 플레이 시간과 연속 도장에 들어가도록, 끝나지 않은 천하통일의 시간을 보고한다.
+  const play = usePlayReport(clock, records, !!engine && snapshot.result === "playing");
 
   const handleReady = useCallback((next: GameEngine) => {
     setEngine(next);
@@ -67,10 +71,10 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     resumeRef.current = null;
     setRewards(null);
     earnedOnTheWay.current = [];
-    resetClock();
+    play.reset();
     setEngine(null);
     setFactionId(null);
-  }, [resetClock]);
+  }, [play]);
 
   const resume = useCallback(() => {
     const saved = loadGame();
@@ -96,11 +100,11 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     if (!engine || snapshot.result === "playing" || reported.current === engine) return;
     reported.current = engine;
     const won = snapshot.result === "victory";
-    const run = records.reportRun({ durationMs: elapsed(), outcome: won ? "win" : "lose", score: won ? snapshot.turn : undefined,
+    const run = records.reportRun({ durationMs: elapsed(), reportedMs: play.reportedMs(), outcome: won ? "win" : "lose", score: won ? snapshot.turn : undefined,
       stats: { turns: snapshot.turn, cities: snapshot.player?.cities ?? 0, officers: snapshot.player?.officers ?? 0 } });
     setRewards({ ...run, unlocked: [...earnedOnTheWay.current, ...run.unlocked] });
     earnedOnTheWay.current = [];
-  }, [engine, snapshot.result, snapshot.turn, snapshot.player, records, elapsed]);
+  }, [engine, snapshot.result, snapshot.turn, snapshot.player, records, elapsed, play]);
 
   // Leaving saves first and stays only if that save fails.
   const leave = () => { if (!engine || engine.saveForExit()) onExit(); };

@@ -4,6 +4,7 @@ import { NextGameActions } from '../../platform/PlaySession';
 import { GameDialog } from '../../shared/kit/GameDialog';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
 import { useRecords } from '../../platform/meta/api';
+import { usePlayReport } from '../../shared/kit/usePlayReport';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
 import { localDateKey, pickDaily } from '../../platform/meta/daily';
 import type { DailyChallenge, RunRewards } from '../../platform/meta/types';
@@ -39,12 +40,14 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   const today=useMemo(()=>{const c=records.daily();return c?{challenge:c,level:pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b))??0}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(!!run&&run.status==='playing'&&!modal);
+  // 끝내지 않은 의뢰(시작 화면으로 나감·다시 하기·창 닫기)의 시간도 플레이 시간과 연속 도장에 넣는다.
+  const play=usePlayReport(clock,records,!!run&&run.status!=='won');
   const [planned,setPlanned]=useState<{source:State;plan:TravelPlan}|null>(null);
   const travel=planned?.source===run&&!modal?planned.plan:null;
   const command=(c:Command)=>{setPlanned(null);setRun(s=>s?act(s,c):s);};
   const requestTravel=(c:TravelCommand)=>{if(!run||modal)return;const plan=planTravel(run,c);if(plan)setPlanned({source:run,plan});else command(c);};
   useEffect(()=>{if(modal)setPlanned(null);},[modal]);
-  const launch=(index:number,mode=relaxed,challenge:DailyChallenge|null=null)=>{clock.reset();setRewards(null);setDaily(challenge);setRun(createState(index,challenge?false:mode));setPanel(null);setPaused(false);root.current?.scrollTo({top:0});};
+  const launch=(index:number,mode=relaxed,challenge:DailyChallenge|null=null)=>{play.reset();setRewards(null);setDaily(challenge);setRun(createState(index,challenge?false:mode));setPanel(null);setPaused(false);root.current?.scrollTo({top:0});};
   const restart=()=>{if(run)launch(run.levelIndex,run.relaxed,daily);};
   const rotate=()=>{if(f)command({type:'face',direction:((f.direction+1)%4) as Direction});};
   const nextFurniture=()=>{if(!run)return;const index=run.furniture.findIndex(f=>f.id===run.active);command({type:'possess',id:run.furniture[(index+1)%run.furniture.length].id});};
@@ -56,9 +59,9 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
     // A cleared job is the run: progress (jobs cleared, stars) drives the achievements.
     const best=Object.values(next.best);
     const unlocked=[...records.reportProgress('cleared',best.length),...records.reportProgress('stars',best.reduce((n,r)=>n+r.stars,0))];
-    const earned=records.reportRun({mode:daily?'daily':undefined,durationMs:clock.elapsed(),outcome:'win',stats:{steps:run.steps,stars:stars(run),undos:run.undos},dailyId:daily?.id});
+    const earned=records.reportRun({mode:daily?'daily':undefined,durationMs:clock.elapsed(),reportedMs:play.reportedMs(),outcome:'win',stats:{steps:run.steps,stars:stars(run),undos:run.undos},dailyId:daily?.id});
     setRewards({...earned,unlocked:[...unlocked,...earned.unlocked]});
-  },[run,progress,records,clock,daily]);
+  },[run,progress,records,clock,daily,play]);
   useEffect(()=>{
     if(!sound||!run||!run.steps)return;
     try {const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(run.status==='won'?740:run.effect?.kind==='ice'?880:run.effect?.kind==='wind'?400:240,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(run.status==='won'?1100:160,ctx.currentTime+.14);gain.gain.setValueAtTime(.045,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.18);osc.connect(gain);gain.connect(kitOutput(ctx,'ghost-movers'));osc.start();osc.stop(ctx.currentTime+.2);}catch{/* Silent play works when audio is unavailable. */}
@@ -83,7 +86,7 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   });
   return <main className="gm-app" ref={root}>
     <div className="gm-shell">
-      <header className="gm-header"><button className="gm-brand" onClick={()=>{setRun(null);setPaused(false);setPanel(null);}} aria-label="유령 이삿짐센터 시작 화면"><span className="gm-brand-mark"><Ghost weight="fill" size={29}/></span><span>유령 이삿짐센터<small>밤에만 영업합니다</small></span></button><nav aria-label="게임 메뉴"><button className="gm-icon-button" aria-label={sound?'소리 끄기':'소리 켜기'} onClick={()=>setSound(s=>!s)}>{sound?<SpeakerHigh size={22}/>:<SpeakerSlash size={22}/>}</button><button className="gm-icon-button" aria-label="게임 방법" onClick={()=>setPanel('help')}><Question size={23}/></button><button className="gm-exit" aria-label="게임 목록" onClick={onExit}><House size={18}/><span>게임 목록</span></button></nav></header>
+      <header className="gm-header"><button className="gm-brand" onClick={()=>{play.flush();setRun(null);setPaused(false);setPanel(null);}} aria-label="유령 이삿짐센터 시작 화면"><span className="gm-brand-mark"><Ghost weight="fill" size={29}/></span><span>유령 이삿짐센터<small>밤에만 영업합니다</small></span></button><nav aria-label="게임 메뉴"><button className="gm-icon-button" aria-label={sound?'소리 끄기':'소리 켜기'} onClick={()=>setSound(s=>!s)}>{sound?<SpeakerHigh size={22}/>:<SpeakerSlash size={22}/>}</button><button className="gm-icon-button" aria-label="게임 방법" onClick={()=>setPanel('help')}><Question size={23}/></button><button className="gm-exit" aria-label="게임 목록" onClick={onExit}><House size={18}/><span>게임 목록</span></button></nav></header>
 
       {!run?<>
         <section className="gm-title-screen"><div className="gm-title-copy"><p className="gm-opening"><span/>새벽이 오기 전, 마지막 배송까지</p><h1>유령<br/>이삿짐센터.</h1><p className="gm-intro">몸을 바꾸면, 길이 열린다.<br/>일곱 가구에 빙의하는 한밤의 3D 퍼즐.</p><div className="gm-start-actions"><button className="gm-primary" onClick={()=>launch(progress.unlocked)}><Play weight="fill" size={20}/>{progress.unlocked>0?'야간 근무 이어하기':'첫 의뢰 받기'}</button><button className="gm-text-button" onClick={()=>{setMapChapter(Math.floor(progress.unlocked/8));setPanel('map');}}>의뢰 선택 <ArrowRight size={18}/></button></div>{today&&<button className="gm-daily" onClick={()=>launch(today.level,false,today.challenge)}><Star weight="fill" size={18}/><span><strong>오늘의 의뢰 · {LEVELS[today.level].name}</strong><small>{today.challenge.label}</small></span><ArrowRight size={18}/></button>}<label className="gm-relaxed"><input type="checkbox" checked={relaxed} onChange={e=>setRelaxed(e.target.checked)}/><span>여유 모드 <small>집주인 귀가 걱정 없이</small></span></label><div className="gm-title-note"><Ghost size={18}/><span>무섭지 않아요. 조금 수상할 뿐.</span></div></div><div className="gm-title-room"><div className="gm-scene-label"><span>일곱 가구의 합동 작전</span><strong>가구 연구소 최종 실험</strong></div><Room state={preview.current} preview/><div className="gm-room-caption"><span className="gm-caption-line"/>7가지 능력 · 24개 현장 · 3개 챕터</div></div></section>
