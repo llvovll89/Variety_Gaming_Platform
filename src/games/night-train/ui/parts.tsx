@@ -7,7 +7,7 @@ import {
 import { CARD_GLYPH, Glyph, RELIC_GLYPH, STATUS_GLYPH } from './glyphs';
 
 export function Modal({ label, onClose, children, wide = false, hideClose = false, className = '' }: { label: string; onClose?: () => void; children: ReactNode; wide?: boolean; hideClose?: boolean; className?: string }) {
-  // Kit dialog: focus returns where it was, and Escape closes only dialogs that can be closed.
+  // kit 대화상자: 닫으면 포커스가 원래 자리로 돌아가고, Escape는 닫을 수 있는 대화상자만 닫는다.
   return (
     <GameDialog className={`nt-modal${wide ? ' nt-modal-wide' : ''}${className ? ` ${className}` : ''}`} label={label}
       dismissible={!!onClose} onClose={() => onClose?.()}>

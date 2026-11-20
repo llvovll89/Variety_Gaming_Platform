@@ -84,6 +84,13 @@ export function mergeLegacy(state: MetaState, gameId: string, legacy: LegacyReco
   const stamped = state.importedLegacy[gameId] === version ? state : { ...state, importedLegacy: { ...state.importedLegacy, [gameId]: version } };
   const before = state.games[gameId] ?? emptyRecord();
   const record: GameRecord = { ...before, best: { ...before.best }, progress: { ...before.progress } };
+  // 예전 버전으로 가져온 적이 있을 때만: 그 버전이 넣은 값이 그대로 남은 칸을 지운다.
+  const upgrading = state.importedLegacy[gameId] !== undefined && state.importedLegacy[gameId] !== version;
+  if (upgrading) {
+    for (const [key, value] of Object.entries(legacy.retire ?? {})) {
+      if (record.best[key] === value) delete record.best[key];
+    }
+  }
   for (const [key, value] of Object.entries(legacy.best ?? {})) {
     if (!finite(value) || key.length > MAX_STAT_KEY) continue;
     if (order === 'high' && value <= 0) continue; // 0 points is "never played", not a record

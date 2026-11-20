@@ -158,9 +158,9 @@ export interface RunState {
   seed: number;
   rng: number;
   mode: Mode;
-  /** 운행 등급 0–3 (normal seats only): enemies get tougher at each step. Missing in older saves = 0. */
+  /** 운행 등급 0–3(일반석 전용): 등급이 오를수록 적이 강해진다. 옛 저장에는 없으며 0으로 본다. */
   tier?: number;
-  /** Set when the run is today's route (the daily challenge id), so it is reported for that day. */
+  /** 오늘의 노선일 때 그날 도전 id. 결과를 그 날짜로 보고하는 데 쓴다. */
   daily?: string | null;
   phase: Phase;
   hp: number;
