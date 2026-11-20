@@ -3,6 +3,7 @@ import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
 import { useRecords } from '../../platform/meta/api';
+import { usePlayReport } from '../../shared/kit/usePlayReport';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
 import { localDateKey, pickDaily } from '../../platform/meta/daily';
 import type { DailyChallenge, RunRewards } from '../../platform/meta/types';
@@ -48,8 +49,10 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   const today=useMemo(()=>{const c=records.daily(),level=c?pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b)):undefined;return c&&level!==undefined?{challenge:c,level}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(run?.status==='playing'&&!helpOpen&&!mapOpen);
+  // 탈출하지 못한 방(다른 방으로 이동·창 닫기)의 시간도 플레이 시간과 연속 도장에 넣는다.
+  const play=usePlayReport(clock,records,!!run&&run.status!=='won');
   const tone=(frequency=520)=>{if(!sound)return;try{const ctx=audio.current??new AudioContext();audio.current=ctx;void ctx.resume();const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(frequency,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(frequency*.65,ctx.currentTime+.18);gain.gain.setValueAtTime(.07,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.22);osc.connect(gain);gain.connect(kitOutput(ctx,'ten-seconds'));osc.start();osc.stop(ctx.currentTime+.23);}catch{/* Sound is optional. */}};
-  const launch=(index:number,immediate=false,practice:boolean=index===0&&!progress.best[0],challenge:DailyChallenge|null=null)=>{held.current=null;clock.reset();setRewards(null);setDaily(challenge);const next=new TimeRun(index);next.practice=challenge?false:practice;if(immediate)next.start();setRun(next);setMapOpen(false);setHelpOpen(false);page.current?.scrollTo({top:0});};
+  const launch=(index:number,immediate=false,practice:boolean=index===0&&!progress.best[0],challenge:DailyChallenge|null=null)=>{held.current=null;play.reset();setRewards(null);setDaily(challenge);const next=new TimeRun(index);next.practice=challenge?false:practice;if(immediate)next.start();setRun(next);setMapOpen(false);setHelpOpen(false);page.current?.scrollTo({top:0});};
   const rewind=()=>{if(run?.rewind())tone(660);held.current=null;update();};
   const pause=()=>{touchMove.current=null;held.current=null;if(run)run.route=[];run?.pause();update();};
   const openHelp=()=>{resumeAfterHelp.current=run?.status==='playing';pause();setHelpOpen(true);};
@@ -62,9 +65,9 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
     // An escaped room is the run: progress (rooms cleared, stars) drives the achievements.
     const best=Object.values(next.best);
     const unlocked=[...records.reportProgress('cleared',best.length),...records.reportProgress('stars',best.reduce((n,r)=>n+r.stars,0))];
-    const earned=records.reportRun({mode:daily?'daily':run.practice?'practice':undefined,durationMs:clock.elapsed(),outcome:'win',stats:{loops:run.loops,deaths:run.deaths,stars:run.stars},dailyId:daily?.id});
+    const earned=records.reportRun({mode:daily?'daily':run.practice?'practice':undefined,durationMs:clock.elapsed(),reportedMs:play.reportedMs(),outcome:'win',stats:{loops:run.loops,deaths:run.deaths,stars:run.stars},dailyId:daily?.id});
     setRewards({...earned,unlocked:[...unlocked,...earned.unlocked]});
-  },[run,run?.status,progress,records,clock,daily]);
+  },[run,run?.status,progress,records,clock,daily,play]);
   useEffect(()=>()=>{void audio.current?.close();},[]);
   useEffect(()=>{
     const down=(e:KeyboardEvent)=>{
