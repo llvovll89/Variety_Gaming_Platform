@@ -29,9 +29,29 @@ function removeSave() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* storage may be blocked */ }
 }
 
-/** 저장된 여행이 지난 세션들에서 실제로 달린 시간(ms). 이어 탄 여행도 처음부터의 시간을 보고하려고 따로 둔다. */
+/**
+ * 저장된 여행이 지난 세션들에서 실제로 달린 시간(ms)과 그중 reportPlay로 이미 보고한 시간.
+ * 이어 탄 여행도 처음부터의 시간을 보고하고, 같은 시간을 두 번 세지 않으려고 따로 둔다.
+ */
 const CLOCK_KEY = 'arcade:night-train:run-clock';
-const savedRideMs = () => { const n = Number(safeGetItem(CLOCK_KEY)); return Number.isFinite(n) && n > 0 ? n : 0; };
+/** 이 시간보다 짧은 조각은 보고를 미뤘다가 다음에 함께 보고한다. */
+const MIN_PLAY_REPORT_MS = 1000;
+type RideClock = { ms: number; reported: number };
+const nonNegative = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0);
+function savedRide(): RideClock {
+  const raw = safeGetItem(CLOCK_KEY);
+  if (!raw) return { ms: 0, reported: 0 };
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    // 이전 버전은 달린 시간 숫자만 저장했다.
+    if (typeof parsed === 'number') return { ms: nonNegative(parsed), reported: 0 };
+    const value = parsed as Partial<RideClock> | null;
+    const ms = nonNegative(value?.ms);
+    return { ms, reported: Math.min(ms, nonNegative(value?.reported)) };
+  } catch {
+    return { ms: 0, reported: 0 };
+  }
+}
 function removeRideClock() {
   try { localStorage.removeItem(CLOCK_KEY); } catch { /* storage may be blocked */ }
 }
@@ -133,7 +153,10 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   useEffect(() => { const update = () => setHidden(document.hidden); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
   const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel && !hidden;
   const clock = usePlayClock(playing);
-  const rideBase = useRef(run ? savedRideMs() : 0);
+  // 지난 세션들의 달린 시간·보고한 시간, 이번 세션에서 reportPlay로 보고한 시간.
+  const ride = useRef<RideClock>(run ? savedRide() : { ms: 0, reported: 0 });
+  const sessionReported = useRef(0);
+  const rideNow = useCallback((): RideClock => ({ ms: ride.current.ms + clock.elapsed(), reported: ride.current.reported + sessionReported.current }), [clock]);
   // 지금까지 열린 운행 등급 = 일반석에서 완주한 가장 높은 등급 + 1. 옛 기록에는 좌석 구분이 없어서
   // 등급이 생긴 뒤 완주한 여행만 센다.
   const tiersOpen = Math.min(MAX_TIER, arcade.record()?.progress.tierWon ?? 0);
@@ -143,6 +166,33 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const previousRun = useRef<RunState | null>(run);
   const root = useRef<HTMLElement>(null);
   const photo = profile.characterId === CUSTOM_CHARACTER_ID ? profile.characterImage : null;
+
+  // 끝나지 않은 여행을 두고 떠날 때(시작 화면·게임 목록·탭 숨김·창 닫기) 이번 세션의 달린 시간을 보고한다.
+  // 그래야 저장하고 나간 날도 플레이 시간과 연속 플레이 도장에 들어간다.
+  const runRef = useRef(run);
+  runRef.current = run;
+  const flushPlay = useCallback(() => {
+    const current = runRef.current;
+    if (!current || current.phase === 'victory' || current.phase === 'defeat') return;
+    const ms = clock.elapsed() - sessionReported.current;
+    if (ms < MIN_PLAY_REPORT_MS) return;
+    arcade.reportPlay(ms);
+    sessionReported.current += ms;
+    safeSetItem(CLOCK_KEY, JSON.stringify(rideNow()));
+  }, [arcade, clock, rideNow]);
+  const flushRef = useRef(flushPlay);
+  flushRef.current = flushPlay;
+  useEffect(() => {
+    const onHide = () => { if (document.hidden) flushRef.current(); };
+    const onPageHide = () => flushRef.current();
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onPageHide);
+      flushRef.current();
+    };
+  }, []);
 
   const send = useCallback((command: Command) => setRun(current => (current ? act(current, command) : current)), []);
 
@@ -164,7 +214,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       if (run.phase === 'victory' && run.mode === 'normal') earned.push(...arcade.reportProgress('tierWon', tierOf(run) + 1));
       const result = arcade.reportRun({
         mode: run.daily ? 'daily' : run.mode === 'easy' ? 'easy' : undefined, difficulty: tierOf(run) ? `tier${tierOf(run)}` : undefined,
-        dailyId: run.daily ?? undefined, score: runScore(run), durationMs: rideBase.current + clock.elapsed(),
+        dailyId: run.daily ?? undefined, score: runScore(run), durationMs: rideNow().ms, reportedMs: rideNow().reported,
         outcome: run.phase === 'victory' ? 'win' : 'lose',
         stats: { station: stationOf(run), battles: run.stats.battles, elites: run.stats.elites, damage: run.stats.damageDealt },
       });
@@ -173,13 +223,13 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     }
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(run));
-      safeSetItem(CLOCK_KEY, String(rideBase.current + clock.elapsed()));
+      safeSetItem(CLOCK_KEY, JSON.stringify(rideNow()));
       setSaveError(false);
       setHasSave(true);
     } catch {
       setSaveError(true);
     }
-  }, [run, records, arcade, clock]);
+  }, [run, records, arcade, rideNow]);
 
   useEffect(() => { root.current?.scrollTo({ top: 0 }); setPeek(null); setAimSnack(null); }, [run?.phase]);
 
@@ -215,10 +265,15 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
 
   const start = (chosen: Mode, options: { tier?: number; daily?: { id: string; seed: number } | null } = {}) => {
-    // 덮어쓰는 저장 여행은 보고하지 않는다. quit도 여행 횟수로 세어져 '여행 마치기' 업적이 열리기 때문이다.
+    // 덮어쓰는 저장 여행은 아직 보고하지 않은 달린 시간만 reportPlay로 보고한다(quit은 여행 횟수로 세어진다).
+    if (loadRun(safeGetItem(SAVE_KEY))) {
+      const discarded = savedRide();
+      if (discarded.ms > discarded.reported) arcade.reportPlay(discarded.ms - discarded.reported);
+    }
     removeSave();
     removeRideClock();
-    rideBase.current = 0;
+    ride.current = { ms: 0, reported: 0 };
+    sessionReported.current = 0;
     clock.reset();
     setRewards(null);
     recorded.current = null;
@@ -230,9 +285,10 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
   const resume = () => {
     const saved = loadRun(safeGetItem(SAVE_KEY));
-    if (saved) { rideBase.current = savedRideMs(); clock.reset(); setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
+    if (saved) { ride.current = savedRide(); sessionReported.current = 0; clock.reset(); setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
   };
-  const toTitle = () => { setPanel(null); setRun(null); };
+  const toTitle = () => { flushPlay(); setPanel(null); setRun(null); };
+  const exit = () => { flushPlay(); onExit(); };
 
   const eatSnack = (index: number) => {
     if (!run) return;
@@ -299,7 +355,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
             <div className="nt-hud">
               <button type="button" className="nt-tool" onClick={toggleSfx} aria-pressed={soundSettings.sfx} aria-label={soundSettings.sfx ? '효과음 끄기' : '효과음 켜기'}><Glyph name={soundSettings.sfx ? 'sound' : 'mute'} size={18} /></button>
               <button type="button" className="nt-tool" onClick={() => setPanel('help')} aria-label="게임 방법"><Glyph name="book" size={18} /></button>
-              <button type="button" className="nt-tool" onClick={onExit} aria-label="게임 목록으로"><Glyph name="home" size={18} /></button>
+              <button type="button" className="nt-tool" onClick={exit} aria-label="게임 목록으로"><Glyph name="home" size={18} /></button>
             </div>
           )}
         </header>
@@ -444,7 +500,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       )}
       {panel === 'menu' && run && (
         <PauseMenu run={run} sound={soundSettings} onResume={() => setPanel(null)} onToggleSfx={toggleSfx} onToggleAmbient={toggleAmbient}
-          onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onRelics={() => setPanel('relics')} onTitle={toTitle} onExit={onExit} />
+          onHelp={() => setPanel('help')} onMap={() => setPanel('map')} onRelics={() => setPanel('relics')} onTitle={toTitle} onExit={exit} />
       )}
       {confirmNew && (
         <Modal label="새 여행 확인" onClose={() => setConfirmNew(null)}>
