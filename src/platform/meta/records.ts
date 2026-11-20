@@ -41,6 +41,21 @@ export function bestOf(record: GameRecord | undefined, order: ScoreOrder, mode?:
 
 const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
 
+/** 이 보고에서 playMs에 새로 더할 시간: 전체 시간에서 reportPlay로 이미 보고한 만큼을 뺀다. */
+function unreportedMs(run: Pick<RunReport, 'durationMs' | 'reportedMs'>): number {
+  const total = finite(run.durationMs) ? Math.max(0, run.durationMs) : 0;
+  const reported = finite(run.reportedMs) ? Math.max(0, run.reportedMs) : 0;
+  return Math.max(0, total - reported);
+}
+
+/** 끝나지 않은 run에서 실제로 플레이한 시간. runs·best는 건드리지 않는다. */
+export function addPlay(state: MetaState, gameId: string, durationMs: number, now: number): MetaState {
+  const ms = finite(durationMs) ? Math.max(0, durationMs) : 0;
+  if (ms === 0) return state;
+  const before = state.games[gameId] ?? emptyRecord();
+  return { ...state, games: { ...state.games, [gameId]: { ...before, playMs: before.playMs + ms, lastPlayed: now } } };
+}
+
 /** Counts one finished run into the game's record. */
 export function addRun(state: MetaState, gameId: string, run: RunReport, now: number, order: ScoreOrder = 'high'): { state: MetaState; previousBest: number | null; newBest: boolean } {
   const before = state.games[gameId] ?? emptyRecord();
@@ -50,7 +65,7 @@ export function addRun(state: MetaState, gameId: string, run: RunReport, now: nu
     ...before,
     runs: before.runs + 1,
     wins: before.wins + (run.outcome === 'win' || run.outcome === 'complete' ? 1 : 0),
-    playMs: before.playMs + Math.max(0, finite(run.durationMs) ? run.durationMs : 0),
+    playMs: before.playMs + unreportedMs(run),
     lastPlayed: now,
     best: { ...before.best },
     totals: { ...before.totals },

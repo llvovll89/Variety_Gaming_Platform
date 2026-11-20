@@ -20,6 +20,8 @@ export interface RunReport {
   /** The challenge this run was started for (DailyChallenge.id), so a run that ends after midnight
    * still counts for the day it began. */
   dailyId?: string;
+  /** durationMs 중 이미 reportPlay로 보고한 시간. playMs에 다시 더하지 않는다. */
+  reportedMs?: number;
 }
 
 export interface GameRecord {

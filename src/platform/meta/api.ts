@@ -2,7 +2,7 @@ import { useContext } from 'react';
 import { PlaySession } from '../playSessionContext';
 import { evaluate, unlockManual } from './achievements';
 import { addDailyRun, addStreakDay, dailyChallenge, localDateKey } from './daily';
-import { addProgress, addRun, bestOf, mergeLegacy } from './records';
+import { addPlay, addProgress, addRun, bestOf, mergeLegacy } from './records';
 import { metaStore } from './store';
 import type { DailyChallenge, GameMeta, GameRecord, LegacyParse, RunReport, RunRewards, UnlockedAchievement } from './types';
 
@@ -15,6 +15,11 @@ const legacyParse: LegacyParse = {
 export interface RecordsApi {
   /** Call once when a run ends. Returns what it earned, for the result screen, in the same render. */
   reportRun(run: RunReport): RunRewards;
+  /**
+   * 저장해 두고 나가는 등 아직 끝나지 않은 run에서 플레이한 시간. 플레이 시간과 연속 플레이 도장에만 들어가고
+   * runs·best·업적은 건드리지 않는다. 나중에 그 run을 reportRun할 때 보고한 합계를 reportedMs로 넘긴다.
+   */
+  reportPlay(durationMs: number): { days: number; extendedToday: boolean };
   /** Furthest point reached (world, chapter). Only ever moves forward. */
   reportProgress(key: string, value: number): UnlockedAchievement[];
   /** For achievements the game decides itself (rule kind 'manual'). */
@@ -31,6 +36,7 @@ const NO_REWARDS: RunRewards = { newBest: false, previousBest: null, best: null,
 /** Used outside the arcade shell (tests, previews): records nothing, earns nothing. */
 export const offlineRecords: RecordsApi = {
   reportRun: () => NO_REWARDS,
+  reportPlay: () => NO_REWARDS.streak,
   reportProgress: () => [],
   unlock: () => [],
   best: () => null,
@@ -70,6 +76,16 @@ export function createRecordsApi(gameId: string, meta: GameMeta | undefined, clo
         return next;
       });
       return rewards;
+    },
+    reportPlay(durationMs) {
+      const now = clock();
+      let streak = NO_REWARDS.streak;
+      metaStore.update(state => {
+        const added = addStreakDay(addPlay(state, gameId, durationMs, now.getTime()), localDateKey(now), { durationMs, outcome: 'quit' });
+        streak = added.streak;
+        return added.state;
+      });
+      return streak;
     },
     reportProgress(key, value) {
       let unlocked: UnlockedAchievement[] = [];

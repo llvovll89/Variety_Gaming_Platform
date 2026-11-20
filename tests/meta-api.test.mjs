@@ -72,3 +72,17 @@ test('a daily run that ends after midnight counts for the day it began', () => {
     assert.equal(M.metaStore.get().daily['2026-11-17'].jump.done, true);
   });
 });
+
+test('reportPlay counts play time and the streak, never a run', () => {
+  withStorage(() => {
+    const day = new Date(2026, 10, 17, 20, 0);
+    const api = M.createRecordsApi('jump', meta, () => day);
+    assert.deepEqual(api.reportPlay(5000), { days: 0, extendedToday: false }, 'a few seconds do not stamp the day');
+    assert.deepEqual(api.reportPlay(30000), { days: 1, extendedToday: true });
+    const record = api.record();
+    assert.deepEqual([record.runs, record.playMs, Object.keys(M.metaStore.get().achievements).length], [0, 35000, 0]);
+    // 나중에 그 run이 끝나면 이미 보고한 35초는 다시 더하지 않는다.
+    api.reportRun({ score: 10, durationMs: 50000, reportedMs: 35000, outcome: 'lose' });
+    assert.deepEqual([api.record().runs, api.record().playMs], [1, 50000]);
+  });
+});
