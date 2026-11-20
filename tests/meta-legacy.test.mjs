@@ -67,3 +67,18 @@ test('old records come in once, read-only, and unlock what they already earned',
     assert.equal(store.get('arcade:meta:v1'), raw, 'with nothing new, nothing is written');
   } finally { delete globalThis.localStorage; M.metaStore.resetForTests(); }
 });
+
+test('night-train v2 clears the mixed best that v1 put in the normal-seat bucket', () => {
+  const store = new Map([['arcade:night-train:records', JSON.stringify({ runs: 3, wins: 1, bestFloor: 13, bestScore: 4321 })]]);
+  globalThis.localStorage = { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: k => store.delete(k) };
+  M.metaStore.resetForTests();
+  const nt = games.filter(g => g.id === 'night-train');
+  // v1이 이미 돌았던 사용자: 일반석 칸에 섞인 값, 다른 칸에는 진짜 기록.
+  M.metaStore.update(s => ({ ...s, importedLegacy: { 'night-train': 1 }, games: { 'night-train': { runs: 3, wins: 1, playMs: 0, lastPlayed: 0, best: { 'default|-': 4321, 'easy|-': 500 }, totals: {}, peaks: {}, progress: {}, dailyDone: 0 } } }));
+  M.importLegacyRecords(nt, k => store.get(k) ?? null, 5);
+  assert.deepEqual(M.metaStore.get().games['night-train'].best, { 'easy|-': 500, 'legacy|-': 4321 });
+  // 업그레이드 뒤 일반석에서 낸 진짜 기록은 다음 시작 때 지워지지 않는다.
+  M.metaStore.update(s => ({ ...s, games: { ...s.games, 'night-train': { ...s.games['night-train'], best: { ...s.games['night-train'].best, 'default|-': 4321 } } } }));
+  M.importLegacyRecords(nt, k => store.get(k) ?? null, 6);
+  assert.equal(M.metaStore.get().games['night-train'].best['default|-'], 4321);
+});

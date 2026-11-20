@@ -90,6 +90,8 @@ export interface LegacyRecord {
   progress?: Record<string, number>;
   runs?: number;
   wins?: number;
+  /** 이전 adapter 버전이 잘못 채운 best 칸과 그때 넣은 값. 버전이 오를 때 아직 그 값이면 지운다. */
+  retire?: Record<string, number>;
 }
 /** Parsing helpers the platform hands to adapters, so meta.ts files stay import-free. */
 export interface LegacyParse {

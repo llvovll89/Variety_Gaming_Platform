@@ -60,7 +60,9 @@ export const runSchema = z.object({
   fxSeq: count,
 }).refine(run => run.hp <= run.maxHp, '체력이 최대치를 넘습니다')
   .refine(run => run.path.every(id => run.map.some(n => n.id === id)), '경로가 지도와 맞지 않습니다')
-  .refine(run => run.phase !== 'combat' || run.combat !== null, '전투 정보가 없습니다');
+  .refine(run => run.phase !== 'combat' || run.combat !== null, '전투 정보가 없습니다')
+  // createRun은 침대석에 등급을 붙이지 않는다. 그런 저장을 받으면 침대석에 등급 효과가 걸리므로 거부한다.
+  .refine(run => !run.tier || run.mode === 'normal', '등급과 좌석이 맞지 않습니다');
 
 /** Returns null for missing, corrupt or finished runs so the hub never offers to resume a broken save. */
 export function loadRun(raw: string | null): RunState | null {

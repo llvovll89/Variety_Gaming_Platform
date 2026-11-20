@@ -444,4 +444,26 @@ test('the intent tag and the hit agree on a tiered run', () => {
   assert.equal(E.enemyHitBase({}, 6), 6);
   assert.equal(E.enemyHitBase({ tier: 3 }, 6), 9);
   assert.equal(E.enemyHitBase({ tier: 99 }, 6), 6 + E.MAX_TIER);
+  // CombatView가 '받을 피해'를 계산하는 방식 그대로 예상 피해를 구해 실제 체력 감소와 비교한다.
+  const lost = tier => {
+    let run = fight([{ defId: 'soot-rat', hp: 99, intent: 'bite' }], { hand: [] });
+    run.tier = tier;
+    run.combat.player.block = 0;
+    const enemy = run.combat.enemies[0];
+    const tag = ENEMIES[enemy.defId].moves[enemy.intent].effects
+      .reduce((sum, e) => sum + (e.k === 'attack' ? attackDamage(E.enemyHitBase(run, e.n), enemy.statuses, run.combat.player.statuses) * (e.times ?? 1) : 0), 0);
+    const hp = run.hp;
+    run = act(run, { t: 'endTurn' });
+    return { tag, lost: hp - run.hp };
+  };
+  const base = lost(0), hard = lost(3);
+  assert.equal(base.lost, base.tag);
+  assert.equal(hard.lost, hard.tag);
+  assert.ok(hard.lost > base.lost, 'a tier hits harder');
+});
+
+test('a save with a tier on easy seats is rejected', () => {
+  const run = E.createRun(1234, 'normal', { tier: 2 });
+  assert.equal(loadRun(JSON.stringify({ ...run, mode: 'easy' })), null);
+  assert.ok(loadRun(JSON.stringify(run)));
 });

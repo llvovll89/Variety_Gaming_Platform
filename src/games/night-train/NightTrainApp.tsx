@@ -29,6 +29,13 @@ function removeSave() {
   try { localStorage.removeItem(SAVE_KEY); } catch { /* storage may be blocked */ }
 }
 
+/** 저장된 여행이 지난 세션들에서 실제로 달린 시간(ms). 이어 탄 여행도 처음부터의 시간을 보고하려고 따로 둔다. */
+const CLOCK_KEY = 'arcade:night-train:run-clock';
+const savedRideMs = () => { const n = Number(safeGetItem(CLOCK_KEY)); return Number.isFinite(n) && n > 0 ? n : 0; };
+function removeRideClock() {
+  try { localStorage.removeItem(CLOCK_KEY); } catch { /* storage may be blocked */ }
+}
+
 /** Key for "the end-of-fight beat for this stop has been shown". */
 const outroKey = (run: RunState) => `${run.path.length}:${run.phase}`;
 
@@ -97,7 +104,7 @@ function SnackBag({ run, onUse, onDrop, aiming }: { run: RunState; onUse: (index
   );
 }
 
-/** Station number (1-based) the run reached, for the arcade records. */
+/** 여행이 닿은 역 번호(1부터). 아케이드 기록용. */
 const stationOf = (run: RunState) => currentFloor(run);
 
 export default function NightTrainApp({ onExit, launchIntent, profile }: GameProps) {
@@ -109,7 +116,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const [tier, setTier] = useState(0);
   const [panel, setPanel] = useState<Panel>(null);
   const [saveError, setSaveError] = useState(false);
-  // The new journey waiting for confirmation (a saved one would be replaced), or null.
+  // 확인을 기다리는 새 여행(저장된 여행을 덮어씀). 없으면 null.
   const [confirmNew, setConfirmNew] = useState<null | { mode: Mode; tier?: number; daily?: { id: string; seed: number } | null }>(null);
   const [peek, setPeek] = useState<MapNode | null>(null);
   const [aimSnack, setAimSnack] = useState<number | null>(null);
@@ -119,17 +126,17 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const recorded = useRef<RunState | null>(null);
   const arcade = useRecords();
   const [rewards, setRewards] = useState<RunRewards | null>(null);
-  // Real time spent riding (pauses and hidden tabs excluded), for the arcade records.
-  // A resumed journey counts only the time since it was reopened (earlier sessions are not saved).
+  // 실제로 달린 시간(일시정지·숨긴 탭 제외). 지난 세션 시간(rideBase)은 저장해 두고 이어 탈 때 더한다.
   const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
   useEffect(() => { const update = () => setHidden(document.hidden); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
   const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel && !hidden;
   const clock = usePlayClock(playing);
-  // 운행 등급 opened so far: one past the highest step completed on normal seats. Old records do not
-  // say which seat a win was on, so tiers count only journeys finished since they were added.
+  const rideBase = useRef(run ? savedRideMs() : 0);
+  // 지금까지 열린 운행 등급 = 일반석에서 완주한 가장 높은 등급 + 1. 옛 기록에는 좌석 구분이 없어서
+  // 등급이 생긴 뒤 완주한 여행만 센다.
   const tiersOpen = Math.min(MAX_TIER, arcade.record()?.progress.tierWon ?? 0);
   const pickedTier = Math.min(tier, tiersOpen);
-  // Today's route: the same map for everyone today, from the day's seed.
+  // 오늘의 노선: 그날 seed로 만든, 모두에게 같은 노선도.
   const today = arcade.daily();
   const previousRun = useRef<RunState | null>(run);
   const root = useRef<HTMLElement>(null);
@@ -141,6 +148,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     if (!run) return;
     if (run.phase === 'victory' || run.phase === 'defeat') {
       removeSave();
+      removeRideClock();
       setHasSave(false);
       if (recorded.current === run) return;
       recorded.current = run;
@@ -148,13 +156,13 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       const next = recordRun(records, { won: run.phase === 'victory', floor: currentFloor(run), score: runScore(run) });
       setRecords(next);
       safeSetItem(RECORD_KEY, JSON.stringify(next));
-      // The arcade copy: the station reached is progress, the run itself feeds bests and achievements.
+      // 아케이드 기록: 닿은 역은 progress로, 여행 자체는 최고 점수·업적으로 보고한다.
       const earned = arcade.reportProgress('station', stationOf(run));
-      // A completed journey on normal seats opens the next 운행 등급.
+      // 일반석 완주는 다음 운행 등급을 연다.
       if (run.phase === 'victory' && run.mode === 'normal') earned.push(...arcade.reportProgress('tierWon', tierOf(run) + 1));
       const result = arcade.reportRun({
         mode: run.daily ? 'daily' : run.mode === 'easy' ? 'easy' : undefined, difficulty: tierOf(run) ? `tier${tierOf(run)}` : undefined,
-        dailyId: run.daily ?? undefined, score: runScore(run), durationMs: clock.elapsed(),
+        dailyId: run.daily ?? undefined, score: runScore(run), durationMs: rideBase.current + clock.elapsed(),
         outcome: run.phase === 'victory' ? 'win' : 'lose',
         stats: { station: stationOf(run), battles: run.stats.battles, elites: run.stats.elites, damage: run.stats.damageDealt },
       });
@@ -163,6 +171,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     }
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(run));
+      safeSetItem(CLOCK_KEY, String(rideBase.current + clock.elapsed()));
       setSaveError(false);
       setHasSave(true);
     } catch {
@@ -204,7 +213,17 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
 
   const start = (chosen: Mode, options: { tier?: number; daily?: { id: string; seed: number } | null } = {}) => {
+    // 덮어쓰는 저장 여행은 그만둔 여행(quit)으로 보고한다. 달린 시간은 남고 점수는 기록되지 않는다.
+    const discarded = loadRun(safeGetItem(SAVE_KEY));
+    if (discarded) {
+      arcade.reportRun({
+        mode: discarded.daily ? 'daily' : discarded.mode === 'easy' ? 'easy' : undefined, difficulty: tierOf(discarded) ? `tier${tierOf(discarded)}` : undefined,
+        dailyId: discarded.daily ?? undefined, durationMs: savedRideMs(), outcome: 'quit', stats: { station: stationOf(discarded) },
+      });
+    }
     removeSave();
+    removeRideClock();
+    rideBase.current = 0;
     clock.reset();
     setRewards(null);
     recorded.current = null;
@@ -216,7 +235,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
   const resume = () => {
     const saved = loadRun(safeGetItem(SAVE_KEY));
-    if (saved) { setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
+    if (saved) { rideBase.current = savedRideMs(); clock.reset(); setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
   };
   const toTitle = () => { setPanel(null); setRun(null); };
 
@@ -392,7 +411,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
       {finished && run && !inOutro && !panel && (
         <Modal label={run.phase === 'victory' ? '새벽역 도착' : '여행 종료'}>
           <div className="nt-result-art" aria-hidden="true">{run.phase === 'victory' ? <Conductor photo={photo} /> : ENEMY_ART['black-engine']()}</div>
-          <p className="nt-modal-kicker">{run.daily ? '오늘의 노선 · ' : tierOf(run) ? `${TIERS[tierOf(run)].name} · ` : ''}{run.phase === 'victory' ? '종착역 · 새벽역 05:12' : `${floor}번째 역 · 운행 중단`}</p>
+          <p className="nt-modal-kicker">{run.daily ? (today?.id === run.daily ? '오늘의 노선 · ' : '지난 노선 · ') : tierOf(run) ? `${TIERS[tierOf(run)].name} · ` : ''}{run.phase === 'victory' ? '종착역 · 새벽역 05:12' : `${floor}번째 역 · 운행 중단`}</p>
           <h2>{run.phase === 'victory' ? '새벽이 밝았어요' : '열차가 멈춰 섰어요'}</h2>
           <p>{run.phase === 'victory' ? '검은 기관차를 물리치고 모든 승객을 새벽역에 내려 줬어요.' : '다음 여행은 다른 노선, 다른 카드로 시작해요.'}</p>
           <dl className="nt-result-stats">
