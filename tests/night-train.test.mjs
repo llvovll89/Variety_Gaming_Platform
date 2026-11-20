@@ -467,3 +467,39 @@ test('a save with a tier on easy seats is rejected', () => {
   assert.equal(loadRun(JSON.stringify({ ...run, mode: 'easy' })), null);
   assert.ok(loadRun(JSON.stringify(run)));
 });
+
+test('twin lamps: shine keeps its block on the partner and the partner hits as its tag shows', () => {
+  let run = fight([{ defId: 'twin-lamp', hp: 30, intent: 'shine' }, { defId: 'twin-lamp', hp: 30, intent: 'glare' }], { hand: [] });
+  run.combat.player.block = 0;
+  const hp = run.hp;
+  run = act(run, { t: 'endTurn' });
+  assert.deepEqual(run.combat.enemies.map(e => e.block), [5, 5], 'the block given this round lasts through my turn');
+  assert.equal(hp - run.hp, 8, 'glare deals the 8 its tag showed');
+  assert.deepEqual(run.combat.enemies.map(e => e.statuses.strength), [1, 1], 'both lamps are stronger afterwards');
+});
+
+test('an enemy killed by thorns does not land the rest of its move', () => {
+  let run = fight([{ defId: 'soot-rat', hp: 2, intent: 'scratch' }, { defId: 'soot-rat', hp: 40, intent: 'bite' }], { hand: [] });
+  run.combat.player.statuses.thorns = 3;
+  run = act(run, { t: 'endTurn' });
+  assert.equal(run.combat.enemies[0].hp, 0);
+  assert.equal(run.combat.player.statuses.weak, undefined, 'no weak from a dead rat');
+});
+
+test('a boss pushed past half by its own burn still does what its tag showed', () => {
+  let run = fight([{ defId: 'black-engine', hp: 90, maxHp: 170, intent: 'charge', statuses: { burn: 5 } }], { hand: [] });
+  run.combat.player.block = 0;
+  const hp = run.hp;
+  run = act(run, { t: 'endTurn' });
+  assert.deepEqual(run.combat.enemies[0].history, ['charge']);
+  assert.ok(hp - run.hp >= 22 || run.phase === 'defeat');
+  assert.equal(run.combat.enemies[0].intent, 'rampage', 'the rampage is telegraphed for next turn');
+});
+
+test('a save with prototype keys as ids is rejected', () => {
+  const run = createRun(77);
+  const bad = structuredClone(run);
+  bad.deck[0].id = 'constructor';
+  assert.equal(loadRun(JSON.stringify(bad)), null);
+  assert.equal(loadRun(JSON.stringify({ ...run, relics: ['toString'] })), null);
+});

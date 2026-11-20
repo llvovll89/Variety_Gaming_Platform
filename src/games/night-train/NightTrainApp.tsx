@@ -67,7 +67,7 @@ function HelpContent() {
   );
 }
 
-function SnackBag({ run, onUse, onDrop, aiming }: { run: RunState; onUse: (index: number) => void; onDrop: (index: number) => void; aiming: number | null }) {
+function SnackBag({ run, onUse, onDrop, aiming, locked }: { run: RunState; onUse: (index: number) => void; onDrop: (index: number) => void; aiming: number | null; locked: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -78,7 +78,8 @@ function SnackBag({ run, onUse, onDrop, aiming }: { run: RunState; onUse: (index
   }, [open]);
   const snack = open !== null ? SNACKS[run.snacks[open]] : undefined;
   const check = open !== null ? checkSnack(run, open) : null;
-  const usable = !!check && (check.ok || (snack?.target && run.phase === 'combat'));
+  // 적 차례 리플레이나 전투 종료 연출 중에는 먹을 수 없다(연출이 잘린다).
+  const usable = !locked && !!check && (check.ok || (snack?.target && run.phase === 'combat'));
   return (
     <div className="nt-snacks" ref={wrap} role="group" aria-label={`간식 가방 ${run.snacks.length}/${SNACK_SLOTS}`}>
       {Array.from({ length: SNACK_SLOTS }, (_, index) => {
@@ -120,6 +121,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const [confirmNew, setConfirmNew] = useState<null | { mode: Mode; tier?: number; daily?: { id: string; seed: number } | null }>(null);
   const [peek, setPeek] = useState<MapNode | null>(null);
   const [aimSnack, setAimSnack] = useState<number | null>(null);
+  const [combatBusy, setCombatBusy] = useState(false);
   // A run loaded from a save should not replay a fight that already ended.
   const [outroDone, setOutroDone] = useState<string | null>(() => (run ? outroKey(run) : null));
   const [soundSettings, setSoundSettings] = useState<SoundSettings>(loadSoundSettings);
@@ -213,14 +215,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
 
   const start = (chosen: Mode, options: { tier?: number; daily?: { id: string; seed: number } | null } = {}) => {
-    // 덮어쓰는 저장 여행은 그만둔 여행(quit)으로 보고한다. 달린 시간은 남고 점수는 기록되지 않는다.
-    const discarded = loadRun(safeGetItem(SAVE_KEY));
-    if (discarded) {
-      arcade.reportRun({
-        mode: discarded.daily ? 'daily' : discarded.mode === 'easy' ? 'easy' : undefined, difficulty: tierOf(discarded) ? `tier${tierOf(discarded)}` : undefined,
-        dailyId: discarded.daily ?? undefined, durationMs: savedRideMs(), outcome: 'quit', stats: { station: stationOf(discarded) },
-      });
-    }
+    // 덮어쓰는 저장 여행은 보고하지 않는다. quit도 여행 횟수로 세어져 '여행 마치기' 업적이 열리기 때문이다.
     removeSave();
     removeRideClock();
     rideBase.current = 0;
@@ -250,7 +245,8 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     const handler = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
       if (/INPUT|TEXTAREA|SELECT/.test((event.target as HTMLElement).tagName)) return;
-      if (!run || panel || document.querySelector('dialog[open]')) return;
+      // 끝난 여행(종료 연출 포함)에는 일시정지 메뉴를 열지 않는다. 저장이 이미 지워졌다.
+      if (!run || run.phase === 'victory' || run.phase === 'defeat' || panel || document.querySelector('dialog[open]')) return;
       if (event.key === 'Escape') { event.preventDefault(); setPanel('menu'); }
       else if (keyOf(event) === 'd') { event.preventDefault(); setPanel('deck'); }
     };
@@ -289,7 +285,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
                 <Glyph name="route" size={18} />
                 <span className="nt-stat-stack"><b>{Math.min(floor, BOSS_FLOOR + 1)}<small>/{BOSS_FLOOR + 1}</small></b><small>{region.name}</small></span>
               </span>
-              <SnackBag run={run} aiming={aimSnack} onUse={eatSnack} onDrop={index => send({ t: 'dropSnack', index })} />
+              <SnackBag run={run} aiming={aimSnack} locked={combatBusy} onUse={eatSnack} onDrop={index => send({ t: 'dropSnack', index })} />
               <button type="button" className="nt-relic-strip" onClick={() => setPanel('relics')} aria-label={`유물 ${run.relics.length}개 보기`}>
                 {run.relics.slice(0, 5).map(id => <span key={id} title={`${RELICS[id].name}: ${RELICS[id].desc}`}><RelicIcon id={id} size={18} /></span>)}
                 {run.relics.length > 5 && <small>+{run.relics.length - 5}</small>}
@@ -371,7 +367,7 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
             </div>
           </section>
         ) : showCombat ? (
-          <CombatView run={run} onCommand={send} photo={photo} locked={panel !== null} ending={ending} onEnded={onEnded}
+          <CombatView run={run} onCommand={send} photo={photo} locked={panel !== null} ending={ending} onEnded={onEnded} onBusyChange={setCombatBusy}
             aimSnack={aimSnack} onCancelSnack={() => setAimSnack(null)} />
         ) : run.phase === 'map' ? (
           <section className="nt-map-layout" aria-label="노선도">

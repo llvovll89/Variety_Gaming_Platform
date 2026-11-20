@@ -36,7 +36,7 @@ type DragState = { uid: number; x0: number; y0: number; x: number; y: number; mo
 
 const FRAME_MS = { player: 620, enemy: 820 };
 
-export default function CombatView({ run, onCommand, photo, locked, ending, onEnded, aimSnack, onCancelSnack }: {
+export default function CombatView({ run, onCommand, photo, locked, ending, onEnded, aimSnack, onCancelSnack, onBusyChange }: {
   run: RunState;
   onCommand: (command: Command) => void;
   photo: string | null;
@@ -44,6 +44,8 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   /** Set once the fight is over; the view plays its last beat, then calls onEnded. */
   ending: 'win' | 'lose' | null;
   onEnded: () => void;
+  /** 리플레이·종료 연출 중인지 알린다(HUD 간식 잠금용). */
+  onBusyChange?: (busy: boolean) => void;
   aimSnack: number | null;
   onCancelSnack: () => void;
 }) {
@@ -94,6 +96,9 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     return () => window.clearTimeout(timer);
   }, [replay, combat.frames, combat.turn, ending]);
   const replaying = replay !== null;
+  const animating = replaying || !!ending;
+  useEffect(() => { onBusyChange?.(animating); }, [animating, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
   const frame: Frame | null = replay && replay.step >= 0 ? combat.frames[replay.step] ?? null : null;
 
   // ── Ending beat ──
@@ -312,7 +317,8 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
   const pileCards = pile ? [...combat[pile]].sort((a, b) => (pile === 'draw' ? a.id.localeCompare(b.id) : 0) || a.uid - b.uid) : [];
   const dragging = drag ? combat.hand.find(card => card.uid === drag.uid) : undefined;
   const aiming = !!dragging && needsTarget(dragging);
-  const remaining = Math.max(0, incoming - player.block);
+  // 철갑은 턴을 마칠 때 방어를 더하므로 남는 피해 계산에 넣는다.
+  const remaining = Math.max(0, incoming - player.block - (player.statuses.plating ?? 0));
 
   let hintNode: ReactNode;
   if (hint) hintNode = hint.text;
