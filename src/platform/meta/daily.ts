@@ -70,6 +70,7 @@ export function dailyChallenge(date: string, gameId: string, templates: readonly
     compare: template.compare ?? 'atLeast',
     mode: template.mode,
     difficulty: difficulty?.id,
+    outcome: template.outcome,
     seed,
     seeded: template.seeded === true,
   };
@@ -100,6 +101,8 @@ export function meetsChallenge(challenge: DailyChallenge, run: RunReport): { mat
   if (run.outcome === 'quit') return { matches: false, value: null, done: false };
   if (challenge.mode !== undefined && run.mode !== challenge.mode) return { matches: false, value: null, done: false };
   if (challenge.difficulty !== undefined && run.difficulty !== challenge.difficulty) return { matches: false, value: null, done: false };
+  // A challenge that asks for a win is not met by a quick loss with a flattering number.
+  if (challenge.outcome !== undefined && run.outcome !== challenge.outcome) return { matches: false, value: null, done: false };
   const value = challenge.stat === 'score' ? run.score : run.stats?.[challenge.stat];
   if (typeof value !== 'number' || !Number.isFinite(value)) return { matches: true, value: null, done: false };
   return { matches: true, value, done: challenge.compare === 'atMost' ? value <= challenge.goal : value >= challenge.goal };

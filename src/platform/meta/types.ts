@@ -84,6 +84,8 @@ export interface DailyTemplate {
   difficulty?: { id: string; label: string }[];
   /** The game builds today's map from the challenge seed (same map for everyone today). */
   seeded?: boolean;
+  /** Only a run that ended this way counts, so "N턴 안에 승리" is not also met by a fast loss. */
+  outcome?: Outcome;
 }
 
 /** Records a game kept on its own before the arcade-wide store, read once (never written). */
@@ -133,6 +135,7 @@ export interface DailyChallenge {
   compare: 'atLeast' | 'atMost';
   mode?: string;
   difficulty?: string;
+  outcome?: Outcome;
   seed: number;
   seeded: boolean;
 }

@@ -51,7 +51,24 @@ test('the hub picks one kids, one short and one long game, spread over the year'
   for (const id of ['k1', 'k2', 's1', 's2', 'l1', 'l2']) assert.ok(counts[id] > 120, `${id} picked ${counts[id]} times`);
 });
 
-test('a run completes today\'s challenge only on the right difficulty, and counts once', () => {
+test('a challenge that asks for a win is not met by a fast loss', () => {
+  // "N턴 안에 승리" reads the same number from a quick defeat, so the outcome has to be checked too.
+  const c = { id: 'd:card:tower', date: '2026-11-17', gameId: 'card', label: '', stat: 'turns', goal: 8, compare: 'atMost', mode: 'tower', outcome: 'win', seed: 1, seeded: false };
+  const run = extra => ({ mode: 'tower', stats: { turns: 5 }, durationMs: 1, ...extra });
+  assert.equal(M.meetsChallenge(c, run({ outcome: 'lose' })).matches, false);
+  assert.equal(M.meetsChallenge(c, run({ outcome: 'complete' })).matches, false);
+  assert.deepEqual(M.meetsChallenge(c, run({ outcome: 'win' })), { matches: true, value: 5, done: true });
+  // Without the field, any ending still counts, as it did before.
+  assert.equal(M.meetsChallenge({ ...c, outcome: undefined }, run({ outcome: 'lose' })).done, true);
+});
+
+test('the outcome a template asks for reaches the day challenge', () => {
+  const win = M.dailyChallenge('2026-11-17', 'card', [{ id: 'w', label: '{n}턴 안에 승리', stat: 'turns', range: [6, 10], step: 1, compare: 'atMost', outcome: 'win' }]);
+  assert.equal(win.outcome, 'win');
+  assert.equal(M.dailyChallenge('2026-11-17', 'mole', templates).outcome, undefined);
+});
+
+test('a run completes the daily challenge only on the right difficulty, and counts once', () => {
   const c = { id: 'd:mole:score', date: '2026-11-17', gameId: 'mole', label: '', stat: 'score', goal: 200, compare: 'atLeast', difficulty: 'hard', seed: 1, seeded: false };
   let s = M.emptyMeta();
   assert.equal(M.addDailyRun(s, c, { difficulty: 'easy', score: 999, durationMs: 1, outcome: 'complete' }).result, undefined);
