@@ -24,7 +24,7 @@ export const meta: GameMeta = {
     // v1이 일반석 칸에 넣었던 값은 retire로 정리한다. 게임이 옛 키도 계속 쓰므로 'legacy|-'는 전 좌석 최고 점수를 따라간다.
     version: 2,
     read(get, parse) {
-      const r = parse.json(get('arcade:night-train:records')) as any;
+      const r = parse.json(get('arcade:night-train:records')) as Record<string, unknown> | null;
       if (!r || typeof r !== 'object') return {};
       return { runs: parse.num(r.runs), wins: parse.num(r.wins), best: { 'legacy|-': parse.num(r.bestScore) }, retire: { 'default|-': parse.num(r.bestScore) }, progress: { station: parse.num(r.bestFloor) } };
     },

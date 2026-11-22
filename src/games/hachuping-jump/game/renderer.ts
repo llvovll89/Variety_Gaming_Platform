@@ -2,7 +2,7 @@ import { ITEMS } from "./items";
 import { drawObstacleModel } from "./obstacleModels";
 import type { ItemKind } from "./items";
 import { STAGES, type Journey } from "./stages";
-﻿import { GROUND_Y, ITEM_OFFSET, ITEM_RADIUS, LOGICAL_HEIGHT, LOGICAL_WIDTH, PIPE_WIDTH, PLAYER_RADIUS, PLAYER_X, STAR_RADIUS } from "./constants";
+import { GROUND_Y, ITEM_OFFSET, ITEM_RADIUS, LOGICAL_HEIGHT, LOGICAL_WIDTH, PIPE_WIDTH, PLAYER_RADIUS, PLAYER_X, STAR_RADIUS } from "./constants";
 import type { Obstacle, PlayerState } from "./types";
 import type { Rewards } from "./rewards";
 import { drawImageTopCrop } from "../../../shared/canvasImage";

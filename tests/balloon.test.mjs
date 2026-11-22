@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 const result = await build({stdin:{contents:`export * from "./src/games/hachuping-balloon/game/engine.ts"; export * from "./src/games/hachuping-balloon/game/balloons.ts"; export * from "./src/games/hachuping-balloon/game/renderer.ts";`,resolveDir:process.cwd()},bundle:true,write:false,format:'esm',platform:'node',define:{'import.meta.env.DEV':'false'}});
-const {BalloonEngine,spawnBalloon,advanceBalloons,findBalloonsAtPoint,computeLetterboxTransform,toLogical} = await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
+const {BalloonEngine,spawnBalloon,advanceBalloons,computeLetterboxTransform,toLogical} = await import('data:text/javascript;base64,'+Buffer.from(result.outputFiles[0].text).toString('base64'));
 globalThis.window={matchMedia:()=>({matches:false})};
 globalThis.Image=class{complete=false;naturalWidth=0;};
 function engine(){

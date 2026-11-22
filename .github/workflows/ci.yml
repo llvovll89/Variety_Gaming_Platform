@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test-and-build:
-    name: Test and build (Node ${{ matrix.node }})
+    name: Lint, test and build (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -28,5 +28,6 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run build

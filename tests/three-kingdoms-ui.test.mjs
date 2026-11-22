@@ -43,7 +43,7 @@ test('all 120 historical officers have distinct illustrated portraits backed by 
   const images=new Set();
   for(const officer of Object.values(createOfficers())) {
     const style=officerPortraitStyle(officer.id);
-    const asset=style.backgroundImage.match(/url\(['"]?([^'"\)]+)/)[1];
+    const asset=style.backgroundImage.match(/url\(['"]?([^'")]+)/)[1];
     assert.ok(existsSync(`public${asset}`),`${officer.name} portrait asset must exist`);
     images.add(asset);
     const coordinates=style.backgroundPosition.split(' ').map(parseFloat);

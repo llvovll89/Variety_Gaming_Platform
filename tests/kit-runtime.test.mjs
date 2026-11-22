@@ -75,8 +75,7 @@ test('a game with its own audio follows the arcade mute and volume, live', async
     assert.equal(isGameMuted('balloon'), true);
     assert.equal(kitOutput(ctx, 'balloon'), node, 'one output per audio context');
     ctx.state = 'closed';
-    let created = 0;
-    const next = { currentTime: 0, destination: {}, createGain: () => { created++; return { gain: { value: 1, setTargetAtTime() {} }, connect() {} }; } };
+    const next = { currentTime: 0, destination: {}, createGain: () => ( { gain: { value: 1, setTargetAtTime() {} }, connect() {} }) };
     kitOutput(next, 'balloon');
     gain.value = 'untouched';
     settingsStore.set({ muted: false });
@@ -84,7 +83,7 @@ test('a game with its own audio follows the arcade mute and volume, live', async
   } finally { delete globalThis.localStorage; settingsStore.resetForTests(); }
   // Every game's sound goes through the arcade output, so the hub's sound switch reaches it.
   const walk = dir => readdirSync(dir).flatMap(f => statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]);
-  const direct = walk('src/games').filter(f => /\.tsx?$/.test(f) && /\.destination/.test(readFileSync(f, 'utf8').replace(/kitOutput\([^)]*\)/g, '')));
+  const direct = walk('src/games').filter(f => /\.tsx?$/.test(f) && /\.destination\b/.test(readFileSync(f, 'utf8').replace(/kitOutput\([^)]*\)/g, '')));
   assert.deepEqual(direct, [], 'no game connects straight to the speakers');
 });
 

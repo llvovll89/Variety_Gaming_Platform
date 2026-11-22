@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 const output=await build({entryPoints:['src/games/ten-seconds/engine.ts'],bundle:true,write:false,platform:'node',format:'esm'});
-const {TimeRun,LEVELS,LOOP_TICKS,MOVE_TICKS,MAX_ECHOES,loadProgress,completeRoom,DIRECTIONS}=await import('data:text/javascript;base64,'+Buffer.from(output.outputFiles[0].text).toString('base64'));
+const {TimeRun,LOOP_TICKS,MOVE_TICKS,MAX_ECHOES,loadProgress,completeRoom,DIRECTIONS}=await import('data:text/javascript;base64,'+Buffer.from(output.outputFiles[0].text).toString('base64'));
 const frames=(run,n)=>{for(let i=0;i<n;i++)run.advance(1/60);};
 const playing=(index=0)=>{const run=new TimeRun(index);run.start();return run;};
 

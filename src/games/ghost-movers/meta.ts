@@ -80,7 +80,7 @@ export const meta: GameMeta = {
   legacy: {
     version: 1,
     read(get, parse) {
-      const p = parse.json(get('gh-ghost-movers-v1')) as any;
+      const p = parse.json(get('gh-ghost-movers-v1')) as { best?: Record<string, unknown> } | null;
       // Same checks as the game's own loader: whole-number level keys, 1 to 3 stars.
       const stars = Object.entries(p?.best ?? {}).filter(([i]) => /^\d+$/.test(i) && Number(i) < 24)
         .map(([, v]) => (v as { stars?: unknown })?.stars).filter((n): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= 3);

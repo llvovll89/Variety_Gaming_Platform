@@ -8,7 +8,7 @@ const M = await loadBundle(ids.map((id, i) => `export {meta as m${i}} from './sr
 const metas = Object.fromEntries(ids.map((id, i) => [id, M[`m${i}`]]));
 const registry = readFileSync('src/platform/gameRegistry.ts', 'utf8').replace(/\r\n/g, '\n');
 /** Each entry of the GAMES array, as source text. */
-const ENTRY_SPLIT = /\n  \{\n/;
+const ENTRY_SPLIT = /\n {2}\{\n/;
 /** 레지스트리 항목이 스스로 적어 둔 play 정보. 게임 전체를 번들하지 않고 글로 읽는다. */
 const PLAY_MINUTES = Object.fromEntries(registry.split(ENTRY_SPLIT).slice(1).flatMap(block => {
   const id = block.match(/id: ['"]([^'"]+)['"]/)?.[1];
