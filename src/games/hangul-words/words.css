@@ -1,0 +1,243 @@
+/* 오늘의 낱말: 종이에 연필로 적는 느낌. 좁은 화면에서도 여섯 줄이 한 화면에 들어오게 한다. */
+.hw-root {
+  --hw-paper: #fbf7ef;
+  --hw-ink: #2b2722;
+  --hw-muted: #7a7066;
+  --hw-line: #ded3c2;
+  --hw-hit: #3f7d5c;
+  --hw-move: #c99a28;
+  --hw-miss: #b7ada0;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--hw-paper);
+  color: var(--hw-ink);
+  font-family: Pretendard, system-ui, sans-serif;
+  overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.hw-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hw-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--hw-line);
+}
+.hw-top h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.hw-top-right { display: flex; gap: 6px; }
+
+.hw-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--hw-line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--hw-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+@media (hover: hover) {
+  .hw-icon:hover { border-color: var(--hw-ink); }
+}
+
+.hw-menu,
+.hw-play {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px max(16px, env(safe-area-inset-left)) 24px max(16px, env(safe-area-inset-right));
+}
+.hw-menu { justify-content: center; }
+
+.hw-lead {
+  margin: 0 0 6px;
+  text-align: center;
+  line-height: 1.6;
+  color: var(--hw-muted);
+  font-size: 14px;
+}
+
+.hw-primary,
+.hw-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 15px 18px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.hw-primary { background: var(--hw-hit); color: #fff; }
+.hw-secondary { background: #fff; border-color: var(--hw-line); color: var(--hw-ink); }
+.hw-primary small,
+.hw-secondary small { font-size: 12px; font-weight: 600; opacity: .8; }
+
+.hw-mode {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hw-muted);
+}
+
+.hw-board {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hw-row { display: flex; gap: 7px; }
+
+.hw-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(62px, 20vw, 86px);
+  aspect-ratio: 1;
+  border: 2px solid var(--hw-line);
+  border-radius: 14px;
+  background: #fff;
+}
+.hw-tile[data-state='hit'] { background: var(--hw-hit); border-color: var(--hw-hit); color: #fff; }
+.hw-tile[data-state='move'] { background: var(--hw-move); border-color: var(--hw-move); color: #fff; }
+.hw-tile[data-state='miss'] { background: #efe9df; border-color: var(--hw-miss); color: var(--hw-muted); }
+
+.hw-syllable {
+  font-size: clamp(28px, 9vw, 38px);
+  font-weight: 800;
+  line-height: 1;
+}
+.hw-jamo {
+  position: absolute;
+  bottom: 7px;
+  display: flex;
+  gap: 4px;
+}
+.hw-jamo i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .25;
+}
+.hw-jamo i[data-jamo='hit'] { opacity: 1; }
+.hw-jamo i[data-jamo='near'] { opacity: 1; background: var(--hw-move); box-shadow: 0 0 0 1px #fff6; }
+.hw-tile[data-state='miss'] .hw-jamo i[data-jamo='near'] { background: var(--hw-move); }
+
+.hw-entry {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.hw-input {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 15px;
+  border: 2px solid var(--hw-line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--hw-ink);
+  font-size: 18px;
+  font-weight: 700;
+  font-family: inherit;
+  text-align: center;
+  letter-spacing: .3em;
+  text-indent: .3em;
+}
+.hw-input:focus-visible { outline: 3px solid var(--hw-hit); outline-offset: 1px; }
+.hw-submit { width: auto; flex: 0 0 auto; padding: 13px 22px; }
+
+.hw-closed {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.hw-hint {
+  min-height: 18px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b4472f;
+  text-align: center;
+}
+
+.hw-known {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+.hw-known span {
+  padding: 5px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--hw-line);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.hw-known span[data-state='hit'] { background: var(--hw-hit); border-color: var(--hw-hit); color: #fff; }
+.hw-known span[data-state='move'] { background: var(--hw-move); border-color: var(--hw-move); color: #fff; }
+.hw-known span[data-state='miss'] { background: #efe9df; color: var(--hw-muted); text-decoration: line-through; }
+
+.hw-help { margin: 0; padding-left: 18px; line-height: 1.7; font-size: 14px; }
+.hw-help li + li { margin-top: 5px; }
+
+/* 가로로 누운 휴대폰: 게임판과 입력이 나란히 서야 여섯 줄이 다 보인다. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hw-play {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    max-width: 640px;
+  }
+  .hw-mode,
+  .hw-entry,
+  .hw-closed,
+  .hw-hint,
+  .hw-known { grid-column: 2; }
+  .hw-board { grid-column: 1; grid-row: 1 / -1; gap: 5px; }
+  .hw-tile { width: clamp(40px, 9vh, 56px); border-radius: 10px; }
+  .hw-syllable { font-size: clamp(18px, 4.5vh, 26px); }
+  .hw-jamo { bottom: 4px; gap: 3px; }
+  .hw-jamo i { width: 5px; height: 5px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hw-tile[data-state]:not([data-state='empty']) { animation: hw-flip .26s ease-out both; }
+  @keyframes hw-flip {
+    from { transform: rotateX(-80deg); }
+    to { transform: none; }
+  }
+}
+:root[data-kit-motion='reduce'] .hw-tile { animation: none !important; }

@@ -90,6 +90,7 @@ const REPORTED = {
   'night-train': { modes: ['daily', 'easy'], difficulties: ['tier1', 'tier2', 'tier3'], stats: ['score', 'station', 'battles', 'elites', 'damage'] },
   'kitchen-fighter': { modes: ['ladder-1', 'ladder-2', 'ladder-3', 'ladder-4', 'ladder-5', 'cpu-easy', 'cpu-normal', 'local'], difficulties: [], stats: ['rounds', 'cpuWins', 'weapon-spatula', 'weapon-swatter', 'weapon-golf', 'win-spatula', 'win-swatter', 'win-golf'] },
   'fantasy-tactics': { modes: ['stage', 'side'], difficulties: [], stats: ['rounds', 'survivors', 'chests'] },
+  'hangul-words': { modes: ['daily', 'free'], difficulties: [], stats: ['score', 'guesses', 'solved'] },
 };
 
 test('a daily challenge only asks for numbers its game reports', () => {

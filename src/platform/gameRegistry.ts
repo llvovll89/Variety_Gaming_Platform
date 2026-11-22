@@ -10,6 +10,7 @@ const GhostMoversApp = lazy(() => import('../games/ghost-movers/GhostMoversApp')
 const FantasyTacticsApp = lazy(() => import('../games/fantasy-tactics/FantasyTacticsApp'));
 const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
 const TenSecondsApp = lazy(() => import('../games/ten-seconds/TenSecondsApp'));
+const HangulWordsApp = lazy(() => import('../games/hangul-words/HangulWordsApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
@@ -30,6 +31,7 @@ import { meta as HachupingMemoryMeta } from '../games/hachuping-memory/meta';
 import { meta as HachupingWhackAMoleMeta } from '../games/hachuping-whack-a-mole/meta';
 import { meta as HachupingColorMatchMeta } from '../games/hachuping-color-match/meta';
 import { meta as HachupingBalloonMeta } from '../games/hachuping-balloon/meta';
+import { meta as HangulWordsMeta } from '../games/hangul-words/meta';
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
@@ -93,6 +95,21 @@ export const GAMES: GameDefinition[] = [
     tags: ['3D', '퍼즐', '시간 루프', '협동', '잔상'],
     featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 아홉 개의 시간 연구실을 탈출하세요. 짧게 켜지는 발판과 시간 문을 연결하는 고급 실험에 도전하세요.',
     Component: TenSecondsApp,
+  },
+  {
+    id: 'hangul-words',
+    meta: HangulWordsMeta,
+    title: '오늘의 낱말',
+    description: '두 글자 낱말을 여섯 번 안에 맞히는 추리 놀이 · 오늘의 낱말은 모두에게 같아요',
+    thumbnail: '/art/hub/hangul-words.jpg',
+    cover: '/art/hub/hangul-words-large.jpg',
+    previewThumbnail: '/art/hub/hangul-words-small.jpg',
+    spotlightText: '하루에 하나, 모두가 같은 두 글자 낱말을 풉니다.',
+    accentColor: '#3f7d5c',
+    genres: ['캐주얼'],
+    tags: ['낱말', '한글', '추리', '매일', '혼자'],
+    featuredText: '글자가 맞으면 초록, 자리만 다르면 노랑. 맞지 않은 글자도 초성·중성·종성이 맞았는지 알려 줍니다. 여섯 번의 기회로 오늘의 낱말을 찾아보세요.',
+    Component: HangulWordsApp,
   },
   {
     id: 'fantasy-tactics',
