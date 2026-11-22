@@ -13,6 +13,7 @@ import { usePlayClock } from "../../shared/kit/usePlayClock";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
 import { gameStorageKey, safeGetItem, safeSetItem } from "../../shared/storage";
+import { settingsStore } from "../../shared/kit/settings";
 import { emptySnapshot } from "./game/uiStore";
 import { ColorMatchEngine } from "./game/engine";
 import { setMuted as setSoundMuted } from "./game/sound";
@@ -28,11 +29,23 @@ const PREFS_KEY = gameStorageKey(GAME_ID, "prefs");
 
 interface Prefs { difficulty: DifficultyLevel; patterns: boolean; muted: boolean }
 
+const isDifficulty = (value: unknown): value is DifficultyLevel => typeof value === "string" && value in DIFFICULTY_CONFIGS;
+
+/**
+ * The arcade settings hold the chosen level, so "오늘의 도전" can open the game on the level it asks
+ * for. The game's own prefs are only a fallback, for players who chose before the move.
+ */
+function readDifficulty(fallback: unknown): DifficultyLevel {
+  const shared = settingsStore.get().games[GAME_ID]?.extra?.difficulty;
+  if (isDifficulty(shared)) return shared;
+  return isDifficulty(fallback) ? fallback : DEFAULT_DIFFICULTY;
+}
+
 function readPrefs(): Prefs {
   try {
     const raw = JSON.parse(safeGetItem(PREFS_KEY) ?? "{}") as Partial<Prefs>;
     return {
-      difficulty: raw.difficulty && raw.difficulty in DIFFICULTY_CONFIGS ? raw.difficulty : DEFAULT_DIFFICULTY,
+      difficulty: readDifficulty(raw.difficulty),
       patterns: raw.patterns === true,
       muted: raw.muted === true,
     };
@@ -48,7 +61,7 @@ export default function HachupingColorMatchApp({ onExit }: GameProps) {
   const { leaderboard: legacyLeaderboard } = useLeaderboard(GAME_ID);
   // The menu remounts with the new difficulty, so it puts keyboard focus back on the chosen level.
   const [focusDifficulty, setFocusDifficulty] = useState(false);
-  const choose: SessionProps["chooseDifficulty"] = (difficulty) => { setFocusDifficulty(true); setPrefs((p) => ({ ...p, difficulty })); };
+  const choose: SessionProps["chooseDifficulty"] = (difficulty) => { setFocusDifficulty(true); settingsStore.setGame(GAME_ID, { extra: { difficulty } }); setPrefs((p) => ({ ...p, difficulty })); };
   // Only that one remount: a later return to the menu (after a game) must not pull focus.
   useEffect(() => { if (focusDifficulty) setFocusDifficulty(false); }, [focusDifficulty]);
   useEffect(() => { setSoundMuted(prefs.muted); safeSetItem(PREFS_KEY, JSON.stringify(prefs)); }, [prefs]);

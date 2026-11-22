@@ -51,10 +51,15 @@ const FALLBACK_SNAPSHOT = emptySnapshot({
 export default function HachupingMemoryApp({ onExit }: GameProps) {
   // Remembered between visits, like the other games' difficulty.
   const [speed, setSpeed] = useState<MemorySpeed>(() => {
-    const saved = settingsStore.get().games[GAME_ID]?.extra?.speed;
-    return typeof saved === "string" && Object.hasOwn(SPEEDS, saved) ? saved as MemorySpeed : "normal";
+    const extra = settingsStore.get().games[GAME_ID]?.extra;
+    // The speed is what this game reports as the run's difficulty, so "오늘의 도전" asks for it under
+    // that name. Accept either spelling rather than silently ignoring the day's choice.
+    for (const saved of [extra?.speed, extra?.difficulty]) {
+      if (typeof saved === "string" && Object.hasOwn(SPEEDS, saved)) return saved as MemorySpeed;
+    }
+    return "normal";
   });
-  const chooseSpeed = (next: MemorySpeed) => { setSpeed(next); settingsStore.setGame(GAME_ID, { extra: { speed: next } }); };
+  const chooseSpeed = (next: MemorySpeed) => { setSpeed(next); settingsStore.setGame(GAME_ID, { extra: { speed: next, difficulty: next } }); };
   // Score hooks load on mount, so each speed gets its own session and its own best.
   return <MemorySession key={speed} onExit={onExit} speed={speed} chooseSpeed={chooseSpeed} />;
 }
