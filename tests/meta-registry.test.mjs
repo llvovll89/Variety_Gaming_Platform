@@ -4,7 +4,9 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { loadBundle } from './bundle.mjs';
 
 const ids = readdirSync('src/games').filter(id => existsSync(`src/games/${id}/meta.ts`));
-const M = await loadBundle(ids.map((id, i) => `export {meta as m${i}} from './src/games/${id}/meta.ts';`).join('\n') + `\nexport * from './src/platform/meta/daily.ts';`);
+const M = await loadBundle(ids.map((id, i) => `export {meta as m${i}} from './src/games/${id}/meta.ts';`).join('\n') + `\nexport * from './src/platform/meta/daily.ts';
+export {PLAY_INFO} from './src/platform/playExperience.ts';`);
+const { PLAY_INFO } = M;
 const metas = Object.fromEntries(ids.map((id, i) => [id, M[`m${i}`]]));
 const registry = readFileSync('src/platform/gameRegistry.ts', 'utf8').replace(/\r\n/g, '\n');
 const KIDS = ['hachuping-whack-a-mole', 'hachuping-color-match', 'hachuping-balloon', 'hachuping-memory'];
@@ -65,5 +67,91 @@ test('puzzle par challenges only count runs started from the challenge', () => {
     assert.equal(t.stat, 'stars');
     assert.ok(t.range[1] <= 3, `${id}: at most three stars`);
     assert.ok(metas[id].reportsRuns, `${id} reports runs`);
+  }
+});
+
+/**
+ * What each game actually passes to reportRun. Daily templates may only name these, or they would
+ * ask for a number the game never reports. Keep in sync with the game's reportRun call; the keys
+ * kitchen-fighter builds from the weapon are spelled out because the source has them only as
+ * `win-${weapon}`.
+ */
+const REPORTED = {
+  'hachuping-memory': { modes: [], difficulties: ['slow', 'normal'], stats: ['score', 'stage'] },
+  'hachuping-balloon': { modes: [], difficulties: [], stats: ['score', 'popped'] },
+  'hachuping-color-match': { modes: [], difficulties: ['easy', 'normal', 'hard'], stats: ['score', 'correct', 'streak', 'accuracy'] },
+  'hachuping-whack-a-mole': { modes: [], difficulties: ['easy', 'normal', 'hard'], stats: ['score', 'hits', 'combo', 'accuracy'] },
+  'hachuping-slither': { modes: ['timed'], difficulties: [], stats: ['score', 'kills', 'survivalSec', 'level'] },
+  'hachuping-jump': { modes: ['full'], difficulties: [], stats: ['score', 'world'] },
+  'hachuping-dodge': { modes: [], difficulties: ['easy', 'normal', 'hard', 'nightmare'], stats: ['score', 'kills', 'level', 'region'] },
+  'echo-maze': { modes: ['daily'], difficulties: ['easy', 'normal', 'hard'], stats: ['score', 'steps', 'shards'] },
+  'ghost-movers': { modes: ['daily'], difficulties: [], stats: ['steps', 'stars', 'undos'] },
+  'ten-seconds': { modes: ['daily', 'practice'], difficulties: [], stats: ['loops', 'deaths', 'stars'] },
+  'night-train': { modes: ['daily', 'easy'], difficulties: ['tier1', 'tier2', 'tier3'], stats: ['score', 'station', 'battles', 'elites', 'damage'] },
+  'kitchen-fighter': { modes: ['ladder-1', 'ladder-2', 'ladder-3', 'ladder-4', 'ladder-5', 'cpu-easy', 'cpu-normal', 'local'], difficulties: [], stats: ['rounds', 'cpuWins', 'weapon-spatula', 'weapon-swatter', 'weapon-golf', 'win-spatula', 'win-swatter', 'win-golf'] },
+  'fantasy-tactics': { modes: ['stage', 'side'], difficulties: [], stats: ['rounds', 'survivors', 'chests'] },
+};
+
+test('a daily challenge only asks for numbers its game reports', () => {
+  for (const [id, meta] of Object.entries(metas)) {
+    if (!meta.daily?.length) continue;
+    const known = REPORTED[id];
+    assert.ok(known, `${id} has daily challenges, so its reportRun arguments belong in REPORTED`);
+    for (const t of meta.daily) {
+      assert.ok(known.stats.includes(t.stat), `${id}/${t.id}: reports "${t.stat}"`);
+      if (t.mode !== undefined) assert.ok(known.modes.includes(t.mode), `${id}/${t.id}: reports mode "${t.mode}"`);
+      for (const d of t.difficulty ?? []) assert.ok(known.difficulties.includes(d.id), `${id}/${t.id}: reports difficulty "${d.id}"`);
+      if (t.outcome !== undefined) assert.ok(['win', 'lose', 'complete'].includes(t.outcome), `${id}/${t.id}: a run can end as "${t.outcome}"`);
+    }
+  }
+});
+
+test('a game whose challenge picks a difficulty actually opens on it', () => {
+  // The hub writes the day's difficulty into the arcade settings (TodayCard) before opening the
+  // game. A game that reads only its own storage silently rejects every run that day.
+  const sources = id => readdirSync(`src/games/${id}`, { recursive: true, encoding: 'utf8' })
+    .filter(f => /\.(ts|tsx)$/.test(f)).map(f => readFileSync(`src/games/${id}/${f}`, 'utf8')).join('\n');
+  for (const [id, meta] of Object.entries(metas)) {
+    if (!meta.daily?.some(t => t.difficulty?.length)) continue;
+    const source = sources(id);
+    const reads = /extra\??\.difficulty/.test(source) || /daily\(\)/.test(source);
+    assert.ok(reads, `${id}: reads the difficulty the hub asks for (settings extra.difficulty, or the challenge itself)`);
+  }
+});
+
+test('the hub always has a kids, a short and a long challenge to offer', () => {
+  // The hub shows three challenges a day: one kids game, one short and one long (featuredDailies).
+  // A group with no candidate leaves a slot empty every day of the year, silently. The synthetic
+  // fixtures in meta-daily.test.mjs cannot see that, so build the candidates from the real registry.
+  const entries = registry.split(/\n  \{\n/).slice(1);
+  const games = entries.map(block => ({
+    id: block.match(/id: ['"]([^'"]+)['"]/)?.[1],
+    kids: /audience: ['"]kids['"]/.test(block) || /genres: \[[^\]]*키즈/.test(block),
+    comingSoon: /releaseStatus: ['"]coming-soon['"]/.test(block) || /disabled: true/.test(block),
+  })).filter(g => g.id);
+  assert.ok(games.length >= 15, `parsed ${games.length} registry entries`);
+
+  const candidates = games.filter(g => !g.comingSoon && metas[g.id]?.reportsRuns && metas[g.id]?.daily?.length && PLAY_INFO[g.id])
+    .map(g => ({ id: g.id, audience: g.kids ? 'kids' : 'general', minutes: PLAY_INFO[g.id].minutes }));
+  const groups = {
+    kids: candidates.filter(c => c.audience === 'kids'),
+    short: candidates.filter(c => c.audience === 'general' && c.minutes <= 5),
+    long: candidates.filter(c => c.audience === 'general' && c.minutes > 5),
+  };
+  for (const [name, group] of Object.entries(groups)) {
+    assert.ok(group.length > 0, `the ${name} slot has a game to offer`);
+  }
+  for (let d = 0; d < 365; d++) {
+    const date = M.localDateKey(new Date(2026, 0, 1 + d));
+    assert.equal(M.featuredDailies(date, candidates).length, 3, `${date}: three challenges`);
+  }
+});
+
+test('every game with a daily challenge is listed in PLAY_INFO', () => {
+  // TodayCard drops a game with no PLAY_INFO entry, and gamesForTime filters it out of the time
+  // picker, both without a word. A new game missing from that map just never appears.
+  for (const [id, meta] of Object.entries(metas)) {
+    if (!meta.daily?.length) continue;
+    assert.ok(PLAY_INFO[id], `${id} has a PLAY_INFO entry, or its challenges never reach the hub`);
   }
 });
