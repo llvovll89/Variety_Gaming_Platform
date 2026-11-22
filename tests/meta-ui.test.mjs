@@ -46,7 +46,7 @@ test('the hub only offers challenges a game can actually complete, plus this wee
   assert.deepEqual(T.weekOf('2026-11-17'), ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21', '2026-11-22']);
   assert.equal(T.weekOf('2026-11-22')[0], '2026-11-16', 'Sunday ends the week');
   const daily = [{ id: 's', label: '{n}점 넘기', stat: 'score', range: [10, 10], step: 1 }];
-  const game = (id, extra) => ({ id, title: id, description: '', thumbnail: '', accentColor: '', genres: ['키즈'], tags: [], Component: () => null, meta: { achievements: [], daily, ...extra } });
+  const game = (id, extra) => ({ id, title: id, description: '', thumbnail: '', accentColor: '', genres: ['키즈'], tags: [], Component: () => null, play: { duration: '1분', minutes: 1, controls: '터치', experience: '', save: '' }, meta: { achievements: [], daily, ...extra } });
   const games = [game('hachuping-balloon', {}), game('hachuping-memory', { reportsRuns: true })];
   const html = T.renderToStaticMarkup(T.createElement(T.TodayCard, { games, onSelect() {}, today: '2026-11-17' }));
   assert.match(html, /hachuping-memory: 10점 넘기/);

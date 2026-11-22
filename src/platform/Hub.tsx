@@ -3,7 +3,7 @@ import { ArrowRightIcon, ArrowUpRightIcon, CaretLeftIcon, CaretRightIcon, Deskto
 import type { GameDefinition, GameGenre } from "./types";
 import { availableGames, comingSoonGames, filterHubGames, HUB_GENRES, readRecentGameIds } from "./hubCatalog";
 import { safeGetItem, safeSetItem } from "../shared/storage";
-import { PLAY_INFO, TIME_CHOICES, gamesForTime, type TimeChoice } from "./playExperience";
+import { TIME_CHOICES, gamesForTime, type TimeChoice } from "./playExperience";
 import { savedProgressLabel } from "./savedProgress";
 import { GameDialog } from "../shared/kit/GameDialog";
 import { SettingsPanel } from "../shared/kit/SettingsPanel";
@@ -18,8 +18,7 @@ interface HubProps {
   profile: { name: string; characterImage: string };
 }
 function PlayFacts({ game }: { game: GameDefinition }) {
-  const info = PLAY_INFO[game.id];
-  if (!info) return null;
+  const info = game.play;
   return <span className="hub-play-facts"><span>{info.duration}</span><span>{info.controls}</span><span>{info.experience}</span><span>{info.save}</span></span>;
 }
 
@@ -79,7 +78,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
   const resumable = [...recent, ...playableAll.filter(game => !recent.some(item => item.id === game.id))].filter(game => saves[game.id]);
   useEffect(() => {
     let cancelled = false;
-    void Promise.all(playableAll.map(async game => [game.id, await savedProgressLabel(game.id)] as const)).then(entries => {
+    void Promise.all(playableAll.map(async game => [game.id, await savedProgressLabel(game)] as const)).then(entries => {
       if (cancelled) return;
       setSaves(Object.fromEntries(entries.filter((entry): entry is readonly [string, string] => entry[1] !== null)));
       setSavesLoading(false);
@@ -130,7 +129,7 @@ export default function Hub({ games, onSelect, profile }: HubProps) {
         <div className="hub-quick">
           <h2>지금 한 판</h2><p>얼마나 쉬어갈까요? 한 판 기준으로 골랐어요.</p>
           <div className="hub-time-choices" role="group" aria-label="플레이 시간">{TIME_CHOICES.map(choice => <button key={choice.id} type="button" aria-pressed={timeChoice === choice.id} onClick={() => { setTimeChoice(choice.id); setQuickIndex(0); }}>{choice.label}</button>)}</div>
-          {quickGame ? <div className="hub-quick-pick" aria-live="polite"><span><strong>{quickGame.title}</strong><small>{PLAY_INFO[quickGame.id]?.duration} · {PLAY_INFO[quickGame.id]?.controls}</small></span><div><button type="button" className="hub-play" onClick={() => onSelect(quickGame.id)}><PlayIcon size={17} weight="fill"/>시작하기</button>{quickGames.length > 1 && <button type="button" className="hub-another" onClick={() => setQuickIndex(index => index + 1)}>다른 게임</button>}</div></div> : <p role="status">이 시간에 맞는 게임을 준비하고 있어요. 다른 시간을 골라 주세요.</p>}
+          {quickGame ? <div className="hub-quick-pick" aria-live="polite"><span><strong>{quickGame.title}</strong><small>{quickGame.play.duration} · {quickGame.play.controls}</small></span><div><button type="button" className="hub-play" onClick={() => onSelect(quickGame.id)}><PlayIcon size={17} weight="fill"/>시작하기</button>{quickGames.length > 1 && <button type="button" className="hub-another" onClick={() => setQuickIndex(index => index + 1)}>다른 게임</button>}</div></div> : <p role="status">이 시간에 맞는 게임을 준비하고 있어요. 다른 시간을 골라 주세요.</p>}
         </div>
       </section>
       <TodayCard games={playableAll} onSelect={id => onSelect(id)} />

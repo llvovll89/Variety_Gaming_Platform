@@ -51,6 +51,8 @@ export const GAMES: GameDefinition[] = [
     genres: ['전략'],
     tags: ['카드', '덱빌딩', '로그라이크', '턴제', '유물'],
     featuredText: '그림자 승객이 올라탄 마지막 밤 열차. 견습 차장이 되어 카드를 모으고 유물을 챙겨, 매번 다른 노선 끝의 검은 기관차를 물리치세요.',
+    play: { duration: '약 20분 / 여행', minutes: 20, controls: '터치 · 마우스', experience: '덱빌딩 · 로그라이크', save: '진행 자동 저장' },
+    resume: { key: 'arcade:night-train:run', label: () => import('../games/night-train/resume').then(m => m.resumeLabel()) },
     Component: NightTrainApp,
   },
   {
@@ -66,6 +68,7 @@ export const GAMES: GameDefinition[] = [
     genres: ['액션', '캐주얼'],
     tags: ['격투', '3D', '주걱', '콤보', '필살기', '2인'],
     featuredText: 'CPU 또는 친구와 같은 키보드로 붙는 3판 2선승 주방 격투. 내 사진을 넣어 선수로 쓸 수도 있습니다.',
+    play: { duration: '약 3분 / 경기', minutes: 3, controls: '키보드 권장', experience: '격투 · 콤보', save: '한 판씩 플레이' },
     Component: KitchenFighterApp,
   },
   {
@@ -81,6 +84,8 @@ export const GAMES: GameDefinition[] = [
     genres: ['전략', '캐주얼'],
     tags: ['3D', '퍼즐', '빙의', '유령', '이사'],
     featuredText: '몸을 바꾸면, 길이 열립니다. 밀고 당기고 튕기고 운반하는 일곱 가구의 능력을 연결해 24개 이사 현장을 해결하세요.',
+    play: { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '차근차근 퍼즐', save: '완료한 의뢰 저장' },
+    resume: { key: 'gh-ghost-movers-v1', label: () => import('../games/ghost-movers/resume').then(m => m.resumeLabel()) },
     Component: GhostMoversApp,
   },
   {
@@ -96,6 +101,8 @@ export const GAMES: GameDefinition[] = [
     genres: ['전략', '캐주얼'],
     tags: ['3D', '퍼즐', '시간 루프', '협동', '잔상'],
     featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 아홉 개의 시간 연구실을 탈출하세요. 짧게 켜지는 발판과 시간 문을 연결하는 고급 실험에 도전하세요.',
+    play: { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '시간 협동 퍼즐', save: '완료한 방 저장' },
+    resume: { key: 'ten-seconds-progress-v1', label: () => import('../games/ten-seconds/resume').then(m => m.resumeLabel()) },
     Component: TenSecondsApp,
   },
   {
@@ -111,6 +118,7 @@ export const GAMES: GameDefinition[] = [
     genres: ['키즈', '캐주얼'],
     tags: ['리듬', '박자', '동물', '손뼉', '아이'],
     featuredText: '토끼와 곰과 개구리가 박자를 맞춰요. 조금 빨라도 늦어도 괜찮아요. 놓쳐도 점수가 깎이지 않고 노래는 끝까지 갑니다.',
+    play: { duration: '약 1분 / 노래', minutes: 1, controls: '한 손 터치', experience: '리듬 · 박자', save: '한 판씩 플레이' },
     Component: KidsRhythmApp,
   },
   {
@@ -126,6 +134,7 @@ export const GAMES: GameDefinition[] = [
     genres: ['캐주얼'],
     tags: ['낱말', '한글', '추리', '매일', '혼자'],
     featuredText: '글자가 맞으면 초록, 자리만 다르면 노랑. 맞지 않은 글자도 초성·중성·종성이 맞았는지 알려 줍니다. 여섯 번의 기회로 오늘의 낱말을 찾아보세요.',
+    play: { duration: '약 3분 / 낱말', minutes: 3, controls: '한글 키보드', experience: '낱말 · 추리', save: '오늘의 낱말 저장' },
     Component: HangulWordsApp,
   },
   {
@@ -141,6 +150,8 @@ export const GAMES: GameDefinition[] = [
     genres: ['전략'],
     tags: ['턴제', 'RPG', '판타지', '스토리', '전술'],
     featuredText: '등대에 돌아온 빛이 바다 건너에서 응답합니다. 숲과 언덕을 지나 항구·유령선·별이 떨어진 섬으로 원정을 이어 가세요.',
+    play: { duration: '약 15분 / 전투', minutes: 15, controls: '터치 · 마우스', experience: '턴제 · 동료 성장', save: '진행 자동 저장' },
+    resume: { key: 'gh-arcade:fantasy-tactics:v1', label: () => import('../games/fantasy-tactics/resume').then(m => m.resumeLabel()) },
     Component: FantasyTacticsApp,
   },
   {
@@ -155,6 +166,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#78b79b",
     genres: ["캐주얼"],
     tags: ["미로", "3D", "사진 캐릭터", "시간 제한"],
+    play: { duration: '약 3분 / 탐험', minutes: 3, controls: '터치 · 키보드', experience: '미로 · 길 찾기', save: '한 판씩 플레이' },
     Component: EchoMazeApp,
   },
   {
@@ -170,6 +182,8 @@ export const GAMES: GameDefinition[] = [
     genres: ["전략"],
     tags: ["삼국지", "카드", "수집", "영지", "부대 편성"],
     featuredText: "장수를 모으고, 당신만의 영지에서 새로운 천하를 시작하세요.",
+    play: { duration: '5분부터 가볍게', minutes: 5, controls: '한 손 터치', experience: '장수 수집 · 영지', save: '진행 자동 저장' },
+    resume: { key: 'three-kingdoms-local-v2', label: () => import('../games/three-kingdoms-card/resume').then(m => m.resumeLabel()) },
     Component: ThreeKingdomsCardApp,
   },
   {
@@ -184,6 +198,8 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#7a2020",
     genres: ["전략"],
     tags: ["삼국지", "3D", "턴제", "PK", "전쟁"],
+    play: { duration: '20분 이상 몰입', minutes: 20, controls: '마우스 권장', experience: '내정 · 전쟁 전략', save: '턴 진행 저장' },
+    resume: { key: 'arcade:three-kingdoms:save', label: () => import('../games/three-kingdoms/resume').then(m => m.resumeLabel()) },
     Component: ThreeKingdomsApp,
   },
   {
@@ -198,6 +214,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#72bd85",
     genres: ["액션", "캐주얼"],
     tags: ["성장", "지렁이", "아케이드", "점수"],
+    play: { duration: '약 5분 / 도전', minutes: 5, controls: '터치 · 마우스', experience: '성장 · 생존', save: '한 판씩 플레이' },
     Component: HachupingSliderApp,
   },
   {
@@ -212,6 +229,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#77cba3",
     genres: ["액션"],
     tags: ["생존", "RPG", "자동 전투", "레벨업"],
+    play: { duration: '약 10분 / 원정', minutes: 10, controls: '한 손 터치', experience: '자동 사격 · 성장', save: '한 판씩 플레이' },
     Component: RuneRangerApp,
   },
   {
@@ -226,6 +244,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#4fd8ff",
     genres: ["액션", "캐주얼"],
     tags: ["점프", "비행", "장애물", "아케이드"],
+    play: { duration: '약 3분 / 도전', minutes: 3, controls: '한 손 터치', experience: '타이밍 · 점프', save: '한 판씩 플레이' },
     Component: HachupingJumpApp,
   },
   {
@@ -240,6 +259,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#ff6fa5",
     genres: ["키즈", "캐주얼"],
     tags: ["기억력", "동물", "두뇌", "패턴"],
+    play: { duration: '약 3분 / 도전', minutes: 3, controls: '한 손 터치', experience: '패턴 · 기억력', save: '한 판씩 플레이' },
     Component: HachupingMemoryApp,
   },
   {
@@ -254,6 +274,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#ff9020",
     genres: ["액션", "캐주얼", "키즈"],
     tags: ["두더지", "반응 속도", "3D", "30초"],
+    play: { duration: '30초 / 한 판', minutes: .5, controls: '한 손 터치', experience: '순발력 · 정확도', save: '한 판씩 플레이' },
     Component: HachupingWhackAMoleApp,
   },
   {
@@ -268,6 +289,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#22c55e",
     genres: ["키즈", "캐주얼"],
     tags: ["색깔", "반응 속도", "교육"],
+    play: { duration: '약 1분 / 도전', minutes: 1, controls: '한 손 터치', experience: '색깔 · 순발력', save: '한 판씩 플레이' },
     Component: HachupingColorMatchApp,
   },
   {
@@ -282,6 +304,7 @@ export const GAMES: GameDefinition[] = [
     accentColor: "#ffb020",
     genres: ["키즈", "캐주얼"],
     tags: ["풍선", "터치", "유아", "반응 속도"],
+    play: { duration: '60초 / 한 판', minutes: 1, controls: '한 손 터치', experience: '가볍게 톡톡', save: '한 판씩 플레이' },
     Component: HachupingBalloonApp,
   },
 ];

@@ -4,13 +4,17 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { loadBundle } from './bundle.mjs';
 
 const ids = readdirSync('src/games').filter(id => existsSync(`src/games/${id}/meta.ts`));
-const M = await loadBundle(ids.map((id, i) => `export {meta as m${i}} from './src/games/${id}/meta.ts';`).join('\n') + `\nexport * from './src/platform/meta/daily.ts';
-export {PLAY_INFO} from './src/platform/playExperience.ts';`);
-const { PLAY_INFO } = M;
+const M = await loadBundle(ids.map((id, i) => `export {meta as m${i}} from './src/games/${id}/meta.ts';`).join('\n') + `\nexport * from './src/platform/meta/daily.ts';`);
 const metas = Object.fromEntries(ids.map((id, i) => [id, M[`m${i}`]]));
 const registry = readFileSync('src/platform/gameRegistry.ts', 'utf8').replace(/\r\n/g, '\n');
 /** Each entry of the GAMES array, as source text. */
 const ENTRY_SPLIT = /\n  \{\n/;
+/** 레지스트리 항목이 스스로 적어 둔 play 정보. 게임 전체를 번들하지 않고 글로 읽는다. */
+const PLAY_MINUTES = Object.fromEntries(registry.split(ENTRY_SPLIT).slice(1).flatMap(block => {
+  const id = block.match(/id: ['"]([^'"]+)['"]/)?.[1];
+  const minutes = block.match(/play: \{[^}]*minutes: ([0-9.]+)/)?.[1];
+  return id && minutes !== undefined ? [[id, Number(minutes)]] : [];
+}));
 /** 레지스트리가 키즈로 분류한 게임. 손으로 적어 두면 새 게임이 생길 때마다 뒤처진다. */
 const KIDS = registry.split(ENTRY_SPLIT).slice(1)
   .filter(block => /audience: ['"]kids['"]/.test(block) || /genres: \[[^\]]*키즈/.test(block))
@@ -139,8 +143,8 @@ test('the hub always has a kids, a short and a long challenge to offer', () => {
   })).filter(g => g.id);
   assert.ok(games.length >= 15, `parsed ${games.length} registry entries`);
 
-  const candidates = games.filter(g => !g.comingSoon && metas[g.id]?.reportsRuns && metas[g.id]?.daily?.length && PLAY_INFO[g.id])
-    .map(g => ({ id: g.id, audience: g.kids ? 'kids' : 'general', minutes: PLAY_INFO[g.id].minutes }));
+  const candidates = games.filter(g => !g.comingSoon && metas[g.id]?.reportsRuns && metas[g.id]?.daily?.length && PLAY_MINUTES[g.id] !== undefined)
+    .map(g => ({ id: g.id, audience: g.kids ? 'kids' : 'general', minutes: PLAY_MINUTES[g.id] }));
   const groups = {
     kids: candidates.filter(c => c.audience === 'kids'),
     short: candidates.filter(c => c.audience === 'general' && c.minutes <= 5),
@@ -155,11 +159,33 @@ test('the hub always has a kids, a short and a long challenge to offer', () => {
   }
 });
 
-test('every game with a daily challenge is listed in PLAY_INFO', () => {
-  // TodayCard drops a game with no PLAY_INFO entry, and gamesForTime filters it out of the time
-  // picker, both without a word. A new game missing from that map just never appears.
-  for (const [id, meta] of Object.entries(metas)) {
-    if (!meta.daily?.length) continue;
-    assert.ok(PLAY_INFO[id], `${id} has a PLAY_INFO entry, or its challenges never reach the hub`);
+test('every registered game says how long one round takes', () => {
+  // 예전에는 이 값이 플랫폼의 별도 맵에 있어서, 빠뜨린 게임이 시간별 추천과 오늘의 도전에서
+  // 아무 말 없이 사라졌다. 지금은 GameDefinition의 필수 필드라 타입이 먼저 막지만, 레지스트리
+  // 글만 보고도 비어 있지 않은지 확인해 둔다.
+  const registered = [...registry.matchAll(/^\s+id: ['"]([^'"]+)['"],$/gm)].map(m => m[1]);
+  for (const id of registered) {
+    assert.ok(PLAY_MINUTES[id] !== undefined, `${id}: play.minutes`);
+    assert.ok(PLAY_MINUTES[id] > 0, `${id}: a round takes some time`);
   }
+});
+
+test('a resumable game names a storage key and a label module that exist', () => {
+  // 이어하기 규칙은 게임 폴더(resume.ts)에 있고, 레지스트리는 열쇠와 그 모듈을 가리키기만 한다.
+  // 허브는 화면에 보이는 모든 게임에 대해 묻기 때문에, 열쇠가 어긋나면 저장본이 있어도 조용히
+  // "이어하기"가 사라진다.
+  const entries = registry.split(ENTRY_SPLIT).slice(1);
+  let resumable = 0;
+  for (const block of entries) {
+    const id = block.match(/id: ['"]([^'"]+)['"]/)?.[1];
+    const resume = block.match(/resume: \{ key: ['"]([^'"]+)['"], label: \(\) => import\('\.\.\/games\/([^']+)\/resume'\)/);
+    if (!resume) continue;
+    resumable++;
+    const [, key, folder] = resume;
+    assert.equal(folder, id, `${id}: points at its own resume module`);
+    const source = readFileSync(`src/games/${id}/resume.ts`, 'utf8');
+    assert.match(source, /export async function resumeLabel/, `${id}/resume.ts exports resumeLabel`);
+    assert.ok(source.includes(`'${key}'`), `${id}/resume.ts reads the key the registry names (${key})`);
+  }
+  assert.ok(resumable >= 6, `${resumable} games offer to resume`);
 });

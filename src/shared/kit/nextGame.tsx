@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { PlaySession } from '../../platform/playSessionContext';
-import { PLAY_INFO, recommendNext, scoreMessage } from '../../platform/playExperience';
+import { recommendNext, scoreMessage } from '../../platform/playExperience';
 import { nextCss } from './kitCss';
 
 /**
@@ -22,8 +22,8 @@ export function NextGameActions() {
   const different = recommendNext(session.games, session.gameId, 'different');
   return <div className="kit-next arcade-next" role="group" aria-label="다음 한 판 고르기"><style>{nextCss + legacyScrollCss}</style>
     <p>다음엔 어떤 한 판을 해볼까요?</p>
-    {similar && <button type="button" onClick={() => session.selectGame(similar.id)}><span><small>비슷한 재미</small><b>{similar.title}</b><small>{PLAY_INFO[similar.id]?.duration}</small></span><span aria-hidden="true">↗</span></button>}
-    {different && different.id !== similar?.id && <button type="button" onClick={() => session.selectGame(different.id)}><span><small>다른 분위기</small><b>{different.title}</b><small>{PLAY_INFO[different.id]?.duration}</small></span><span aria-hidden="true">↗</span></button>}
+    {similar && <button type="button" onClick={() => session.selectGame(similar.id)}><span><small>비슷한 재미</small><b>{similar.title}</b><small>{similar.play.duration}</small></span><span aria-hidden="true">↗</span></button>}
+    {different && different.id !== similar?.id && <button type="button" onClick={() => session.selectGame(different.id)}><span><small>다른 분위기</small><b>{different.title}</b><small>{different.play.duration}</small></span><span aria-hidden="true">↗</span></button>}
     <button type="button" className="kit-next-hub" onClick={session.exit}>게임 목록으로</button>
   </div>;
 }

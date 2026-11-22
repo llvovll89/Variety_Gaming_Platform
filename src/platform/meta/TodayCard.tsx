@@ -1,6 +1,5 @@
 import { CheckCircleIcon, PlayIcon } from '@phosphor-icons/react';
 import { audienceOf, type GameDefinition } from '../types';
-import { PLAY_INFO } from '../playExperience';
 import { currentStreak, dailyChallenge, featuredDailies, localDateKey } from './daily';
 import { settingsStore } from '../../shared/kit/settings';
 import { useMeta } from './store';
@@ -21,8 +20,8 @@ export function weekOf(today: string): string[] {
  */
 export function TodayCard({ games, onSelect, today = localDateKey() }: { games: readonly GameDefinition[]; onSelect: (gameId: string) => void; today?: string }) {
   const meta = useMeta();
-  const candidates = games.filter(game => game.meta?.reportsRuns && game.meta.daily?.length && PLAY_INFO[game.id])
-    .map(game => ({ id: game.id, audience: audienceOf(game), minutes: PLAY_INFO[game.id].minutes }));
+  const candidates = games.filter(game => game.meta?.reportsRuns && game.meta.daily?.length)
+    .map(game => ({ id: game.id, audience: audienceOf(game), minutes: game.play.minutes }));
   const picks = featuredDailies(today, candidates).flatMap(id => {
     const game = games.find(g => g.id === id);
     const challenge = game && dailyChallenge(today, id, game.meta?.daily);

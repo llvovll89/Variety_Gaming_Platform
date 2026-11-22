@@ -1,34 +1,5 @@
 import type { GameDefinition } from './types';
 
-export interface PlayInfo {
-  duration: string;
-  minutes: number;
-  controls: string;
-  experience: string;
-  save: string;
-}
-
-/** Durations describe a round, puzzle or battle, rather than the entire campaign. */
-export const PLAY_INFO: Record<string, PlayInfo> = {
-  'kitchen-fighter': { duration: '약 3분 / 경기', minutes: 3, controls: '키보드 권장', experience: '격투 · 콤보', save: '한 판씩 플레이' },
-  'night-train': { duration: '약 20분 / 여행', minutes: 20, controls: '터치 · 마우스', experience: '덱빌딩 · 로그라이크', save: '진행 자동 저장' },
-  'ghost-movers': { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '차근차근 퍼즐', save: '완료한 의뢰 저장' },
-  'ten-seconds': { duration: '약 5분 / 퍼즐', minutes: 5, controls: '터치 · 키보드', experience: '시간 협동 퍼즐', save: '완료한 방 저장' },
-  'fantasy-tactics': { duration: '약 15분 / 전투', minutes: 15, controls: '터치 · 마우스', experience: '턴제 · 동료 성장', save: '진행 자동 저장' },
-  'echo-maze': { duration: '약 3분 / 탐험', minutes: 3, controls: '터치 · 키보드', experience: '미로 · 길 찾기', save: '한 판씩 플레이' },
-  'hangul-words': { duration: '약 3분 / 낱말', minutes: 3, controls: '한글 키보드', experience: '낱말 · 추리', save: '오늘의 낱말 저장' },
-  'kids-rhythm': { duration: '약 1분 / 노래', minutes: 1, controls: '한 손 터치', experience: '리듬 · 박자', save: '한 판씩 플레이' },
-  'three-kingdoms-card': { duration: '5분부터 가볍게', minutes: 5, controls: '한 손 터치', experience: '장수 수집 · 영지', save: '진행 자동 저장' },
-  'three-kingdoms': { duration: '20분 이상 몰입', minutes: 20, controls: '마우스 권장', experience: '내정 · 전쟁 전략', save: '턴 진행 저장' },
-  'hachuping-slither': { duration: '약 5분 / 도전', minutes: 5, controls: '터치 · 마우스', experience: '성장 · 생존', save: '한 판씩 플레이' },
-  'hachuping-dodge': { duration: '약 10분 / 원정', minutes: 10, controls: '한 손 터치', experience: '자동 사격 · 성장', save: '한 판씩 플레이' },
-  'hachuping-jump': { duration: '약 3분 / 도전', minutes: 3, controls: '한 손 터치', experience: '타이밍 · 점프', save: '한 판씩 플레이' },
-  'hachuping-memory': { duration: '약 3분 / 도전', minutes: 3, controls: '한 손 터치', experience: '패턴 · 기억력', save: '한 판씩 플레이' },
-  'hachuping-whack-a-mole': { duration: '30초 / 한 판', minutes: .5, controls: '한 손 터치', experience: '순발력 · 정확도', save: '한 판씩 플레이' },
-  'hachuping-color-match': { duration: '약 1분 / 도전', minutes: 1, controls: '한 손 터치', experience: '색깔 · 순발력', save: '한 판씩 플레이' },
-  'hachuping-balloon': { duration: '60초 / 한 판', minutes: 1, controls: '한 손 터치', experience: '가볍게 톡톡', save: '한 판씩 플레이' },
-};
-
 export type TimeChoice = 'short' | 'medium' | 'long';
 export const TIME_CHOICES: { id: TimeChoice; label: string; description: string }[] = [
   { id: 'short', label: '1분 한 판', description: '짧고 가볍게' },
@@ -38,8 +9,7 @@ export const TIME_CHOICES: { id: TimeChoice; label: string; description: string 
 
 export function gamesForTime(games: readonly GameDefinition[], choice: TimeChoice) {
   return games.filter(g => !g.disabled && g.releaseStatus !== 'coming-soon').filter(g => {
-    const minutes = PLAY_INFO[g.id]?.minutes;
-    if (minutes === undefined) return false;
+    const minutes = g.play.minutes;
     return choice === 'short' ? minutes <= 1 : choice === 'medium' ? minutes > 1 && minutes <= 5 : minutes > 5;
   });
 }
