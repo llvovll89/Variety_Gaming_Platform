@@ -5,6 +5,7 @@ import GameCanvas from "./components/GameCanvas";
 import HUD from "./components/HUD";
 import StartMenu from "./components/StartMenu";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
+import { AUTOFOCUS, GameDialog } from "../../shared/kit/GameDialog";
 import { useBest, useRecords } from "../../platform/meta/api";
 import { GAME_DURATION_SECONDS } from "./game/constants";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
@@ -49,18 +50,14 @@ export default function HachupingBalloonApp({ onExit, profile }: GameProps) {
  <button aria-label="잠깐 쉬기" onClick={() => engine?.pause()}><PauseIcon size={23} weight="fill" /></button></div>
  {snapshot.score === 0 && !paused && !ended && <p className="balloon-help">떠오르는 풍선을 눌러보세요!</p>}
  </div> : <><StartMenu profile={profile} bestScore={best} onStart={start} /><button className="balloon-back" onClick={onExit}><ArrowLeftIcon size={18} />허브로</button></>}
- {(paused || ended) && <div className="balloon-overlay"><section className="balloon-dialog" role="dialog" aria-modal="true" aria-labelledby="balloon-dialog-title" onKeyDown={e => {
-   if(e.key !== "Tab") return;
-   const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>("button");
-   if(e.shiftKey && document.activeElement === buttons[0]) { e.preventDefault(); buttons[buttons.length - 1].focus(); }
-   if(!e.shiftKey && document.activeElement === buttons[buttons.length - 1]) { e.preventDefault(); buttons[0].focus(); }
- }}>
+ {/* 판이 끝났을 때는 Escape로 닫히지 않는다. 다음에 무엇을 할지는 골라야 한다. */}
+ {(paused || ended) && <GameDialog className="balloon-dialog" labelledBy="balloon-dialog-title" dismissible={paused} onClose={() => engine?.resume()}>
  <h2 id="balloon-dialog-title">{paused ? "잠깐 쉬어가요" : "하늘 가득 팡팡!"}</h2>
  <p>{paused ? "풍선들도 기다리고 있어요." : "60초 동안 터뜨린 풍선"}</p>
  <strong className="balloon-result">{snapshot.score}<small>개</small></strong>
  {ended && <><p>내 최고 기록 {best}개</p><ScoreFeedback score={snapshot.score} previousBest={rewards?.previousBest ?? 0} unit="개"/><RewardStrip rewards={rewards} audience="kids"/></>}
- <button autoFocus className="balloon-primary" onClick={paused ? () => engine?.resume() : start}>{paused ? "계속 놀기" : "한 번 더 놀기"}</button>
+ <button {...AUTOFOCUS} className="balloon-primary" onClick={paused ? () => engine?.resume() : start}>{paused ? "계속 놀기" : "한 번 더 놀기"}</button>
  <button className="balloon-secondary" onClick={menu}>처음 화면으로</button>{ended && <NextGameActions/>}
- </section></div>}
+ </GameDialog>}
  </div>;
 }

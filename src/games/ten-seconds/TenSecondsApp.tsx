@@ -1,4 +1,5 @@
 import { keyOf } from '../../shared/kit/keys';
+import { GameDialog } from '../../shared/kit/GameDialog';
 import { kitOutput } from '../../shared/kit/sound';
 import { NextGameActions } from '../../platform/PlaySession';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
@@ -40,7 +41,7 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   const [progress,setProgress]=useState(()=>{try{return loadProgress(localStorage.getItem(SAVE_KEY));}catch{return loadProgress(null);}});
   const [sound,setSound]=useState(false),[saveError,setSaveError]=useState(false),[helpOpen,setHelpOpen]=useState(false);
   const resumeAfterHelp=useRef(false),touchMove=useRef<number|null>(null);
-  const preview=useMemo(()=>{const p=new TimeRun(0);p.player.direction=2;p.echoes=[Array.from({length:600},()=>({x:3,y:3,direction:2 as Direction}))];return p;},[]),held=useRef<Direction|null>(null),page=useRef<HTMLElement>(null),dialog=useRef<HTMLDivElement>(null),wonRun=useRef<TimeRun|null>(null),audio=useRef<AudioContext|null>(null);
+  const preview=useMemo(()=>{const p=new TimeRun(0);p.player.direction=2;p.echoes=[Array.from({length:600},()=>({x:3,y:3,direction:2 as Direction}))];return p;},[]),held=useRef<Direction|null>(null),page=useRef<HTMLElement>(null),wonRun=useRef<TimeRun|null>(null),audio=useRef<AudioContext|null>(null);
   const update=()=>refresh(n=>n+1);
   const records=useRecords(),[rewards,setRewards]=useState<RunRewards|null>(null);
   // Today's room: an escaped one picked with the day's seed. None until a room is escaped, so the
@@ -61,7 +62,9 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   const openHelp=()=>{resumeAfterHelp.current=run?.status==='playing';pause();setHelpOpen(true);};
   const closeHelp=()=>{setHelpOpen(false);if(resumeAfterHelp.current)run?.start();update();};
   const modal=helpOpen||mapOpen||!!run&&run.status!=='playing';
-  useEffect(()=>{if(modal)requestAnimationFrame(()=>dialog.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus());},[modal,run?.status,mapOpen,helpOpen]);
+  // Escape로 닫을 수 있는 모달과, 그때 닫는 방법. 대화상자와 키보드 처리가 같은 것을 보게 한다.
+  const dismissible=helpOpen||mapOpen||run?.status==='paused';
+  const dismiss=()=>{if(helpOpen)closeHelp();else if(mapOpen)setMapOpen(false);else if(run?.status==='paused'){run.start();update();}};
   useEffect(()=>{
     if(!run||run.status!=='won'||wonRun.current===run)return;wonRun.current=run;
     const next=completeRoom(progress,run);setProgress(next);try{localStorage.setItem(SAVE_KEY,JSON.stringify(next));setSaveError(false);}catch{setSaveError(true);}
@@ -76,7 +79,8 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
     const down=(e:KeyboardEvent)=>{
       if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test((e.target as HTMLElement).tagName))return;
       const k=keyOf(e);
-      if(k==='Escape'&&!e.repeat){e.preventDefault();if(helpOpen){closeHelp();}else if(mapOpen){setMapOpen(false);}else if(run?.status==='playing')pause();else if(run?.status==='paused'){run.start();update();}return;}
+      // 모달이 열려 있으면 Escape는 대화상자가 맡는다(네이티브 <dialog>의 cancel).
+      if(k==='Escape'&&!e.repeat){if(modal)return;e.preventDefault();if(run?.status==='playing')pause();return;}
       if(!run||helpOpen||mapOpen||run.status!=='playing')return;
       if(k in directionKeys){e.preventDefault();held.current=directionKeys[k];if(!e.repeat){run.move(held.current);update();}}
       if(k==='r'&&!e.repeat){e.preventDefault();rewind();}
@@ -90,7 +94,6 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[run,mapOpen,sound,helpOpen]);
   const openMap=()=>{run?.pause();held.current=null;setMapOpen(true);update();};
-  const trapFocus=(e:React.KeyboardEvent)=>{if(e.key!=='Tab')return;const buttons=dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]');if(!buttons?.length)return;const first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}};
   const totalStars=Object.values(progress.best).reduce((n,v)=>n+v.stars,0);
   return <main className="ts-app" ref={page}>
     <div className="ts-shell" inert={modal}>
@@ -113,11 +116,11 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
       </>}
     </div>
     {run&&<section className="ts-touch-controls" aria-label="터치 조작과 시간" inert={modal}><div className="ts-touch-summary"><b><Clock size={16}/>{run.practice?"연습 · 시간 제한 없음":`${run.secondsLeft.toFixed(1)}초 남음`}</b><span><Ghost size={15}/>잔상 {run.echoes.length} / {run.echoLimit}</span></div><button className="ts-primary ts-touch-rewind" disabled={run.status!=='playing'} onClick={rewind}><ArrowCounterClockwise size={20}/>지금 되감기<kbd>R</kbd></button><div className="ts-dpad" aria-label="터치 이동">{([0,3,2,1] as Direction[]).map(d=><button key={d} aria-label={['위로 이동','오른쪽으로 이동','아래로 이동','왼쪽으로 이동'][d]} style={{gridArea:['up','right','down','left'][d]}} onPointerDown={e=>{e.preventDefault();if(run.status!=='playing'||held.current!==null)return;e.currentTarget.setPointerCapture(e.pointerId);touchMove.current=e.pointerId;run.route=[];held.current=d;run.move(d);update();}} onPointerUp={e=>{if(touchMove.current===e.pointerId){touchMove.current=null;held.current=null;}}} onPointerCancel={e=>{if(touchMove.current===e.pointerId){touchMove.current=null;held.current=null;}}} onLostPointerCapture={e=>{if(touchMove.current===e.pointerId){touchMove.current=null;held.current=null;}}}>{[<ArrowUp/>,<ArrowRight/>,<ArrowDown/>,<ArrowLeft/>][d]}</button>)}</div></section>}
-    {modal&&<div className="ts-modal-backdrop"><div ref={dialog} className={`ts-modal ${mapOpen?'ts-map-modal':''} ${helpOpen?'ts-help-modal':''}`} role="dialog" aria-modal="true" aria-label={helpOpen?'게임 방법':mapOpen?'연구소 방 선택':run?.status==='won'?'시간 퍼즐 완료':run?.status==='ready'?'시간 퍼즐 준비':'일시 정지'} onKeyDown={trapFocus}>
+    {modal&&<GameDialog key={helpOpen?'help':mapOpen?'map':run?.status} className={`ts-modal ${mapOpen?'ts-map-modal':''} ${helpOpen?'ts-help-modal':''}`} label={helpOpen?'게임 방법':mapOpen?'연구소 방 선택':run?.status==='won'?'시간 퍼즐 완료':run?.status==='ready'?'시간 퍼즐 준비':'일시 정지'} dismissible={dismissible} onClose={dismiss}>
       {helpOpen?<HowToPlay onPractice={()=>launch(0,true,true)} onClose={closeHelp}/>:mapOpen?<><div className="ts-modal-heading"><div><span className="ts-eyebrow">THE TIME LABORATORY</span><h2>아홉 개의 시간</h2></div><button className="ts-icon" aria-label="방 선택 닫기" onClick={()=>setMapOpen(false)}><X size={21}/></button></div><p>닫힌 방은 앞의 퍼즐을 완성하면 열립니다. 기록은 자동으로 저장돼요.</p><div className="ts-room-grid">{LEVELS.map((level,i)=><button key={level.name} className={i>progress.unlocked?'is-locked':''} disabled={i>progress.unlocked} onClick={()=>launch(i)}><span className="ts-room-number">{String(i+1).padStart(2,'0')}{i>progress.unlocked?<Lock size={21}/>:<ArrowRight size={21}/>}</span><b>{level.name}</b><small>{level.subtitle}</small><Stars count={progress.best[i]?.stars}/></button>)}</div></>
       :run?.status==='won'?<><span className="ts-win-mark"><Clock size={45}/></span><span className="ts-eyebrow">TIMELINE CONNECTED</span><h2>{run.levelIndex===LEVELS.length-1?'다시 흐르는 시간':'우리의 시간이 만났어요'}</h2><Stars count={run.stars}/>{run.level.memory&&<div className="ts-story-memory"><Sparkle size={20}/><p>{run.level.memory}</p></div>}<p>{run.levelIndex===LEVELS.length-1?'연구소의 마지막 시계가 열한 번째 초를 향해 움직입니다. 루프는 과거의 자신들을 뒤로하고, 이번에는 새로운 순간으로 나아갑니다.':'과거의 발걸음이 지금의 당신에게 길을 열어 주었습니다.'}</p><div className="ts-result-stats"><div><b>{run.loops}</b><span>되감기</span></div><div><b>{run.deaths}</b><span>레이저 접촉</span></div><div><b>{(run.totalTicks/60).toFixed(1)}s</b><span>움직인 시간</span></div></div><RewardStrip rewards={rewards} audience="general"/>{saveError&&<p className="ts-save-error">이 브라우저에서 기록을 저장할 수 없어요. 현재 접속 중에는 계속 이어갈 수 있습니다.</p>}<button className="ts-primary" onClick={()=>run.levelIndex<LEVELS.length-1?launch(run.levelIndex+1):setRun(null)}>{run.levelIndex<LEVELS.length-1?'다음 시간으로':'연구소 원정 완료'}<ArrowRight size={20}/></button><div className="ts-modal-minor"><button onClick={()=>launch(run.levelIndex,true,undefined,daily)}>다시 도전</button><button onClick={openMap}>방 선택하기</button></div><NextGameActions/></>
       :run?.status==='ready'?<><span className="ts-eyebrow">ROOM {String(run.levelIndex+1).padStart(2,'0')}</span><h2>{run.level.name}</h2><p>{run.practice?'첫 방은 시간 제한 없이 배워요. A 발판에 올라가 되감고, 유령에게 발판을 맡긴 뒤 출구로 가세요.':run.level.story}</p><div className="ts-modal-tip"><Ghost size={22}/><span>{run.level.briefing??run.level.hint}</span></div><button className="ts-primary" onClick={()=>{run.start();update();}}>이 시간에 들어가기<Play weight="fill" size={19}/></button><button className="ts-erase" onClick={openMap}>다른 방 보기</button></>
       :run&&<><span className="ts-eyebrow">A MOMENT TO BREATHE</span><h2>시간을 잠시 멈췄어요</h2><p>{run.echoes.length>=run.echoLimit?run.notice:'잔상과 기록은 그대로입니다. 준비되면 이어가세요.'}</p><button className="ts-primary" onClick={()=>{run.start();update();}}><Play size={20}/>계속하기</button>{run.echoes.length>0&&<button className="ts-secondary" onClick={()=>{run.removeLastEcho();run.start();update();}}>마지막 잔상을 지우고 계속</button>}<div className="ts-modal-minor"><button onClick={()=>launch(run.levelIndex,true,undefined,daily)}>방 처음부터</button><button onClick={()=>{setRun(null);setMapOpen(false);}}>시작 화면</button></div></>}
-    </div></div>}
+    </GameDialog>}
   </main>;
 }

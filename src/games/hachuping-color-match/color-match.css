@@ -9,6 +9,9 @@
 /* Shared surfaces */
 .cm-sheet{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
 .cm-card{width:min(440px,100%);background:var(--cm-card);border:1px solid var(--cm-line);border-radius:28px;padding:28px 24px;box-shadow:0 18px 40px -24px #20243f59}
+.cm-dialog{color:inherit;font-family:inherit;line-height:inherit;width:min(440px,calc(100% - 32px));border:1px solid var(--cm-line)}
+.cm-dialog-pause{--kit-backdrop:#20243f66;text-align:center}
+.cm-dialog-result{--kit-backdrop:#20243f40}
 .cm-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border:0;border-radius:18px;background:var(--cm-ink);color:#fff!important;font-size:17px!important;font-weight:800}
 .cm-primary:active{transform:translateY(1px)}
 .cm-secondary{width:100%;min-height:48px;border:1px solid var(--cm-line);border-radius:16px;background:transparent;font-weight:700}

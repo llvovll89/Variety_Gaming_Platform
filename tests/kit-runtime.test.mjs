@@ -87,6 +87,32 @@ test('a game with its own audio follows the arcade mute and volume, live', async
   assert.deepEqual(direct, [], 'no game connects straight to the speakers');
 });
 
+/**
+ * 모달은 네이티브 <dialog>를 쓰는 키트의 GameDialog로 연다. 손으로 짠 포커스 덫은 Tab만 막고
+ * 화면 낭독기·브라우저 UI·중첩 대화상자를 놓치며, isKitDialogOpen()에 등록되지 않아 자동 일시정지가
+ * 대화상자 위에서 또 울린다. 남은 두 곳은 이유가 있어 남겨 둔 것이고, 새로 늘지 않게 막는다.
+ */
+const HAND_ROLLED = [
+  // 두 대화상자의 CSS가 겉-상자 두 겹 구조에 깊이 묶여 있다(.tk-overview>div 등 두 파일 15규칙).
+  // 자체 useDialogFocus는 Escape·포커스 복귀·중첩 native dialog까지 이미 다루고, 이 게임은
+  // useAutoPause를 쓰지 않아 isKitDialogOpen()이 필요 없다. 옮길 값이 아직 비용보다 작다.
+  'src/games/three-kingdoms/components/DispatchDialog.tsx',
+  'src/games/three-kingdoms/components/OverviewSheet.tsx',
+  // 간식 설명은 모달이 아니라 인라인 말풍선이다(aria-modal 없음). 모달로 만들면 더 나빠진다.
+  'src/games/night-train/NightTrainApp.tsx',
+];
+
+test('a game opens modals through the kit, not a hand-written focus trap', async () => {
+  const { readdirSync, readFileSync, statSync } = await import('node:fs');
+  const { join, sep } = await import('node:path');
+  const walk = dir => readdirSync(dir).flatMap(f => statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]);
+  const allowed = HAND_ROLLED.map(f => f.split('/').join(sep));
+  const own = walk('src/games')
+    .filter(f => /\.tsx$/.test(f) && /role="dialog"/.test(readFileSync(f, 'utf8')))
+    .filter(f => !allowed.includes(f));
+  assert.deepEqual(own, [], 'every other modal goes through the kit GameDialog');
+});
+
 test('letter keys work with a Korean keyboard layout', async () => {
   const { keyOf } = await loadBundle(`export {keyOf} from './src/shared/kit/keys.ts';`);
   assert.equal(keyOf({ key: 'ㅈ', code: 'KeyW' }), 'w');

@@ -1,4 +1,5 @@
 import { keyOf } from '../../shared/kit/keys';
+import { AUTOFOCUS, GameDialog } from '../../shared/kit/GameDialog';
 import { NextGameActions } from '../../platform/PlaySession';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRecords } from '../../platform/meta/api';
@@ -26,28 +27,12 @@ export default function EchoMazeApp({ onExit, profile }: GameProps) {
   const [photo, setPhoto] = useState<string | null>(null), [error, setError] = useState(''), [loading, setLoading] = useState(false);
 
   const page = useRef<HTMLElement>(null);
-  const dialog = useRef<HTMLElement>(null);
   const held = useRef<number | null>(null), lastMove = useRef(0), uploadId = useRef(0);
   const swipe = useRef<{id:number;x:number;y:number} | null>(null);
   const source = photo || profile.characterImage;
 
   useEffect(() => () => { uploadId.current++; }, []);
   useEffect(() => { page.current?.scrollTo(0, 0); }, [run]);
-  const modalOpen = !!run && (run.paused || run.status !== 'playing');
-  useEffect(() => {
-    if (!modalOpen) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const buttons = () => Array.from(dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || []);
-    buttons()[0]?.focus({ preventScroll: true });
-    const trap = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') return;
-      const items = buttons(), index = items.indexOf(document.activeElement as HTMLButtonElement);
-      event.preventDefault();
-      items[(index + (event.shiftKey ? -1 : 1) + items.length) % items.length]?.focus({ preventScroll: true });
-    };
-    document.addEventListener('keydown', trap);
-    return () => { document.removeEventListener('keydown', trap); if (previous?.isConnected) previous.focus({ preventScroll: true }); };
-  }, [modalOpen]);
   useEffect(() => {
     if (!run) return;
     let frame = 0, previous = performance.now(), lastUi = 0;
@@ -116,7 +101,7 @@ export default function EchoMazeApp({ onExit, profile }: GameProps) {
       <div className="maze-hud"><div><span>{LEVELS[run.difficulty].label} · {profile.name||'탐험가'}</span><strong>{run.sealsRemaining ? '봉인을 모아 출구를 열어라' : '빛나는 출구로 이동하세요'}</strong></div><div className={run.remaining<=20?'maze-time urgent':'maze-time'}><small>남은 시간</small><b>{Math.floor(Math.ceil(run.remaining)/60)}:{String(Math.ceil(run.remaining)%60).padStart(2,'0')}</b></div><button onClick={()=>{run.paused=!run.paused;held.current=null;refresh(v=>v+1);}} disabled={run.status!=='playing'} aria-label="일시 정지"><Pause size={20} weight="fill"/></button></div>
       <RunStatus run={run}/>
       <div className="maze-board" onPointerDown={e=>{if(e.pointerType==='mouse'||(e.target as HTMLElement).closest('button,.maze-overlay'))return;swipe.current={id:e.pointerId,x:e.clientX,y:e.clientY};e.currentTarget.setPointerCapture(e.pointerId);}} onPointerUp={e=>{const start=swipe.current;swipe.current=null;if(!start||start.id!==e.pointerId)return;const x=e.clientX-start.x,y=e.clientY-start.y;if(Math.max(Math.abs(x),Math.abs(y))<18)return;run.move(Math.abs(x)>Math.abs(y)?(x>0?1:3):(y>0?2:0));refresh(v=>v+1);}} onPointerCancel={()=>{swipe.current=null;}} onLostPointerCapture={()=>{swipe.current=null;}}><MazeViewport run={run} source={source}/><div className="maze-run-stats"><span><Footprints size={16} aria-hidden="true"/>{run.steps} 걸음</span><span><Diamond size={16} aria-hidden="true"/>시간 조각 {run.collected}개</span><span><Diamond size={16} aria-hidden="true"/>봉인 {run.sealsCollected}/{run.requiredSeals}</span><span className="maze-north">↑ 북쪽</span></div><div className="maze-legend"><span>보라색 수정 · 봉인</span><span>{run.trapsActive?"함정 활성 -6초":"함정 휴면"}</span><span>모래시계 +10초</span><span>고리 · 내 발자국</span><span>▣ 빛나는 출구</span></div>
-      {(run.paused||run.status!=='playing')&&<div className="maze-overlay"><section ref={dialog} role="dialog" aria-modal="true" aria-label={run.status==='playing'?'일시 정지':'게임 결과'}><span className="maze-eyebrow">{run.status==='won'?'EXPLORATION COMPLETE':run.status==='lost'?'TIME OVER':'TAKE A BREATH'}</span><h2>{run.status==='won'?'무사히 탈출했어요!':run.status==='lost'?'시간이 다 되었어요':'잠시 쉬어 가요'}</h2><p>{run.status==='playing'?'시간도 함께 멈췄어요. 준비되면 이어서 탐험하세요.':`${run.status==='won'?`${Math.ceil(run.elapsed)}초 만에 탈출 · `:''}${run.steps}걸음 · 시간 조각 ${run.collected}개${best(run.difficulty)!==null?` · 최단 ${best(run.difficulty)}초`:''}${daily?' · 오늘의 미로':''}`}</p>{run.status==='playing'?<button className="maze-primary" onClick={()=>{run.paused=false;refresh(v=>v+1);}}>계속 탐험</button>:<button className="maze-primary" onClick={start}>새 미로 도전</button>}<button onClick={()=>setRun(null)}>캐릭터 · 난이도 설정</button>{run.status!=="playing"&&<RewardStrip rewards={rewards} audience="general"/>}{run.status!=="playing"&&<NextGameActions/>}</section></div>}
+      {(run.paused||run.status!=='playing')&&<GameDialog className="maze-dialog" label={run.status==='playing'?'일시 정지':'게임 결과'} dismissible={run.status==='playing'} onClose={()=>{run.paused=false;refresh(v=>v+1);}}><span className="maze-eyebrow">{run.status==='won'?'EXPLORATION COMPLETE':run.status==='lost'?'TIME OVER':'TAKE A BREATH'}</span><h2>{run.status==='won'?'무사히 탈출했어요!':run.status==='lost'?'시간이 다 되었어요':'잠시 쉬어 가요'}</h2><p>{run.status==='playing'?'시간도 함께 멈췄어요. 준비되면 이어서 탐험하세요.':`${run.status==='won'?`${Math.ceil(run.elapsed)}초 만에 탈출 · `:''}${run.steps}걸음 · 시간 조각 ${run.collected}개${best(run.difficulty)!==null?` · 최단 ${best(run.difficulty)}초`:''}${daily?' · 오늘의 미로':''}`}</p>{run.status==='playing'?<button {...AUTOFOCUS} className="maze-primary" onClick={()=>{run.paused=false;refresh(v=>v+1);}}>계속 탐험</button>:<button {...AUTOFOCUS} className="maze-primary" onClick={start}>새 미로 도전</button>}<button onClick={()=>setRun(null)}>캐릭터 · 난이도 설정</button>{run.status!=="playing"&&<RewardStrip rewards={rewards} audience="general"/>}{run.status!=="playing"&&<NextGameActions/>}</GameDialog>}
       </div>
       <div className="maze-bottom"><div className="maze-tools"><p>{"기억 닻으로 갈림길을 저장하세요. 함정의 빛은 3초마다 바뀝니다."}</p><div className="maze-message" role="status">{run.message}</div><div className="maze-actions"><button disabled={run.paused||run.status!=='playing'} onClick={()=>run.action('anchor')}><Anchor size={24} aria-hidden="true"/><span><b>기억 닻 저장</b><small>E · 이곳을 기억하기</small></span></button><button disabled={run.paused||run.status!=='playing'||!run.anchor||!run.returns} onClick={()=>run.action('return')}><ArrowUUpLeft size={24} aria-hidden="true"/><span><b>닻으로 귀환</b><small>R · {run.returns}회 남음</small></span></button><button disabled={run.paused||run.status!=='playing'||!run.pulses||run.remaining<=4} onClick={()=>run.action('pulse')}><Broadcast size={24} aria-hidden="true"/><span><b>메아리</b><small>Space · −4초 · {run.pulses}회</small></span></button></div><p>방향키 / WASD · 인접한 길 클릭 · Esc 일시 정지</p></div><div className="maze-dpad" aria-label="터치 이동">{[0,3,2,1].map(d=><button key={d} className={`dir-${d}`} aria-label={['위로 이동','오른쪽 이동','아래로 이동','왼쪽 이동'][d]} disabled={run.paused||run.status!=='playing'} onPointerDown={e=>{e.preventDefault();if(held.current!==null)return;e.currentTarget.setPointerCapture(e.pointerId);held.current=d;run.move(d);lastMove.current=performance.now();refresh(v=>v+1);}} onPointerUp={()=>{held.current=null;}} onPointerCancel={()=>{held.current=null;}} onLostPointerCapture={()=>{held.current=null;}} onClick={e=>{if(e.detail===0)run.move(d);}}>{['↑','→','↓','←'][d]}</button>)}</div></div>
     </div>}

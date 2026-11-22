@@ -1,4 +1,5 @@
 import { NextGameActions } from '../../platform/PlaySession';
+import { GameDialog } from '../../shared/kit/GameDialog';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowCounterClockwise, Sword, Footprints, Sparkle, Hourglass, Flask, Pause, GridFour, Shield, FloppyDisk, TreasureChest } from '@phosphor-icons/react';
 import type { GameProps } from '../../platform/types';
@@ -45,7 +46,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
     trigger?.focus({preventScroll:true});
     trigger?.scrollIntoView({block:'nearest'});
   };
-  const dialog = useRef<HTMLDivElement>(null), board = useRef<HTMLCanvasElement>(null), busyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const board = useRef<HTMLCanvasElement>(null), busyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // One battle is one run, like the other long games. The clock counts only the turns themselves.
   const records = useRecords();
   const settled = ['won', 'lost', 'camp', 'ending'].includes(battle.phase);
@@ -113,18 +114,9 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
     return () => { document.removeEventListener('visibilitychange', visibility); };
   }, [screen, battle]);
   useEffect(() => () => { if (busyTimer.current) clearTimeout(busyTimer.current); }, []);
-  useEffect(() => {
-    if (!overlay) return;
-    dialog.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
-  }, [overlay, battle.dialogue]);
-  function dialogKeys(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') { if (gearOpen) setGearOpen(false); else if (help) setHelp(false); else if (paused) setPaused(false); else if (confirmNew) setConfirmNew(false); }
-    if (e.key !== 'Tab') return;
-    const buttons = [...(dialog.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])];
-    if (!buttons.length) return;
-    if (e.shiftKey && document.activeElement === buttons[0]) { e.preventDefault(); buttons.at(-1)?.focus(); }
-    else if (!e.shiftKey && document.activeElement === buttons.at(-1)) { e.preventDefault(); buttons[0].focus(); }
-  }
+  // 전투 결과와 대화는 Escape로 닫지 않는다. 다음에 무엇을 할지 골라야 한다.
+  const escapable = gearOpen || help || paused || confirmNew;
+  const dismissOverlay = () => { if (gearOpen) setGearOpen(false); else if (help) setHelp(false); else if (paused) setPaused(false); else if (confirmNew) setConfirmNew(false); };
   const select = (u: Unit) => {
     if (u.team !== 'ally' || u.hp === 0 || battle.phase !== 'player' || busy || overlay) return;
     battle.selected = u.id; resetMode(); setHover({ x: u.x, y: u.y }); update();
@@ -218,7 +210,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
       </section>}
       <footer className="ft-footer"><span>칸 클릭으로 조작 · 방향키로 칸 선택 · Enter 결정 · Esc 이동 취소</span><span><FloppyDisk size={14} />{storageMessage || '동료를 지휘하는 작은 모험'}</span></footer>
     </div>}
-    {!!overlay && <div className={`ft-overlay ${overlay === 'intro' ? 'ft-dialogue-overlay' : overlay === 'gear' ? 'ft-gear-overlay' : ''}`}><div ref={dialog} className={`ft-modal ${overlay === 'intro' ? 'ft-dialogue' : ''}`} role="dialog" aria-modal="true" aria-label={overlay === 'intro' ? `${line.speaker}의 대화` : '원정 안내'} onKeyDown={dialogKeys}>
+    {!!overlay && <GameDialog key={`${overlay}:${battle.dialogue}`} className={`ft-modal ${overlay === 'intro' ? 'ft-dialogue' : ''}`} label={overlay === 'intro' ? `${line.speaker}의 대화` : '원정 안내'} dismissible={escapable} onClose={dismissOverlay}>
       {overlay === 'gear' ? <><GearPanel battle={battle} onUpdate={update}/><button className="ft-secondary" onClick={()=>setGearOpen(false)}>장비창 닫기</button></> : overlay === 'intro' ? <><Portrait promoted={speaker?.promoted} role={speaker?.role ?? 'sword'} large /><div className="ft-dialogue-copy"><span>{stage.name}</span><h2>{line.speaker}</h2><p>{line.text}</p><div className="ft-dialogue-actions"><small>{battle.dialogue + 1} / {stage.dialogue.length}</small><button className="ft-primary" onClick={() => { battle.advanceDialogue(); update(); if (battle.phase === 'player') board.current?.focus({ preventScroll: true }); }}>{battle.dialogue === stage.dialogue.length - 1 ? '전투 시작' : '다음 대화'}</button></div></div></>
         : overlay === 'won' ? <><Sparkle className="ft-result-icon" size={45} weight="duotone" /><span className="ft-modal-kicker">제{battle.stage + 1}장 완료</span><h2>{battle.sideQuest?'주민 구출 성공':'전투 승리'}</h2><p>{battle.victoryText}</p><div className="ft-rewards"><span>동료 모두 경험치 +{battle.sideQuest?(battle.stage===0?120:160):25}</span>{!battle.sideQuest&&<span>보물상자 {battle.treasures.filter(t=>battle.opened.includes(t.id)).length} / 3 개봉</span>}{!battle.sideQuest&&<span>{battle.stage===0?'집중의 수정 획득':battle.stage===2?'등대 수호갑 획득':'획득 장비는 캠프에서 장착'}</span>}<span>{battle.stage === 2 ? '별의 등대에 빛을 되찾았어요' : '다음 전투 전 HP·MP 회복'}</span></div><RewardStrip rewards={rewards} audience="general"/><button className="ft-secondary" onClick={()=>setGearOpen(true)}>획득 장비 보기</button><button className="ft-primary" onClick={() => { if(battle.sideQuest){const next=battle.returnFromSideQuest();if(next)setBattle(next);} else if (battle.stage===2||battle.stage===FINAL_STAGE) battle.phase='ending'; else battle.enterCamp(); resetMode(); update(); }}>{battle.sideQuest?'야영지로 귀환':battle.stage === 2 ? '1부를 마치고 다음 이야기' : battle.stage===FINAL_STAGE ? '원정의 끝' : '야영지로 이동'}</button><NextGameActions/></>
         : overlay === 'lost' ? <><Shield className="ft-result-icon" size={44} /><h2>{battle.sideQuest?'구출 작전 실패':'전투 패배'}</h2>{battle.sideQuest&&<><p>8턴 안에 주민 3명을 구출하세요. 적을 모두 처치해도 구출 임무는 계속됩니다.</p><button className="ft-secondary" onClick={()=>{const next=battle.returnFromSideQuest();if(next){setBattle(next);resetMode();update();}}}>야영지로 귀환</button></>}<p>원정이 잠시 멈췄어요. 회복과 보호 마법을 활용하고, 적이 모였을 때 범위 마법을 사용해 보세요.</p><RewardStrip rewards={rewards} audience="general"/><button className="ft-primary" onClick={() => { setBattle(battle.retryStage()); resetMode(); update(); }}>이 전투 다시 도전</button><button className="ft-secondary" onClick={() => setScreen('title')}>시작 화면으로</button><NextGameActions/></>
@@ -226,7 +218,7 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
         : overlay === 'new' ? <><h2>새 원정을 시작할까요?</h2><p>기존 원정의 저장 기록이 새 이야기로 바뀝니다.</p><button className="ft-primary" onClick={() => start()}>처음부터 시작</button><button className="ft-secondary" onClick={() => setConfirmNew(false)}>돌아가기</button></>
         : overlay === 'help' ? <><h2>동료와 함께 싸우는 법</h2><ol><li>동료를 선택하고 파란 칸으로 이동하세요. 적을 바로 누르면 이동 가능한 공격 칸으로 이동해 일반 공격합니다.</li><li>공격이나 마법을 고른 뒤 대상을 선택하세요. 마법은 MP를 소모합니다.</li><li>높은 곳에서 공격하면 피해가 커집니다. 직선 3칸 이동 후 앞의 적을 근접 공격하면 돌진합니다.</li><li>노아의 치유와 보호, 리아의 범위 마법을 활용하세요. 물은 건널 수 없고 동료도 통과할 수 없어요.</li><li>Lv.3부터 야영지에서 전직과 기술 강화를 선택합니다. 전직 후 Lv.5가 되면 히든스킬이 열립니다. 외전에서는 주민 옆으로 이동한 뒤 구출 버튼을 누르세요.</li><li>2부에서는 지형 전술을 사용하세요. 낡은 빈 다리는 옆에서 끊고, 인접 적을 밀어 낙하 피해를 줍니다. 보스는 밀어내기 면역이에요. 점화와 리아의 불꽃 마법은 풀밭을 태웁니다. 불은 아군 차례 종료마다 8 피해를 두 번 주며 아군도 다칩니다.</li><li>보스의 붉은 공격 예고 칸을 피하세요. 체력이 절반 이하가 되면 2페이즈로 강화됩니다.</li><li>모두 행동하면 적의 차례가 됩니다. 일찍 마치려면 ‘아군 차례 마치기’를 누르세요.</li></ol><p>키보드: 전장을 선택한 뒤 방향키로 칸 이동, Enter로 결정. 동료와 명령 버튼은 Tab으로 선택할 수 있어요.</p><button className="ft-primary" onClick={() => { setHelp(false); board.current?.focus({ preventScroll: true }); }}>이제 알겠어요</button></>
         : <><h2>일시 정지</h2><p>진행 상황은 이 브라우저에 저장됩니다.</p><button className="ft-primary" onClick={() => { setPaused(false); board.current?.focus({ preventScroll: true }); }}>계속하기</button><button className="ft-secondary" onClick={() => { setPaused(false); setScreen('title'); }}>시작 화면으로</button></>}
-    </div></div>}
+    </GameDialog>}
   </main>;
 }
 

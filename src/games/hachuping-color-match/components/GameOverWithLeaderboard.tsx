@@ -1,4 +1,5 @@
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/icons/ArrowCounterClockwise";
+import { AUTOFOCUS, GameDialog } from "../../../shared/kit/GameDialog";
 import { NextGameActions, ScoreFeedback } from "../../../platform/PlaySession";
 import type { LeaderboardEntry } from "../../../shared/hooks/useLeaderboard";
 import type { UISnapshot } from "../game/types";
@@ -21,8 +22,8 @@ export default function GameOverWithLeaderboard({ finalScore, previousBest, snap
   const tries = snapshot.totalCorrect + snapshot.totalWrong;
   const accuracy = tries ? Math.round((snapshot.totalCorrect / tries) * 100) : 0;
   return (
-    <div className="cm-sheet" style={{ background: "#20243f40", zIndex: 5 }}>
-      <div className="cm-card motion-safe:animate-panel-in" role="dialog" aria-modal="true" aria-labelledby="cm-result-title">
+    // 결과 화면은 Escape로 닫지 않는다. 다시 할지 난이도를 바꿀지 골라야 한다.
+    <GameDialog className="cm-card cm-dialog cm-dialog-result motion-safe:animate-panel-in" labelledBy="cm-result-title" dismissible={false} onClose={onMainMenu}>
         <div style={{ textAlign: "center" }}>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--cm-muted)" }}>시간 끝!</p>
           <h2 id="cm-result-title" className="cm-num" style={{ margin: "2px 0 0", fontSize: 56, lineHeight: 1.1 }}>{finalScore}<span style={{ fontSize: 22, marginLeft: 4 }}>점</span></h2>
@@ -59,11 +60,10 @@ export default function GameOverWithLeaderboard({ finalScore, previousBest, snap
         )}
 
         <div style={{ display: "grid", gap: 10 }}>
-          <button type="button" autoFocus className="cm-primary" onClick={onRestart}><ArrowCounterClockwiseIcon size={18} weight="bold" /> 한 번 더</button>
+          <button type="button" {...AUTOFOCUS} className="cm-primary" onClick={onRestart}><ArrowCounterClockwiseIcon size={18} weight="bold" /> 한 번 더</button>
           <button type="button" className="cm-secondary" onClick={onMainMenu}>난이도 바꾸기</button>
         </div>
         <NextGameActions />
-      </div>
-    </div>
+    </GameDialog>
   );
 }

@@ -15,6 +15,7 @@ import { useBest, useRecords } from "../../platform/meta/api";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
 import { useMeta } from "../../platform/meta/store";
 import type { RunRewards, UnlockedAchievement } from "../../platform/meta/types";
+import { AUTOFOCUS, GameDialog } from "../../shared/kit/GameDialog";
 import { usePlayClock } from "../../shared/kit/usePlayClock";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
@@ -148,11 +149,11 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
         </>
       )}
       {isPaused && (
-        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-pause-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-pause-title">구름 위에서 잠깐 쉬어요</h2><p className="jump-final-score">{snapshot.score.toLocaleString()}<small> 점</small></p><button autoFocus className="jump-button jump-button-primary" onClick={handleTogglePause}>계속하기</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
+        <GameDialog className="jump-dialog" labelledBy="jump-pause-title" onClose={handleTogglePause}><CloudIcon size={48} weight="duotone"/><h2 id="jump-pause-title">구름 위에서 잠깐 쉬어요</h2><p className="jump-final-score">{snapshot.score.toLocaleString()}<small> 점</small></p><button {...AUTOFOCUS} className="jump-button jump-button-primary" onClick={handleTogglePause}>계속하기</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></GameDialog>
       )}
       {screen === "won" && <Victory previousBest={rewards?.previousBest ?? 0} score={finalScore ?? 0} onRestart={() => handleRestart(0)} onMenu={handleMainMenu} fromWorld={startStage + 1} rewards={<RewardStrip rewards={rewards} audience="general"/>} />}
       {screen === "dead" && finalScore !== null && (
-        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {best.toLocaleString()}점</p>{startStage === 0 && <ScoreFeedback score={finalScore} previousBest={rewards?.previousBest ?? 0}/>}<RewardStrip rewards={rewards} audience="general"/>{deathStage > 0 && <button autoFocus className="jump-button jump-button-primary" onClick={() => handleRestart(deathStage)}>{deathStage + 1}번째 세계부터 다시</button>}<button autoFocus={deathStage === 0} className={deathStage > 0 ? "jump-button" : "jump-button jump-button-primary"} onClick={() => handleRestart(0)}>처음부터 다시</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
+        <GameDialog className="jump-dialog" labelledBy="jump-end-title" dismissible={false} onClose={handleMainMenu}><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {best.toLocaleString()}점</p>{startStage === 0 && <ScoreFeedback score={finalScore} previousBest={rewards?.previousBest ?? 0}/>}<RewardStrip rewards={rewards} audience="general"/>{deathStage > 0 && <button {...AUTOFOCUS} className="jump-button jump-button-primary" onClick={() => handleRestart(deathStage)}>{deathStage + 1}번째 세계부터 다시</button>}<button {...(deathStage === 0 ? AUTOFOCUS : {})} className={deathStage > 0 ? "jump-button" : "jump-button jump-button-primary"} onClick={() => handleRestart(0)}>처음부터 다시</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></GameDialog>
       )}
     </div>
   );
