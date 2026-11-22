@@ -10,23 +10,26 @@ const MIN_PLAY_REPORT_MS = 1000;
  * - 탭 숨김·창 닫기·unmount 때는 자동으로 보고한다.
  * - 새 판을 시작할 때는 clock.reset() 대신 reset()을 부른다(버린 판의 시간을 먼저 보고).
  * - run이 끝나 reportRun할 때는 reportedMs()를 함께 넘겨 이미 보고한 시간을 다시 세지 않게 한다.
+ * - onReport는 실제로 보고한 뒤에만 불린다. 세션을 넘겨 이어지는 판이 누적 시간을 따로 저장할 때 쓴다.
  */
 export function usePlayReport(
   clock: { elapsed: () => number; reset: () => void },
   records: Pick<RecordsApi, 'reportPlay'>,
   unfinished: boolean,
+  onReport?: () => void,
 ) {
   const reported = useRef(0);
-  const latest = useRef({ clock, records, unfinished });
-  useEffect(() => { latest.current = { clock, records, unfinished }; });
+  const latest = useRef({ clock, records, unfinished, onReport });
+  useEffect(() => { latest.current = { clock, records, unfinished, onReport }; });
 
   const flush = useCallback(() => {
-    const { clock: c, records: r, unfinished: open } = latest.current;
+    const { clock: c, records: r, unfinished: open, onReport: after } = latest.current;
     if (!open) return;
     const ms = c.elapsed() - reported.current;
     if (ms < MIN_PLAY_REPORT_MS) return;
     r.reportPlay(ms);
     reported.current += ms;
+    after?.();
   }, []);
 
   const reset = useCallback(() => {

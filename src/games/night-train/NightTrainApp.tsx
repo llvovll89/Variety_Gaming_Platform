@@ -2,6 +2,7 @@ import { useRecords } from '../../platform/meta/api';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
 import type { RunRewards } from '../../platform/meta/types';
 import { usePlayClock } from '../../shared/kit/usePlayClock';
+import { usePlayReport } from '../../shared/kit/usePlayReport';
 import { keyOf } from '../../shared/kit/keys';
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import type { GameProps } from '../../platform/types';
@@ -34,8 +35,6 @@ function removeSave() {
  * 이어 탄 여행도 처음부터의 시간을 보고하고, 같은 시간을 두 번 세지 않으려고 따로 둔다.
  */
 const CLOCK_KEY = 'arcade:night-train:run-clock';
-/** 이 시간보다 짧은 조각은 보고를 미뤘다가 다음에 함께 보고한다. */
-const MIN_PLAY_REPORT_MS = 1000;
 type RideClock = { ms: number; reported: number };
 const nonNegative = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) && n > 0 ? n : 0);
 function savedRide(): RideClock {
@@ -153,10 +152,10 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   useEffect(() => { const update = () => setHidden(document.hidden); document.addEventListener('visibilitychange', update); return () => document.removeEventListener('visibilitychange', update); }, []);
   const playing = !!run && run.phase !== 'victory' && run.phase !== 'defeat' && !panel && !hidden;
   const clock = usePlayClock(playing);
-  // 지난 세션들의 달린 시간·보고한 시간, 이번 세션에서 reportPlay로 보고한 시간.
+  // 지난 세션들의 달린 시간·보고한 시간. 이번 세션 몫은 키트의 usePlayReport가 센다.
   const ride = useRef<RideClock>(run ? savedRide() : { ms: 0, reported: 0 });
-  const sessionReported = useRef(0);
-  const rideNow = useCallback((): RideClock => ({ ms: ride.current.ms + clock.elapsed(), reported: ride.current.reported + sessionReported.current }), [clock]);
+  const playRef = useRef<{ reportedMs: () => number } | null>(null);
+  const rideNow = useCallback((): RideClock => ({ ms: ride.current.ms + clock.elapsed(), reported: ride.current.reported + (playRef.current?.reportedMs() ?? 0) }), [clock]);
   // 지금까지 열린 운행 등급 = 일반석에서 완주한 가장 높은 등급 + 1. 옛 기록에는 좌석 구분이 없어서
   // 등급이 생긴 뒤 완주한 여행만 센다.
   const tiersOpen = Math.min(MAX_TIER, arcade.record()?.progress.tierWon ?? 0);
@@ -167,32 +166,12 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   const root = useRef<HTMLElement>(null);
   const photo = profile.characterId === CUSTOM_CHARACTER_ID ? profile.characterImage : null;
 
-  // 끝나지 않은 여행을 두고 떠날 때(시작 화면·게임 목록·탭 숨김·창 닫기) 이번 세션의 달린 시간을 보고한다.
-  // 그래야 저장하고 나간 날도 플레이 시간과 연속 플레이 도장에 들어간다.
-  const runRef = useRef(run);
-  runRef.current = run;
-  const flushPlay = useCallback(() => {
-    const current = runRef.current;
-    if (!current || current.phase === 'victory' || current.phase === 'defeat') return;
-    const ms = clock.elapsed() - sessionReported.current;
-    if (ms < MIN_PLAY_REPORT_MS) return;
-    arcade.reportPlay(ms);
-    sessionReported.current += ms;
-    safeSetItem(CLOCK_KEY, JSON.stringify(rideNow()));
-  }, [arcade, clock, rideNow]);
-  const flushRef = useRef(flushPlay);
-  flushRef.current = flushPlay;
-  useEffect(() => {
-    const onHide = () => { if (document.hidden) flushRef.current(); };
-    const onPageHide = () => flushRef.current();
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', onPageHide);
-    return () => {
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', onPageHide);
-      flushRef.current();
-    };
-  }, []);
+  // 끝나지 않은 여행을 두고 떠날 때(시작 화면·게임 목록·탭 숨김·창 닫기) 이번 세션의 달린 시간을
+  // 보고한다. 그래야 저장하고 나간 날도 플레이 시간과 연속 플레이 도장에 들어간다.
+  // 여행은 세션을 넘겨 이어지므로, 보고할 때마다 누적 시간을 저장해 둔다.
+  const unfinished = !!run && run.phase !== 'victory' && run.phase !== 'defeat';
+  const play = usePlayReport(clock, arcade, unfinished, () => safeSetItem(CLOCK_KEY, JSON.stringify(rideNow())));
+  playRef.current = play;
 
   const send = useCallback((command: Command) => setRun(current => (current ? act(current, command) : current)), []);
 
@@ -265,6 +244,9 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
 
   const start = (chosen: Mode, options: { tier?: number; daily?: { id: string; seed: number } | null } = {}) => {
+    // 타던 여행이 있으면 아직 보고하지 않은 시간을 먼저 보고하고 시계를 접는다. 그래야 아래에서
+    // 읽는 저장 시계가 최신이고, 같은 시간을 두 번 세지 않는다.
+    play.reset();
     // 덮어쓰는 저장 여행은 아직 보고하지 않은 달린 시간만 reportPlay로 보고한다(quit은 여행 횟수로 세어진다).
     if (loadRun(safeGetItem(SAVE_KEY))) {
       const discarded = savedRide();
@@ -273,8 +255,6 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
     removeSave();
     removeRideClock();
     ride.current = { ms: 0, reported: 0 };
-    sessionReported.current = 0;
-    clock.reset();
     setRewards(null);
     recorded.current = null;
     setConfirmNew(null);
@@ -285,10 +265,10 @@ export default function NightTrainApp({ onExit, launchIntent, profile }: GamePro
   };
   const resume = () => {
     const saved = loadRun(safeGetItem(SAVE_KEY));
-    if (saved) { ride.current = savedRide(); sessionReported.current = 0; clock.reset(); setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
+    if (saved) { play.reset(); ride.current = savedRide(); setOutroDone(outroKey(saved)); setRun(saved); } else setHasSave(false);
   };
-  const toTitle = () => { flushPlay(); setPanel(null); setRun(null); };
-  const exit = () => { flushPlay(); onExit(); };
+  const toTitle = () => { play.flush(); setPanel(null); setRun(null); };
+  const exit = () => { play.flush(); onExit(); };
 
   const eatSnack = (index: number) => {
     if (!run) return;
