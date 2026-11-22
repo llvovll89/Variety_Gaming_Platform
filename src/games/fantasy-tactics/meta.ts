@@ -2,6 +2,8 @@ import type { GameMeta } from '../../platform/meta/types';
 
 /** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
 export const meta: GameMeta = {
+  // One battle is one run. No score is reported, so no scoreOrder/scoreUnit either.
+  reportsRuns: true,
   "achievements": [
     {
       "id": "first",

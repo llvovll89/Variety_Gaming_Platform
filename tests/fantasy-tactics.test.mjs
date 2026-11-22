@@ -387,3 +387,38 @@ test('ranged enemy click attacks without moving when already in range', () => {
   enemy.x=u.x+2;enemy.y=u.y;
   assert.ok(b.approachAttack(enemy));assert.equal(u.moved,false);assert.ok(u.acted);
 });
+
+test('the numbers a run report reads stay true to one battle', () => {
+  // The app reports rounds, survivors and chests when a battle ends. Each has to describe this
+  // battle only, or a daily challenge built on it would be met by something that did not happen.
+  const b = playing();
+  assert.equal(b.round, 1);
+  assert.equal(b.allies.filter(u => u.hp > 0).length, 4, 'four go into a battle, so "nobody fell" is 4');
+  assert.equal(b.treasures.filter(t => b.opened.includes(t.id)).length, 0);
+
+  // Open every chest of chapter one, win, and move on.
+  b.opened = b.treasures.map(t => t.id);
+  assert.equal(b.treasures.filter(t => b.opened.includes(t.id)).length, 3);
+  b.units.filter(u => u.team === 'enemy').forEach(u => { u.hp = 0; });
+  b.checkResult();
+  assert.equal(b.phase, 'won');
+  b.enterCamp();
+  const next = b.nextStage();
+
+  // opened carries forward; the next battle's own chests are untouched, so the count starts at 0.
+  assert.ok(next.opened.length >= 3, 'the opened list carries across chapters');
+  assert.equal(next.treasures.filter(t => next.opened.includes(t.id)).length, 0,
+    'counting opened.length instead would make "open N chests" true before the battle began');
+});
+
+test('finishing part one and continuing does not end a second battle', () => {
+  // continuePartTwo() puts the same battle object back through 'won' on its way to the camp, so a
+  // result screen that watched the phase alone would count chapter three twice.
+  const b = playing(2);
+  b.units.filter(u => u.team === 'enemy').forEach(u => { u.hp = 0; });
+  b.checkResult();
+  assert.equal(b.phase, 'won');
+  b.phase = 'ending';
+  assert.ok(b.continuePartTwo());
+  assert.equal(b.phase, 'camp', 'the battle settles in the camp, not back on a win');
+});
