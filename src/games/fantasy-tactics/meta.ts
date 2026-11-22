@@ -70,6 +70,15 @@ export const meta: GameMeta = {
       }
     }
   ],
+  /**
+   * 한 전투 안에서 끝나는 도전만 낸다. 차례 수 범위는 캠페인을 끝까지 자동으로 돌려 재 보고
+   * 정했다(승리한 전투가 7~12차례). 8은 빠듯하고 12는 여유 있는 쪽이다.
+   */
+  daily: [
+    { id: 'swift', label: '전투를 {n}차례 안에 승리', stat: 'rounds', range: [8, 12], step: 1, compare: 'atMost', mode: 'stage', outcome: 'win' },
+    { id: 'intact', label: '동료 {n}명 모두 살아남아 승리', stat: 'survivors', range: [4, 4], step: 1, mode: 'stage', outcome: 'win' },
+    { id: 'chest', label: '한 전투에서 보물상자 {n}개 열기', stat: 'chests', range: [1, 3], step: 1, mode: 'stage' },
+  ],
   legacy: {
     version: 1,
     read(get, parse) {
