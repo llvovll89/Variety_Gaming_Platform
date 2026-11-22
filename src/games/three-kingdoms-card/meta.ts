@@ -1,6 +1,14 @@
 import type { GameMeta } from '../../platform/meta/types';
 
-/** Records, achievements and daily challenges for this game. Data only, loaded with the registry. */
+/**
+ * Records and achievements for this game. Data only, loaded with the registry.
+ *
+ * 오늘의 도전은 넣지 않는다. 이 게임이 한 판에 대해 보고하는 수는 turns 하나뿐인데, 둘 다
+ * 도전의 척도가 되지 못한다. 연무탑은 층마다 시드가 고정이라 같은 부대면 결과가 늘 같고 승리가
+ * 2~3턴에 끝난다. 토벌은 전투가 끝나도 상대 병력이 남아 다음 전투로 이어지므로, 거의 쓰러진
+ * 상대를 골라 때리면 턴 수를 얼마든지 낮출 수 있다. 쓸 만한 척도를 새로 보고하기 전까지는
+ * 지킬 수 없거나 속이기 쉬운 약속을 내지 않는다.
+ */
 export const meta: GameMeta = {
   // Every battle (토벌, 연무탑, 요일 전장) reports a run; the game keeps its own daily quests.
   reportsRuns: true,
