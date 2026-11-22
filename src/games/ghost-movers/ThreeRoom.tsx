@@ -5,6 +5,9 @@ import {LEVELS,type State,type Point} from './engine';
 import Room from './FallbackRoom';
 export default function ThreeRoom({state,onPossess,onPoint,onCargo,route,preview=false}:{state:State;onPossess?:(id:string)=>void;onPoint?:(p:Point)=>void;onCargo?:(id:string)=>void;route?:Point[];preview?:boolean}) {
   const host=useRef<HTMLDivElement>(null),scene=useRef<MovingScene|null>(null),select=useRef(onPossess),point=useRef(onPoint),cargo=useRef(onCargo),[failed,setFailed]=useState(false),[zoom,setZoom]=useState(1);select.current=onPossess;point.current=onPoint;cargo.current=onCargo;
+  // 장면은 방이 바뀔 때만 새로 짓는다. state 전체를 의존성에 넣으면 가구가 한 칸 움직일 때마다
+  // 3D 장면을 통째로 다시 만든다. 그 사이 변화는 바로 아래 sync(state)가 따라간다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{if(!host.current)return;try{const next=new MovingScene(host.current,state,id=>select.current?.(id),p=>point.current?.(p),id=>cargo.current?.(id));scene.current=next;setFailed(false);setZoom(1);return()=>{next.dispose();scene.current=null;};}catch{setFailed(true);}},[state.levelIndex]);
   useEffect(()=>{scene.current?.sync(state);},[state]);
   useEffect(()=>{scene.current?.showRoute(route??[]);},[route,state.levelIndex]);

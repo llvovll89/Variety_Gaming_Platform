@@ -9,6 +9,9 @@ import { HERO_NEEDS, WEAPON_NEEDS, heroOpen, weaponOpen, type Kept, type UnlockP
 
 export function Portrait({loadout,appearance}: {loadout:Loadout;appearance?:Promotion}) {
   const ref=useRef<HTMLCanvasElement>(null);
+  // 그림에 실제로 영향을 주는 값만 적는다. loadout·appearance 객체 전체를 넣으면 부모가 다시
+  // 그려질 때마다 초상화를 새로 그린다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(()=>{const c=ref.current?.getContext('2d');if(!c)return;c.clearRect(0,0,720,600);drawUnit(c,'hero',310,395,5.2,0,-.22,2,loadout,appearance);},[loadout.hero,loadout.weapon,loadout.tint,appearance?.id]);
   return <canvas ref={ref} width={720} height={600} className="survivor-portrait" role="img" aria-label={`${appearance?.name??HEROES[loadout.hero]} · ${heroWeaponName(loadout)} 외형 미리보기`}/>;
 }

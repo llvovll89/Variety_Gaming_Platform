@@ -20,6 +20,8 @@ export default function ChallengesTab({ state, act, mode, onNavigate }: TabProps
   const reportRef = useRef<HTMLElement>(null);
   const opponentRef = useRef<HTMLElement>(null);
   const previousReport = useRef(report?.id);
+  // 전투 보고가 "새로 왔을 때"만 초점을 옮긴다. report 객체를 넣으면 같은 보고에도 초점이 튄다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (report && report.id !== previousReport.current) { reportRef.current?.focus(); reportRef.current?.scrollIntoView({ block: "start" }); } previousReport.current = report?.id; }, [report?.id]);
   const isTower = mode === "연무탑", level = isTower ? floor : tier;
   const opponent = mode !== "교환소" ? challengeOpponent(isTower ? "tower" : "daily", level, now) : null;

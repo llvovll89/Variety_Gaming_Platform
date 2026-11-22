@@ -41,8 +41,8 @@ function outsideBox(event: MouseEvent<HTMLDialogElement>): boolean {
  */
 export function GameDialog({ open = true, label, labelledBy, describedBy, onClose, dismissible = true, closeOnBackdrop = false, initialFocus, returnFocus = true, className, children }: GameDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
-  const latest = useRef({ onClose, dismissible, returnFocus });
-  latest.current = { onClose, dismissible, returnFocus };
+  const latest = useRef({ onClose, dismissible, returnFocus, initialFocus });
+  latest.current = { onClose, dismissible, returnFocus, initialFocus };
 
   useLayoutEffect(() => {
     const dialog = ref.current;
@@ -56,7 +56,7 @@ export function GameDialog({ open = true, label, labelledBy, describedBy, onClos
     show();
     openDialogs++;
     // React focuses autoFocus children before this effect opens the dialog, so focus here instead.
-    (initialFocus?.current ?? dialog.querySelector<HTMLElement>('[data-kit-autofocus]'))?.focus();
+    (latest.current.initialFocus?.current ?? dialog.querySelector<HTMLElement>('[data-kit-autofocus]'))?.focus();
     // The browser may close the dialog itself (Chrome closes it on a second Escape without a click
     // in between, even when cancel is prevented). Keep React's state and the dialog in step.
     let closing = false;

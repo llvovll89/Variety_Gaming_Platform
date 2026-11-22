@@ -114,7 +114,7 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
     setEngine(next);
     setScreen("playing");
     next.startGame();
-  }, [highScore, prefs.difficulty]);
+  }, [highScore, prefs.difficulty, playClock]);
 
   const toMenu = useCallback(() => {
     setEngine(null);

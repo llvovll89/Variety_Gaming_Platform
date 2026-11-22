@@ -102,6 +102,9 @@ export default function FantasyTacticsApp({ onExit, launchIntent }: GameProps) {
     if (screen !== 'battle' || battle.phase !== 'enemy' || paused || help || gearOpen || busy) return;
     const timer = setTimeout(() => { battle.aiStep(); if (battle.lastEvent) lockBriefly(); update(); }, Math.max(650, eventDuration(battle.lastEvent) + 80));
     return () => clearTimeout(timer);
+  // lockBriefly는 ref와 battle.lastEvent만 본다. 의존성에 넣으면 렌더마다 적 차례 타이머가
+  // 새로 걸려 연출 간격이 흔들린다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battle, revision, screen, paused, help, gearOpen, busy]);
   useEffect(() => {
     const stop = () => { if (screen === 'battle' && ['player', 'enemy'].includes(battle.phase)) setPaused(true); };

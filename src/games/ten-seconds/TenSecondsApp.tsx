@@ -46,6 +46,9 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
   // Today's room: an escaped one picked with the day's seed. None until a room is escaped, so the
   // first room keeps its no-limit practice run.
   const dayKey=localDateKey();
+  // dayKey는 본문에 쓰이지 않지만 의존성에 꼭 있어야 한다. records.daily()가 "오늘"로 도전을
+  // 고르므로 자정을 넘기면 다시 계산해야 하는데, 린트는 본문만 보고 불필요하다고 읽는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const today=useMemo(()=>{const c=records.daily(),level=c?pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b)):undefined;return c&&level!==undefined?{challenge:c,level}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(run?.status==='playing'&&!helpOpen&&!mapOpen);
@@ -82,6 +85,9 @@ export default function TenSecondsApp({onExit,launchIntent}:GameProps){
     const hidden=()=>{if(document.hidden)pause();};
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',pause);document.addEventListener('visibilitychange',hidden);
     return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',pause);document.removeEventListener('visibilitychange',hidden);held.current=null;};
+  // pause·rewind·closeHelp는 렌더마다 새로 만들어지지만 모두 run과 ref만 본다. 의존성에
+  // 넣으면 렌더마다 키보드 리스너를 떼었다 다시 단다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[run,mapOpen,sound,helpOpen]);
   const openMap=()=>{run?.pause();held.current=null;setMapOpen(true);update();};
   const trapFocus=(e:React.KeyboardEvent)=>{if(e.key!=='Tab')return;const buttons=dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]');if(!buttons?.length)return;const first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}};

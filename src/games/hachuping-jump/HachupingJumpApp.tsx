@@ -59,7 +59,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
     setFinalScore(null);
     setScreen(safeGetItem(PRACTICE_KEY)==='done' ? 'playing' : 'practice');
     setPlayKey((k) => k + 1);
-  }, []);
+  }, [playClock]);
 
   const startPractice = useCallback(() => {
     setEngine(null); setFinalScore(null); setScreen('practice'); setPlayKey(k=>k+1);
@@ -69,7 +69,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
     // Keep the world picked in the menu: practice came first only because it was not done yet.
     run.current = { startStage: run.current.startStage, unlocked: [] }; playClock.reset();
     setEngine(null); setFinalScore(null); setScreen('playing'); setPlayKey(k=>k+1);
-  }, []);
+  }, [playClock]);
 
   const handleDeath = useCallback(
     (score: number, cleared: boolean, stage: number) => {
@@ -101,7 +101,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
     setFinalScore(null);
     setScreen("playing");
     setPlayKey((k) => k + 1);
-  }, []);
+  }, [playClock]);
 
   const handleMainMenu = useCallback(() => {
     setEngine(null);

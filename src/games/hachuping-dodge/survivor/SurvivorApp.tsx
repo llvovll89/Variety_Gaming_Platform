@@ -105,6 +105,9 @@ export default function SurvivorApp({onExit}:GameProps) {
     if(import.meta.env.DEV)Object.assign(window,{__ranger:{getWorld:()=>world.current,step:stepWorld,spawn:spawnEnemy,choose:chooseUpgrade,advance:choosePromotion,next:nextStage}});
     frame=requestAnimationFrame(loop);
     return()=>{cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',visibility);if(import.meta.env.DEV)delete (window as Window & {__ranger?:unknown}).__ranger;};
+  // 게임 루프와 입력 리스너를 마운트 때 한 번만 건다. kept는 마운트 때 읽고 끝까지 바뀌지
+  // 않고, pause는 ref만 만진다. 둘을 의존성에 넣으면 플레이 도중 루프가 통째로 다시 걸린다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   const stage=STAGES[ui.stage],p=ui.player;
   const boss=ui.enemies.find(e=>e.kind==='boss'||e.kind==='elite');

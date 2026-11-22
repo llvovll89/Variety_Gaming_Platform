@@ -37,6 +37,9 @@ export default function GhostMoversApp({onExit,launchIntent}:GameProps) {
   const records=useRecords(),[rewards,setRewards]=useState<RunRewards|null>(null);
   // Today's job: a cleared one picked with the day's seed (the first job until one is cleared).
   const dayKey=localDateKey();
+  // dayKey는 본문에 쓰이지 않지만 의존성에 꼭 있어야 한다. records.daily()가 "오늘"로 도전을
+  // 고르므로 자정을 넘기면 다시 계산해야 하는데, 린트는 본문만 보고 불필요하다고 읽는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const today=useMemo(()=>{const c=records.daily();return c?{challenge:c,level:pickDaily(c.seed,Object.keys(progress.best).map(Number).sort((a,b)=>a-b))??0}:null;},[records,progress,dayKey]);
   const [daily,setDaily]=useState<DailyChallenge|null>(null);
   const clock=usePlayClock(!!run&&run.status==='playing'&&!modal);

@@ -197,6 +197,8 @@ export default function GameDemo({ onExit }: { onExit?: () => void }) {
     window.addEventListener("pagehide", flush);
     document.addEventListener("visibilitychange", onVisibility);
     return () => { mounted.current = false; clearInterval(timer); window.removeEventListener("storage", storageChanged); window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("pagehide", flush); document.removeEventListener("visibilitychange", onVisibility); };
+  // 창 단위 리스너라 마운트 때 한 번만 건다. canChange·persist는 ref만 보므로 낡지 않는다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function act(action: DemoAction) {

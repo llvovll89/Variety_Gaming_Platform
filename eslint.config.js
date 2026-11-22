@@ -42,11 +42,12 @@ export default tseslint.config(
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       /**
-       * 의존성 누락은 "가끔 낡은 값이 보인다"로 나타나 재현하기 어렵다. 다만 지금 열다섯 군데가
-       * 걸려 있고, 의존성을 잘못 더하면 효과가 끝없이 되돌기 때문에 한 군데씩 들여다봐야 한다.
-       * 그 일이 끝나기 전까지는 경고로 둔다. 경고는 CI를 멈추지 않지만 새로 생긴 것은 눈에 띈다.
+       * 의존성 누락은 "가끔 낡은 값이 보인다"로 나타나 재현하기 어려우니 오류로 둔다.
+       *
+       * 일부러 좁게 둔 자리에는 eslint-disable과 함께 "넓히면 무엇이 망가지는가"를 적어 두었다.
+       * 이유 없이 끄지 말 것. 끄는 쪽이 맞는 때가 있을 뿐, 그냥 조용히 넘기라는 뜻은 아니다.
        */
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'error',
     },
   },
   {

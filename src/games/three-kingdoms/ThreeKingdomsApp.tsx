@@ -94,6 +94,9 @@ export default function ThreeKingdomsApp({ onExit, launchIntent }: GameProps) {
     if (engine && snapshot.player) {
       earnedOnTheWay.current.push(...records.reportProgress("started", 1), ...records.reportProgress("cities", snapshot.player.cities));
     }
+  // 진행도에 영향을 주는 것은 도시 수뿐이라 그것만 적는다. snapshot.player 객체 전체를 넣으면
+  // 턴 중간의 모든 변화마다 진행도를 다시 보고한다.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, snapshot.turn, snapshot.player?.cities, snapshot.result, records]);
   // A campaign that ends (통일 or 멸망) is the run, reported once.
   useEffect(() => {
