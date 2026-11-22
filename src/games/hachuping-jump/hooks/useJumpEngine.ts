@@ -47,6 +47,5 @@ export function useJumpEngine(
       window.removeEventListener("blur", onBlur);
       engine.stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

@@ -58,6 +58,5 @@ export function useBalloonEngine(
       canvas.removeEventListener("keydown", onKeyDown);
       engine.stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

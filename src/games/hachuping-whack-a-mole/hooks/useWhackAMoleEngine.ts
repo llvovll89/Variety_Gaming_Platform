@@ -28,7 +28,6 @@ export function useWhackAMoleEngine(canvasRef: RefObject<HTMLCanvasElement | nul
     onReady(engine);
     return ()=> {observer.disconnect(); cancelAnimationFrame(frame); view.dispose(); engine.destroy(); window.removeEventListener('keydown',key);};
     // A keyed canvas owns one session, including its initial score and callbacks.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   return {targets,error};
 }

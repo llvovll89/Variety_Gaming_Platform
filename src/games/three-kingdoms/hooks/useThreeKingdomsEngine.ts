@@ -39,6 +39,5 @@ export function useThreeKingdomsEngine(
       window.removeEventListener("orientationchange", resize);
       engine.stop();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerFactionId]);
 }

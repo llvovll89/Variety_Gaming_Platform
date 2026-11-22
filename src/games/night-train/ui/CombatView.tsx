@@ -80,7 +80,6 @@ export default function CombatView({ run, onCommand, photo, locked, ending, onEn
     setSelected(null);
     setReplay({ key: replayKey, step: -1 });
     showRibbon({ key: replayKey, kind: 'enemy', title: '상대의 차례', sub: 'SHADOWS MOVE' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [replayKey]);
   useEffect(() => {
     if (!replay) return;
