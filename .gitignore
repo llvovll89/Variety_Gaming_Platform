@@ -33,3 +33,10 @@ src/shared/assets/3.jpg
 
 # Local browser QA output (screenshots, traces). Summaries go in PR descriptions instead.
 output/
+
+# 삼국 영지를 Next.js로 시험해 본 흔적. 지금 게임은 src/games/three-kingdoms-card에 있고
+# 이쪽은 빌드 산출물과 데모 스크린샷만 남아 git에 올린 적이 없다. 지울지는 각자 판단에 맡긴다.
+apps/
+
+# Playwright MCP가 남기는 스냅숏·콘솔 로그.
+.playwright-mcp/
