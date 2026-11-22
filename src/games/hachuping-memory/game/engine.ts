@@ -1,4 +1,4 @@
-import { UIStore } from "./uiStore";
+import { createUIStore, type UIStore } from "./uiStore";
 import type { GameState, MemoryCard, AnimalType } from "./types";
 import { GAME_CONFIG, ANIMALS, SPEEDS, type MemorySpeed } from "./constants";
 import { playCard, playCorrect, playStage, playWrong } from "./sound";
@@ -26,7 +26,7 @@ export class MemoryGameEngine {
       message: "시작하세요!",
       status: "idle",
     };
-    this.uiStore = new UIStore(this.state);
+    this.uiStore = createUIStore(this.state);
   }
 
   private generateCards(count: number): MemoryCard[] {

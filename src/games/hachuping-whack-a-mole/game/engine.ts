@@ -1,10 +1,10 @@
 ﻿import { GAME_TOTAL_TIME, MOLE_GRID_COLS, MOLE_GRID_ROWS, POINTS_PER_HIT, HIT_FLASH_DURATION, DIFFICULTY_CONFIGS, DEFAULT_DIFFICULTY, ROUND_SPEED, comboMultiplier, roundFor, type DifficultyLevel } from './constants';
-import { UIStore } from './uiStore';
+import { createUIStore } from './uiStore';
 import type { GameState } from './types';
 import { playGameOver, playHit, playRoundUp } from './sound';
 
 export class WhackAMoleEngine {
-  readonly uiStore = new UIStore();
+  readonly uiStore = createUIStore();
   private gameState: GameState;
   private hitTimers = new Map<number, number>();
   /** Points each hole's last hit scored, for its own "+N" label. */

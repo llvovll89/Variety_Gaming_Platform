@@ -1,3 +1,4 @@
+import { createSnapshotStore } from '../../../shared/kit/snapshotStore';
 import type { GameState } from "./types";
 
 export interface UISnapshot {
@@ -15,29 +16,17 @@ export function emptySnapshot(gameState: GameState): UISnapshot {
     gameState,
   };
 }
-
-export class UIStore {
-  private snapshot: UISnapshot;
-  private listeners = new Set<() => void>();
-
-  constructor(initialState: GameState) {
-    this.snapshot = emptySnapshot(initialState);
-  }
-
-  publish = (state: GameState): void => {
-    this.snapshot = {
-      status: state.status,
-      score: state.score,
-      highScore: state.highScore,
-      gameState: state,
-    };
-    this.listeners.forEach((listener) => listener());
+/**
+ * 엔진이 React에 넘기는 화면 한 장. 이 게임은 엔진 상태를 그대로 넘기고 여기서 화면에 필요한
+ * 값만 추려 낸다. 듣는 쪽을 챙기는 일은 키트의 createSnapshotStore가 맡는다
+ * (shared/hooks/useUISnapshot으로 읽는다).
+ */
+export function createUIStore(initial: GameState) {
+  const store = createSnapshotStore(emptySnapshot(initial));
+  return {
+    getSnapshot: store.getSnapshot,
+    subscribe: store.subscribe,
+    publish: (state: GameState): void => store.publish({ status: state.status, score: state.score, highScore: state.highScore, gameState: state }),
   };
-
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
-
-  getSnapshot = (): UISnapshot => this.snapshot;
 }
+export type UIStore = ReturnType<typeof createUIStore>;

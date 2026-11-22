@@ -14,7 +14,7 @@ import {
   STREAK_MILESTONE,
   type DifficultyLevel,
 } from "./constants";
-import { UIStore } from "./uiStore";
+import { createUIStore } from "./uiStore";
 import type { GameState, OptionSlot, PlayEvent, UISnapshot } from "./types";
 import { playCorrectSound, playWrongSound, playGameOverSound, playLevelUpSound } from "./sound";
 
@@ -39,7 +39,7 @@ export function roundRules(difficulty: DifficultyLevel, level: number): { option
 const MAX_EVENTS = 6;
 
 export class ColorMatchEngine {
-  readonly uiStore = new UIStore();
+  readonly uiStore = createUIStore();
 
   private gameState: GameState;
   private wrongFlashTimers: Map<number, number> = new Map(); // optionId -> flash timer

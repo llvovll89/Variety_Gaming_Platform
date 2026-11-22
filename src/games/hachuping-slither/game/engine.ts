@@ -11,7 +11,7 @@ import {
 } from "./constants";
 import { InputController } from "./input";
 import { renderWorld } from "./renderer";
-import { UIStore } from "./uiStore";
+import { createUIStore } from "./uiStore";
 import { World } from "./world";
 import type { RunEnd, UISnapshot } from "./types";
 import { lerp, sampleEvenly } from "../../../utils/math";
@@ -22,7 +22,7 @@ const BOOST_INTENSITY_SMOOTHING = 10;
 export class GameEngine {
   readonly world: World;
   readonly camera = new Camera();
-  readonly uiStore = new UIStore();
+  readonly uiStore = createUIStore();
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;

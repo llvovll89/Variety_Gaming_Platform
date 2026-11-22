@@ -18,7 +18,7 @@ import { advanceRewards, createRewards, resolveRewards } from "./rewards";
 import { FlapInputController } from "./input";
 import { advanceObstacles, createObstacle } from "./obstacles";
 import { computeLetterboxTransform, renderJump, type LetterboxTransform } from "./renderer";
-import { UIStore } from "./uiStore";
+import { createUIStore } from "./uiStore";
 import { FlightPractice } from './practice';
 import { GROUND_Y, PLAYER_RADIUS } from './constants';
 import type { Obstacle, PlayerState, UISnapshot } from "./types";
@@ -27,7 +27,7 @@ import { clamp, lerp } from "../../../utils/math";
 const FLAP_FX_DECAY_PER_SEC = 2.5;
 
 export class JumpEngine {
-  readonly uiStore = new UIStore();
+  readonly uiStore = createUIStore();
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;

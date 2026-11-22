@@ -1,3 +1,4 @@
+import { createSnapshotStore, type WritableSnapshotStore } from '../../../shared/kit/snapshotStore';
 import type { UISnapshot } from "./types";
 
 export function emptySnapshot(): UISnapshot {
@@ -17,21 +18,9 @@ export function emptySnapshot(): UISnapshot {
     standings: [],
   };
 }
-
-/** Bridges the imperative engine into React via useSyncExternalStore. */
-export class UIStore {
-  private snapshot: UISnapshot = emptySnapshot();
-  private listeners = new Set<() => void>();
-
-  publish = (next: UISnapshot): void => {
-    this.snapshot = next;
-    for (const listener of this.listeners) listener();
-  };
-
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
-
-  getSnapshot = (): UISnapshot => this.snapshot;
-}
+/**
+ * 엔진이 React에 넘기는 화면 한 장. 게임마다 같은 클래스를 베껴 두었던 것을 키트의
+ * createSnapshotStore 하나로 모았다(shared/hooks/useUISnapshot으로 읽는다).
+ */
+export type UIStore = WritableSnapshotStore<UISnapshot>;
+export const createUIStore = (): UIStore => createSnapshotStore(emptySnapshot());

@@ -24,7 +24,7 @@ import { MapRenderer3D } from './renderer3d';
 import { editOfficer } from './editor';
 import type { Officer } from './types';
 import type { BattleReplay } from './battleReplay';
-import { UIStore } from "./uiStore";
+import { createUIStore } from "./uiStore";
 import { cityAt, createGameState, standings, unitAt } from "./state";
 import { factionFood, factionGold, factionOfficers } from "./state";
 import { citiesOf, unitsOf } from "./state";
@@ -54,7 +54,7 @@ export type Selection =
   | { kind: "unit"; unitId: number };
 
 export class GameEngine {
-  readonly ui = new UIStore();
+  readonly ui = createUIStore();
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D | null = null;

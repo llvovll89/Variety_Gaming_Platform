@@ -22,12 +22,12 @@ import {
 import { advanceBalloons, findBalloonsAtPoint, spawnBalloon } from "./balloons";
 import { computeLetterboxTransform, renderBalloons, toLogical, type LetterboxTransform } from "./renderer";
 import { PopSoundPlayer } from "./sound";
-import { UIStore } from "./uiStore";
+import { createUIStore } from "./uiStore";
 import type { Balloon, PopEffect, UISnapshot } from "./types";
 import { randInt, randRange } from "../../../utils/math";
 
 export class BalloonEngine {
-  readonly uiStore = new UIStore();
+  readonly uiStore = createUIStore();
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
