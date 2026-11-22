@@ -11,12 +11,11 @@ import { PauseIcon } from '@phosphor-icons/react/dist/icons/Pause';
 import { CloudIcon } from '@phosphor-icons/react/dist/icons/Cloud';
 import './jump.css';
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
-import { useRecords } from "../../platform/meta/api";
+import { useBest, useRecords } from "../../platform/meta/api";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
 import { useMeta } from "../../platform/meta/store";
 import type { RunRewards, UnlockedAchievement } from "../../platform/meta/types";
 import { usePlayClock } from "../../shared/kit/usePlayClock";
-import { useHighScore } from "../../shared/hooks/useHighScore";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
 import type { JumpEngine } from "./game/engine";
@@ -32,7 +31,8 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
   const [playKey, setPlayKey] = useState(0);
   const [finalScore, setFinalScore] = useState<number | null>(null);
   const [engine, setEngine] = useState<JumpEngine | null>(null);
-  const { highScore, previousBest, submitScore } = useHighScore(GAME_ID);
+  // 기록은 처음부터 완주한 판만 센다. 나중 세계에서 시작한 판은 reportRun에서 다른 mode로 간다.
+  const best = useBest("full") ?? 0;
   const records = useRecords();
   const worldsReached = useMeta().games[GAME_ID]?.progress.world ?? 1;
   // The world this run started from (0 = the first); the engine owns its callbacks for one run.
@@ -76,8 +76,6 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
       setFinalScore(score);
       setDeathStage(stage);
       const fromStart = run.current.startStage === 0;
-      // The local best stays a full-journey record; a run started from a later world is its own mode.
-      if (fromStart) submitScore(score);
       const unlocked = [...run.current.unlocked, ...records.reportProgress("world", stage + 1)];
       // Only a full journey from the first world earns the gold "all six worlds" achievement.
       if (fromStart && cleared) unlocked.push(...records.unlock("clear"));
@@ -89,7 +87,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
       setRewards({ ...result, unlocked: [...unlocked, ...result.unlocked] });
       setScreen(cleared ? "won" : "dead");
     },
-    [submitScore, records, playClock],
+    [records, playClock],
   );
 
   const handleRestart = useCallback((stage = run.current.startStage) => {
@@ -121,7 +119,7 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
         <GameCanvas
           key={playKey}
           characterImageUrl={profile.characterImage}
-          bestScore={highScore}
+          bestScore={best}
           onDeath={handleDeath}
           onReady={setEngine}
           practice={screen==='practice'}
@@ -146,15 +144,15 @@ export default function HachupingJumpApp({ onExit, profile }: GameProps) {
             <ArrowLeftIcon size={14} weight="bold" />
             허브로
           </button>
-          <StartMenu profile={profile} bestScore={highScore} onStart={() => handleStart(0)} onPractice={startPractice} worldsReached={worldsReached} onStartWorld={handleStart} />
+          <StartMenu profile={profile} bestScore={best} onStart={() => handleStart(0)} onPractice={startPractice} worldsReached={worldsReached} onStartWorld={handleStart} />
         </>
       )}
       {isPaused && (
         <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-pause-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-pause-title">구름 위에서 잠깐 쉬어요</h2><p className="jump-final-score">{snapshot.score.toLocaleString()}<small> 점</small></p><button autoFocus className="jump-button jump-button-primary" onClick={handleTogglePause}>계속하기</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
       )}
-      {screen === "won" && <Victory previousBest={previousBest} score={finalScore ?? 0} onRestart={() => handleRestart(0)} onMenu={handleMainMenu} fromWorld={startStage + 1} rewards={<RewardStrip rewards={rewards} audience="general"/>} />}
+      {screen === "won" && <Victory previousBest={rewards?.previousBest ?? 0} score={finalScore ?? 0} onRestart={() => handleRestart(0)} onMenu={handleMainMenu} fromWorld={startStage + 1} rewards={<RewardStrip rewards={rewards} audience="general"/>} />}
       {screen === "dead" && finalScore !== null && (
-        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {highScore.toLocaleString()}점</p>{startStage === 0 && <ScoreFeedback score={finalScore} previousBest={previousBest}/>}<RewardStrip rewards={rewards} audience="general"/>{deathStage > 0 && <button autoFocus className="jump-button jump-button-primary" onClick={() => handleRestart(deathStage)}>{deathStage + 1}번째 세계부터 다시</button>}<button autoFocus={deathStage === 0} className={deathStage > 0 ? "jump-button" : "jump-button jump-button-primary"} onClick={() => handleRestart(0)}>처음부터 다시</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
+        <div className="jump-dialog" role="dialog" aria-modal="true" aria-labelledby="jump-end-title"><div className="jump-dialog-panel"><CloudIcon size={48} weight="duotone"/><h2 id="jump-end-title">잠깐, 구름에 쉬어가요!</h2><p>다시 날아오르면 더 멀리 갈 수 있어요.</p><p className="jump-final-score">{finalScore.toLocaleString()}<small> 점</small></p><p>최고 기록 {best.toLocaleString()}점</p>{startStage === 0 && <ScoreFeedback score={finalScore} previousBest={rewards?.previousBest ?? 0}/>}<RewardStrip rewards={rewards} audience="general"/>{deathStage > 0 && <button autoFocus className="jump-button jump-button-primary" onClick={() => handleRestart(deathStage)}>{deathStage + 1}번째 세계부터 다시</button>}<button autoFocus={deathStage === 0} className={deathStage > 0 ? "jump-button" : "jump-button jump-button-primary"} onClick={() => handleRestart(0)}>처음부터 다시</button><button className="jump-button" onClick={handleMainMenu}>메인 메뉴</button><NextGameActions/></div></div>
       )}
     </div>
   );

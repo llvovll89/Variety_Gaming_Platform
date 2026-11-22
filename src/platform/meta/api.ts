@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useSyncExternalStore } from 'react';
 import { PlaySession } from '../playSessionContext';
 import { evaluate, unlockManual } from './achievements';
 import { addDailyRun, addStreakDay, dailyChallenge, localDateKey } from './daily';
@@ -117,10 +117,26 @@ export function useRecords(): RecordsApi {
 }
 
 /**
+ * 이 게임의 최고 기록. 보고한 run이 기록을 갱신하면 다시 그려진다.
+ *
+ * 예전에는 게임마다 를 따로 쓰면서 같은 점수를 reportRun으로도 보냈다.
+ * 같은 사실을 두 곳에 적으면 언젠가 한쪽만 틀어지고, 어느 쪽이 맞는지 알 길이 없다. 점수를
+ * 쓰는 곳은 reportRun 하나이고, 화면은 여기로 읽는다.
+ */
+export function useBest(mode?: string, difficulty?: string): number | null {
+  const records = useRecords();
+  // 돌려주는 값이 원시값이라 매번 다시 계산해도 useSyncExternalStore가 같은 값으로 본다.
+  const read = () => records.best(mode, difficulty);
+  return useSyncExternalStore(metaStore.subscribe, read, read);
+}
+
+/**
  * Brings in each game's own records (bests, progress) and unlocks what they already earn, quietly.
- * Runs on every start: until a game reports to the arcade store itself, its newer scores only reach
- * its old keys. Merging keeps the higher value, so running again never counts anything twice, and
- * with nothing new it writes nothing. Old keys are only read.
+ *
+ * 게임은 이제 옛 열쇠에 점수를 쓰지 않는다. 여기서 읽는 것은 그 열쇠가 쓰이던 시절에 쌓인 기록뿐이고,
+ * 한 번 가져오면 더 자라지 않는다. 그래도 매 시작에 돌린다 — 아직 이 아케이드를 처음 여는 기기에
+ * 예전 기록이 남아 있을 수 있다. 병합은 높은 쪽을 남기므로 다시 돌려도 두 번 세지 않고, 새 것이
+ * 없으면 아무것도 쓰지 않는다. 옛 열쇠는 읽기만 한다.
  */
 export function importLegacyRecords(games: readonly { id: string; meta?: GameMeta }[], get: (key: string) => string | null, now = Date.now()): void {
   metaStore.update(state => {

@@ -1,9 +1,8 @@
 import { NextGameActions, ScoreFeedback } from '../../platform/PlaySession';
-import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AUTOFOCUS, GameDialog } from '../../shared/kit/GameDialog';
 import { useAutoPause } from '../../shared/kit/useAutoPause';
-import { useRecords } from '../../platform/meta/api';
+import { useBest, useRecords } from '../../platform/meta/api';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
 import type { RunRewards } from '../../platform/meta/types';
 import './slither.css';
@@ -41,9 +40,8 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   const records = useRecords();
   const reported = useRef<RunEnd | null>(null);
   const [engine, setEngine] = useState<GameEngine | null>(null);
-  const { highScore, previousBest, submitScore } = useHighScore("hachuping-slither");
-  const submitScoreRef = useRef(submitScore);
-  submitScoreRef.current = submitScore;
+  // 무한 모드와 3분 점수전은 reportRun에서 서로 다른 mode로 가므로 최고 기록도 따로 읽는다.
+  const endlessBest = useBest("default") ?? 0;
   const bodyPalette = useBodyPalette();
   const [usePortrait, setUsePortrait] = useState(false);
 
@@ -59,12 +57,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
   }, []);
 
   // The engine keeps the handler it was created with, so this one only stores the result.
-  const modeRef = useRef(mode);
-  modeRef.current = mode;
   const handleDeath = useCallback((end: RunEnd) => {
-    // In the same batch as the result, so the first result frame already compares with the old best.
-    // The game's own best length stays the endless one; timed bests live in the arcade records.
-    if (modeRef.current === "endless") submitScoreRef.current(end.score);
     setResult(end);
     setScreen("dead");
   }, []);
@@ -154,7 +147,7 @@ export default function HachupingSliderApp({ onExit, profile }: GameProps) {
           <div><span><strong>{result.score}</strong>최종 길이</span><span><strong>{result.kills}</strong>잡은 지렁이</span><span><strong>{formatTime(result.seconds)}</strong>생존 시간</span></div>
           {timed
             ? <><p>3분 점수전 최고 길이 {(rewards?.best ?? result.score).toLocaleString()} · LV {result.level}</p>{rewards && <ScoreFeedback score={result.score} previousBest={rewards.previousBest ?? 0} unit=""/>}</>
-            : <><p>내 최고 길이 {highScore.toLocaleString()} · LV {result.level}</p><ScoreFeedback score={result.score} previousBest={previousBest} unit=""/></>}<RewardStrip rewards={rewards} audience="general"/><button {...AUTOFOCUS} className="slither-primary" onClick={() => handleStart()}>{timed ? '3분 점수전 다시' : '다시 출발'}</button><button onClick={handleMainMenu}>게임 메뉴</button><NextGameActions/>
+            : <><p>내 최고 길이 {(rewards?.best ?? endlessBest).toLocaleString()} · LV {result.level}</p>{rewards && <ScoreFeedback score={result.score} previousBest={rewards.previousBest ?? 0} unit=""/>}</>}<RewardStrip rewards={rewards} audience="general"/><button {...AUTOFOCUS} className="slither-primary" onClick={() => handleStart()}>{timed ? '3분 점수전 다시' : '다시 출발'}</button><button onClick={handleMainMenu}>게임 메뉴</button><NextGameActions/>
         </GameDialog>
       )}
     </div>

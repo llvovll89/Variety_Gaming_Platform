@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { loadBundle } from './bundle.mjs';
 
 const ids = readdirSync('src/games').filter(id => existsSync(`src/games/${id}/meta.ts`));
@@ -188,4 +189,27 @@ test('a resumable game names a storage key and a label module that exist', () =>
     assert.ok(source.includes(`'${key}'`), `${id}/resume.ts reads the key the registry names (${key})`);
   }
   assert.ok(resumable >= 6, `${resumable} games offer to resume`);
+});
+
+test('a best score has one writer: nobody keeps a second copy next to the arcade records', () => {
+  // 예전에는 게임이 reportRun으로 점수를 보내면서 arcade:<id>:highScore에도 같은 수를 적었다.
+  // 같은 사실이 두 곳에 있으면 언젠가 한쪽만 틀어지고, 어느 쪽이 맞는지 알 방법이 없다.
+  // 이제 쓰는 곳은 reportRun 하나이고, 화면은 useBest로 읽는다. meta.ts의 옛 열쇠는 읽기만 한다.
+  const walk = dir => readdirSync(dir).flatMap(f =>
+    statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]);
+  const sources = walk('src').filter(f => /\.tsx?$/.test(f));
+  // 저장 열쇠 모양만 본다: 'arcade:<id>:highScore' 같은 전체 열쇠와 gameStorageKey(id, 'highScore')의 꼬리표.
+  // 기억력 게임 엔진의 state.highScore 같은 속성 이름은 저장 열쇠가 아니라 그냥 필드다.
+  const quoted = /:highScore|['"`]highScore['"`]/i;
+  const writers = sources.filter(f => !f.endsWith('meta.ts') && quoted.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(writers, [], 'meta.ts의 legacy 말고는 highScore 열쇠를 아무도 다루지 않는다');
+  assert.deepEqual(sources.filter(f => /useHighScore/.test(readFileSync(f, 'utf8'))), [],
+    'the per-game high-score hook is gone');
+
+  // 옛 열쇠를 읽는 자리는 meta.ts의 legacy 블록뿐이다(한 번 가져오고 그대로 둔다).
+  for (const id of ids) {
+    const source = readFileSync(`src/games/${id}/meta.ts`, 'utf8');
+    if (!/highScore/.test(source)) continue;
+    assert.match(source, /legacy: \{/, `${id}: 옛 점수 열쇠는 legacy에서만 읽는다`);
+  }
 });

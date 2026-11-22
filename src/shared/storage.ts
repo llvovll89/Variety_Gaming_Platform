@@ -1,6 +1,6 @@
 const NAMESPACE = "arcade";
 
-/** Namespaced localStorage key convention every game should follow, e.g. "arcade:hachuping-jump:highScore". */
+/** Namespaced localStorage key convention every game should follow, e.g. "arcade:hachuping-jump:flight-guide-v1". */
 export function gameStorageKey(gameId: string, suffix: string): string {
   return `${NAMESPACE}:${gameId}:${suffix}`;
 }

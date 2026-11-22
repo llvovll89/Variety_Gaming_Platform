@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties } from "react";
-import { useRecords } from "../../platform/meta/api";
+import { useBest, useRecords } from "../../platform/meta/api";
 import { hasRewards, RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
 import { settingsStore } from "../../shared/kit/settings";
@@ -14,7 +14,6 @@ import { PauseDialog } from "../../shared/kit/PauseDialog";
 import { ResultPanel } from "../../shared/kit/ResultPanel";
 import { useAutoPause } from "../../shared/kit/useAutoPause";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
-import { useHighScore } from "../../shared/hooks/useHighScore";
 import { MemoryGameEngine } from "./game/engine";
 import { emptySnapshot } from "./game/uiStore";
 import type { GameProps } from "../../platform/types";
@@ -60,17 +59,14 @@ export default function HachupingMemoryApp({ onExit }: GameProps) {
     return "normal";
   });
   const chooseSpeed = (next: MemorySpeed) => { setSpeed(next); settingsStore.setGame(GAME_ID, { extra: { speed: next, difficulty: next } }); };
-  // Score hooks load on mount, so each speed gets its own session and its own best.
+  // 빠르기를 바꾸면 엔진과 판을 새로 연다. 기록은 빠르기별로 따로 남는다.
   return <MemorySession key={speed} onExit={onExit} speed={speed} chooseSpeed={chooseSpeed} />;
 }
-
-/** Bests from before speeds existed were all played at the normal speed. */
-const LEGACY_BEST_KEYS: Record<MemorySpeed, string[]> = { normal: ["arcade:hachuping-memory:highScore", "hachuping-memory-highscore"], slow: [] };
 
 function MemorySession({ onExit, speed, chooseSpeed }: Pick<GameProps, "onExit"> & { speed: MemorySpeed; chooseSpeed: (speed: MemorySpeed) => void }) {
   const [screen, setScreen] = useState<Screen>("menu");
   const [engine, setEngine] = useState<MemoryGameEngine | null>(null);
-  const { highScore, previousBest, submitScore } = useHighScore(`${GAME_ID}:${speed}`, LEGACY_BEST_KEYS[speed]);
+  const best = useBest(undefined, speed) ?? 0;
   const resultTitle = useId();
 
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
@@ -89,21 +85,20 @@ function MemorySession({ onExit, speed, chooseSpeed }: Pick<GameProps, "onExit">
     if (snapshot.status !== 'game-over' || !engine || reported.current === engine) return;
     reported.current = engine; // once per run, also under StrictMode
     // A memory run only ends on a mistake: 'lose', so a 3-second slip is not a win or a streak day.
-    submitScore(snapshot.score);
     setRewards(records.reportRun({ score: snapshot.score, durationMs: played.current.ms, outcome: 'lose', difficulty: speed, stats: { stage: snapshot.gameState.stage } }));
-  }, [snapshot.status, snapshot.score, snapshot.gameState.stage, submitScore, engine, records, speed]);
+  }, [snapshot.status, snapshot.score, snapshot.gameState.stage, engine, records, speed]);
 
   const handleStart = useCallback(() => {
     engine?.destroy();
     // Start is a tap: wake the audio here, or strict browsers (iOS) stay silent for the first pattern.
     memorySound.unlock();
-    const newEngine = new MemoryGameEngine(highScore, speed);
+    const newEngine = new MemoryGameEngine(best, speed);
     played.current = { ms: 0, since: 0 };
     setRewards(null);
     setEngine(newEngine);
     setScreen("playing");
     newEngine.startGame();
-  }, [engine, highScore, speed]);
+  }, [engine, best, speed]);
 
   const handleMainMenu = useCallback(() => {
     setEngine(null);
@@ -184,7 +179,7 @@ function MemorySession({ onExit, speed, chooseSpeed }: Pick<GameProps, "onExit">
             <ArrowLeftIcon size={18} weight="bold" />
             허브로 🏠
           </button>
-          <StartMenu highScore={highScore} onStart={handleStart} speed={speed} onSpeedChange={chooseSpeed} />
+          <StartMenu highScore={best} onStart={handleStart} speed={speed} onSpeedChange={chooseSpeed} />
         </>
       )}
       {isPaused && (
@@ -201,8 +196,8 @@ function MemorySession({ onExit, speed, chooseSpeed }: Pick<GameProps, "onExit">
           titleId={resultTitle}
           eyebrow="동물 친구 기억력"
           headline="이번 한 판 완료!"
-          score={{ value: snapshot.score, unit: "점", previousBest }}
-          stats={[{ label: "최고 기록", value: `${Math.max(highScore, snapshot.score)}점` }, { label: "도달 단계", value: `${snapshot.gameState.stage}단계` }]}
+          score={{ value: snapshot.score, unit: "점", previousBest: rewards?.previousBest ?? 0 }}
+          stats={[{ label: "최고 기록", value: `${best}점` }, { label: "도달 단계", value: `${snapshot.gameState.stage}단계` }]}
           rewards={hasRewards(rewards) ? <RewardStrip rewards={rewards} audience="kids" /> : undefined}
           primary={{ label: "다시 시작", onClick: handleStart }}
           secondary={[{ label: "처음 화면으로", onClick: handleMainMenu }]}

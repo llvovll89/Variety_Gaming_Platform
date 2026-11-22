@@ -13,13 +13,12 @@ import { SettingsPanel } from '../../shared/kit/SettingsPanel';
 import { useAutoPause } from '../../shared/kit/useAutoPause';
 import { effectiveAudio, settingsStore, useSettingsValue } from '../../shared/kit/settings';
 import { useUISnapshot } from '../../shared/hooks/useUISnapshot';
-import { useHighScore } from '../../shared/hooks/useHighScore';
 import { useLeaderboard } from '../../shared/hooks/useLeaderboard';
 import { emptySnapshot } from './game/uiStore';
 import type { GameProps } from '../../platform/types';
 import type { WhackAMoleEngine } from './game/engine';
 import { DIFFICULTY_CONFIGS, GAME_TOTAL_TIME, type DifficultyLevel } from './game/constants';
-import { useRecords } from '../../platform/meta/api';
+import { useBest, useRecords } from '../../platform/meta/api';
 import { RewardStrip } from '../../platform/meta/RewardStrip';
 import type { RunRewards } from '../../platform/meta/types';
 import './mole.css';
@@ -36,10 +35,11 @@ export default function HachupingWhackAMoleApp({onExit}:GameProps) {
   const allMuted=useSettingsValue(s=>s.muted);
   const toggleMuted=()=>settingsStore.setGame(ID,{muted:!muted});
   const [focusDifficulty,setFocusDifficulty]=useState(false);
-  const {highScore:legacyBest}=useHighScore(ID);
+  // 난이도로 나누기 전의 기록. 어느 난이도였는지 알 수 없어 따로 둔다.
+  const legacyBest=useBest('legacy')??0;
   const {leaderboard:legacyLeaderboard}=useLeaderboard(ID);
   const selectDifficulty=(d:DifficultyLevel)=>{setFocusDifficulty(true);setDifficulty(d);settingsStore.setGame(ID,{extra:{difficulty:d}});};
-  // Score hooks load on mount: each difficulty owns a fresh record session.
+  // 난이도를 바꾸면 엔진과 TOP 10을 새로 연다.
   return <DifficultySession key={difficulty} difficulty={difficulty} onDifficultyChange={selectDifficulty} onExit={onExit} legacyBest={legacyBest} legacyLeaderboard={legacyLeaderboard} muted={muted} allMuted={allMuted} onMutedChange={toggleMuted} focusDifficulty={focusDifficulty}/>;
 }
 function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,legacyLeaderboard,muted,allMuted,onMutedChange,focusDifficulty}:Pick<GameProps,'onExit'> & {
@@ -51,7 +51,8 @@ function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,lega
   const [playKey,setPlayKey]=useState(0);
   const [engine,setEngine]=useState<WhackAMoleEngine|null>(null);
   const [rank,setRank]=useState<number|null>(null);
-  const {highScore,previousBest,submitScore}=useHighScore(`${ID}:${difficulty}`);
+  const best=useBest(undefined,difficulty)??0;
+  // TOP 10은 아케이드 기록이 담지 않는 목록이라 이 게임이 난이도별로 따로 들고 있다.
   const {leaderboard,submitScore:submitRanking}=useLeaderboard(`${ID}:${difficulty}`);
   const s=useUISnapshot(engine?.uiStore??null,FALLBACK);
   const records=useRecords();
@@ -59,23 +60,23 @@ function DifficultySession({onExit,difficulty,onDifficultyChange,legacyBest,lega
   const start=useCallback(()=>{setEngine(null);setRank(null);setRewards(null);setPlayKey(k=>k+1);setScreen('playing');},[]);
   // The engine calls this once per run; the arcade records come back with the result screen.
   const finish=useCallback((score:number,g:import('./game/types').GameState)=>{
-    submitScore(score);setRank(submitRanking(score));
+    setRank(submitRanking(score));
     setRewards(records.reportRun({difficulty,score,durationMs:GAME_TOTAL_TIME*1000,outcome:'complete',
       stats:{hits:g.totalMolesHit,combo:g.bestCombo,accuracy:g.attempts?Math.round(g.totalMolesHit/g.attempts*100):0}}));
     setScreen('game-over');
-  },[submitScore,submitRanking,records,difficulty]);
+  },[submitRanking,records,difficulty]);
   const menu=useCallback(()=>{engine?.destroy();setEngine(null);setScreen('menu');},[engine]);
   useEffect(()=>{if(engine&&screen==='playing'&&engine.getGameState().status==='idle')engine.startGame();},[engine,screen]);
   // Looking away, Escape or P pauses; Escape on the pause dialog resumes.
   useAutoPause({active:!!engine&&screen==='playing'&&(s.status==='ready'||s.status==='playing'),onPause:()=>engine?.pauseGame()});
   return <div className="mole-game">
-    {screen==='menu'?<StartMenu onStart={start} onExit={onExit} bestScore={highScore} difficulty={difficulty} onDifficultyChange={onDifficultyChange} legacyBest={legacyBest} legacyLeaderboard={legacyLeaderboard} focusDifficulty={focusDifficulty}/>:<>
+    {screen==='menu'?<StartMenu onStart={start} onExit={onExit} bestScore={best} difficulty={difficulty} onDifficultyChange={onDifficultyChange} legacyBest={legacyBest} legacyLeaderboard={legacyLeaderboard} focusDifficulty={focusDifficulty}/>:<>
       <header className="mole-play-nav"><span><b>두더지 잡기</b><small>{DIFFICULTY_CONFIGS[difficulty].name} · 30초 챌린지</small></span><div><button className="mole-icon-button" onClick={onMutedChange} disabled={allMuted} title={allMuted?'모든 게임 소리가 꺼져 있어요 (허브 설정)':undefined} aria-label={allMuted?'모든 게임 소리가 꺼져 있어요':muted?'소리 켜기':'소리 끄기'} aria-pressed={muted}>{muted?<SpeakerSlashIcon size={21}/>:<SpeakerHighIcon size={21}/>}</button><button className="mole-icon-button" onClick={()=>engine?.pauseGame()} aria-label="일시정지" disabled={s.status==='game-over'}><PauseIcon size={21} weight="fill"/></button></div></header>
-      <GameCanvas key={playKey} bestScore={highScore} onGameOver={finish} onReady={setEngine} difficulty={difficulty} engine={engine} activeMoles={s.activeMoles} onBack={menu}/>
+      <GameCanvas key={playKey} bestScore={best} onGameOver={finish} onReady={setEngine} difficulty={difficulty} engine={engine} activeMoles={s.activeMoles} onBack={menu}/>
       <HUD uiSnapshot={s}/>
       {s.status==='ready'&&<div className="mole-countdown" role="status"><span>손가락 준비!</span><strong key={Math.ceil(s.countdown)}>{Math.max(1,Math.ceil(s.countdown))}</strong><p>두더지가 올라오면 톡!</p></div>}
       {s.status==='paused'&&<GameDialog label="일시정지" onClose={()=>engine?.resumeGame()} className="mole-dialog"><div className="mole-pause-panel"><PauseIcon size={36} weight="fill"/><h2>잠깐, 숨 고르기.</h2><p>남은 시간 {Math.ceil(s.timeRemaining)}초 · 현재 {s.score}점</p><button {...AUTOFOCUS} className="mole-primary" onClick={()=>engine?.resumeGame()}><PlayIcon size={19} weight="fill"/> 계속하기</button><button className="mole-quiet" onClick={menu}><ArrowLeftIcon size={18}/> 메뉴로 돌아가기</button><SettingsPanel compact gameId={ID} gameTitle="두더지 잡기"/></div></GameDialog>}
-      {screen==='game-over'&&<GameOverWithLeaderboard difficulty={difficulty} previousBest={previousBest} finalScore={s.finalScore??s.score} bestScore={highScore} leaderboard={leaderboard} playerRank={rank} onRestart={start} onMainMenu={menu} snapshot={s} rewards={<RewardStrip rewards={rewards} audience="kids"/>}/>}
+      {screen==='game-over'&&<GameOverWithLeaderboard difficulty={difficulty} previousBest={rewards?.previousBest??0} finalScore={s.finalScore??s.score} bestScore={best} leaderboard={leaderboard} playerRank={rank} onRestart={start} onMainMenu={menu} snapshot={s} rewards={<RewardStrip rewards={rewards} audience="kids"/>}/>}
     </>}
   </div>;
 }

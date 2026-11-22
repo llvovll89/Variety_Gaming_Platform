@@ -6,9 +6,8 @@ import StartMenu from "./components/StartMenu";
 import PauseDialog from "./components/PauseDialog";
 import GameOverWithLeaderboard from "./components/GameOverWithLeaderboard";
 import { useUISnapshot } from "../../shared/hooks/useUISnapshot";
-import { useHighScore } from "../../shared/hooks/useHighScore";
 import { useLeaderboard, type LeaderboardEntry } from "../../shared/hooks/useLeaderboard";
-import { useRecords } from "../../platform/meta/api";
+import { useBest, useRecords } from "../../platform/meta/api";
 import { usePlayClock } from "../../shared/kit/usePlayClock";
 import { RewardStrip } from "../../platform/meta/RewardStrip";
 import type { RunRewards } from "../../platform/meta/types";
@@ -57,7 +56,7 @@ function readPrefs(): Prefs {
 export default function HachupingColorMatchApp({ onExit }: GameProps) {
   const [prefs, setPrefs] = useState<Prefs>(readPrefs);
   // Records from before they were split by difficulty; kept apart because their difficulty is unknown.
-  const { highScore: legacyBest } = useHighScore(GAME_ID);
+  const legacyBest = useBest("legacy") ?? 0;
   const { leaderboard: legacyLeaderboard } = useLeaderboard(GAME_ID);
   // The menu remounts with the new difficulty, so it puts keyboard focus back on the chosen level.
   const [focusDifficulty, setFocusDifficulty] = useState(false);
@@ -83,9 +82,9 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
   const [engine, setEngine] = useState<ColorMatchEngine | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [playerRank, setPlayerRank] = useState<number | null>(null);
-  const recordId = `${GAME_ID}:${prefs.difficulty}`;
-  const { highScore, previousBest, submitScore } = useHighScore(recordId);
-  const { leaderboard, submitScore: submitToLeaderboard } = useLeaderboard(recordId);
+  const best = useBest(undefined, prefs.difficulty) ?? 0;
+  // TOP 10은 아케이드 기록이 담지 않는 목록이라 이 게임이 난이도별로 따로 들고 있다.
+  const { leaderboard, submitScore: submitToLeaderboard } = useLeaderboard(`${GAME_ID}:${prefs.difficulty}`);
   const snapshot = useUISnapshot(engine?.uiStore ?? null, FALLBACK_SNAPSHOT);
 
   // The engine reports game over from inside its loop; keep the latest callbacks without restarting it.
@@ -95,7 +94,6 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
   const finish = useRef<(score: number) => void>(() => {});
   finish.current = (score: number) => {
     setFinalScore(score);
-    submitScore(score);
     const final = engine?.uiStore.getSnapshot();
     const tries = final ? final.totalCorrect + final.totalWrong : 0;
     setRewards(records.reportRun({
@@ -110,11 +108,11 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
     setPlayerRank(null);
     setRewards(null);
     playClock.reset();
-    const next = new ColorMatchEngine(highScore, (score) => finish.current(score), prefs.difficulty);
+    const next = new ColorMatchEngine(best, (score) => finish.current(score), prefs.difficulty);
     setEngine(next);
     setScreen("playing");
     next.startGame();
-  }, [highScore, prefs.difficulty, playClock]);
+  }, [best, prefs.difficulty, playClock]);
 
   const toMenu = useCallback(() => {
     setEngine(null);
@@ -161,7 +159,7 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
             onDifficultyChange={chooseDifficulty}
             focusDifficulty={focusDifficulty}
             patterns={prefs.patterns}
-            bestScore={highScore}
+            bestScore={best}
             legacyBest={legacyBest}
             legacyLeaderboard={legacyLeaderboard}
             onTogglePatterns={() => setPrefs((p) => ({ ...p, patterns: !p.patterns }))}
@@ -185,7 +183,7 @@ function DifficultySession({ onExit, prefs, setPrefs, chooseDifficulty, focusDif
       {screen === "game-over" && (
         <GameOverWithLeaderboard
           finalScore={finalScore}
-          previousBest={previousBest}
+          previousBest={rewards?.previousBest ?? 0}
           snapshot={snapshot}
           leaderboard={leaderboard}
           difficultyName={DIFFICULTY_CONFIGS[prefs.difficulty].name}
