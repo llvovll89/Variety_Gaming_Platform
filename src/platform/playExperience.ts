@@ -17,6 +17,7 @@ export const PLAY_INFO: Record<string, PlayInfo> = {
   'fantasy-tactics': { duration: '약 15분 / 전투', minutes: 15, controls: '터치 · 마우스', experience: '턴제 · 동료 성장', save: '진행 자동 저장' },
   'echo-maze': { duration: '약 3분 / 탐험', minutes: 3, controls: '터치 · 키보드', experience: '미로 · 길 찾기', save: '한 판씩 플레이' },
   'hangul-words': { duration: '약 3분 / 낱말', minutes: 3, controls: '한글 키보드', experience: '낱말 · 추리', save: '오늘의 낱말 저장' },
+  'kids-rhythm': { duration: '약 1분 / 노래', minutes: 1, controls: '한 손 터치', experience: '리듬 · 박자', save: '한 판씩 플레이' },
   'three-kingdoms-card': { duration: '5분부터 가볍게', minutes: 5, controls: '한 손 터치', experience: '장수 수집 · 영지', save: '진행 자동 저장' },
   'three-kingdoms': { duration: '20분 이상 몰입', minutes: 20, controls: '마우스 권장', experience: '내정 · 전쟁 전략', save: '턴 진행 저장' },
   'hachuping-slither': { duration: '약 5분 / 도전', minutes: 5, controls: '터치 · 마우스', experience: '성장 · 생존', save: '한 판씩 플레이' },

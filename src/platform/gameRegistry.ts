@@ -11,6 +11,7 @@ const FantasyTacticsApp = lazy(() => import('../games/fantasy-tactics/FantasyTac
 const EchoMazeApp = lazy(() => import('../games/echo-maze/EchoMazeApp'));
 const TenSecondsApp = lazy(() => import('../games/ten-seconds/TenSecondsApp'));
 const HangulWordsApp = lazy(() => import('../games/hangul-words/HangulWordsApp'));
+const KidsRhythmApp = lazy(() => import('../games/kids-rhythm/KidsRhythmApp'));
 const HachupingWhackAMoleApp = lazy(() => import('../games/hachuping-whack-a-mole/HachupingWhackAMoleApp'));
 const ThreeKingdomsApp = lazy(() => import('../games/three-kingdoms/ThreeKingdomsApp'));
 const ThreeKingdomsCardApp = lazy(() => import('../games/three-kingdoms-card/ThreeKingdomsCardApp'));
@@ -32,6 +33,7 @@ import { meta as HachupingWhackAMoleMeta } from '../games/hachuping-whack-a-mole
 import { meta as HachupingColorMatchMeta } from '../games/hachuping-color-match/meta';
 import { meta as HachupingBalloonMeta } from '../games/hachuping-balloon/meta';
 import { meta as HangulWordsMeta } from '../games/hangul-words/meta';
+import { meta as KidsRhythmMeta } from '../games/kids-rhythm/meta';
 import type { GameDefinition } from "./types";
 
 /** Every playable game on the platform. Add a new entry here to list a new game on the hub. */
@@ -95,6 +97,21 @@ export const GAMES: GameDefinition[] = [
     tags: ['3D', '퍼즐', '시간 루프', '협동', '잔상'],
     featuredText: '혼자서는 열 수 없는 문. 10초의 기억을 남기고 과거의 나와 함께 아홉 개의 시간 연구실을 탈출하세요. 짧게 켜지는 발판과 시간 문을 연결하는 고급 실험에 도전하세요.',
     Component: TenSecondsApp,
+  },
+  {
+    id: 'kids-rhythm',
+    meta: KidsRhythmMeta,
+    title: '숲속 리듬단',
+    description: '동물 친구와 박자에 맞춰 손뼉 치는 리듬 놀이 · 놓쳐도 노래는 끝까지 가요',
+    thumbnail: '/art/hub/kids-rhythm.jpg',
+    cover: '/art/hub/kids-rhythm-large.jpg',
+    previewThumbnail: '/art/hub/kids-rhythm-small.jpg',
+    spotlightText: '동그라미가 점선에 닿을 때 동물 친구를 톡!',
+    accentColor: '#e4722f',
+    genres: ['키즈', '캐주얼'],
+    tags: ['리듬', '박자', '동물', '손뼉', '아이'],
+    featuredText: '토끼와 곰과 개구리가 박자를 맞춰요. 조금 빨라도 늦어도 괜찮아요. 놓쳐도 점수가 깎이지 않고 노래는 끝까지 갑니다.',
+    Component: KidsRhythmApp,
   },
   {
     id: 'hangul-words',

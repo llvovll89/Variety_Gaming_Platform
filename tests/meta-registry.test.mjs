@@ -9,7 +9,13 @@ export {PLAY_INFO} from './src/platform/playExperience.ts';`);
 const { PLAY_INFO } = M;
 const metas = Object.fromEntries(ids.map((id, i) => [id, M[`m${i}`]]));
 const registry = readFileSync('src/platform/gameRegistry.ts', 'utf8').replace(/\r\n/g, '\n');
-const KIDS = ['hachuping-whack-a-mole', 'hachuping-color-match', 'hachuping-balloon', 'hachuping-memory'];
+/** Each entry of the GAMES array, as source text. */
+const ENTRY_SPLIT = /\n  \{\n/;
+/** 레지스트리가 키즈로 분류한 게임. 손으로 적어 두면 새 게임이 생길 때마다 뒤처진다. */
+const KIDS = registry.split(ENTRY_SPLIT).slice(1)
+  .filter(block => /audience: ['"]kids['"]/.test(block) || /genres: \[[^\]]*키즈/.test(block))
+  .map(block => block.match(/id: ['"]([^'"]+)['"]/)?.[1])
+  .filter(Boolean);
 
 test('every registered game has records data, and it loads nothing heavy', () => {
   const registered = [...registry.matchAll(/^\s+id: ['"]([^'"]+)['"],$/gm)].map(m => m[1]);
@@ -91,6 +97,7 @@ const REPORTED = {
   'kitchen-fighter': { modes: ['ladder-1', 'ladder-2', 'ladder-3', 'ladder-4', 'ladder-5', 'cpu-easy', 'cpu-normal', 'local'], difficulties: [], stats: ['rounds', 'cpuWins', 'weapon-spatula', 'weapon-swatter', 'weapon-golf', 'win-spatula', 'win-swatter', 'win-golf'] },
   'fantasy-tactics': { modes: ['stage', 'side'], difficulties: [], stats: ['rounds', 'survivors', 'chests'] },
   'hangul-words': { modes: ['daily', 'free'], difficulties: [], stats: ['score', 'guesses', 'solved'] },
+  'kids-rhythm': { modes: ['daily'], difficulties: ['easy', 'normal'], stats: ['score', 'hits', 'perfect', 'combo'] },
 };
 
 test('a daily challenge only asks for numbers its game reports', () => {
@@ -124,7 +131,7 @@ test('the hub always has a kids, a short and a long challenge to offer', () => {
   // The hub shows three challenges a day: one kids game, one short and one long (featuredDailies).
   // A group with no candidate leaves a slot empty every day of the year, silently. The synthetic
   // fixtures in meta-daily.test.mjs cannot see that, so build the candidates from the real registry.
-  const entries = registry.split(/\n  \{\n/).slice(1);
+  const entries = registry.split(ENTRY_SPLIT).slice(1);
   const games = entries.map(block => ({
     id: block.match(/id: ['"]([^'"]+)['"]/)?.[1],
     kids: /audience: ['"]kids['"]/.test(block) || /genres: \[[^\]]*키즈/.test(block),
