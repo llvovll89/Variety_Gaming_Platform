@@ -1,139 +1,269 @@
-/* 숲속 리듬단: 손가락이 닿는 곳은 크게, 글씨는 적게. 아이가 보는 화면이다. */
+/* 숲속 리듬단: 밤 숲의 반딧불 공연. 손가락이 닿는 곳은 크게, 글씨는 적게. 아이가 보는 화면이다.
+   트랙·음표는 네온처럼 빛나고, 동물 친구와 패드는 파스텔이라 무섭지 않게 남는다. */
 .kr-root {
+  --kr-night: #0e1a33;
+  --kr-night-deep: #0a1326;
+  --kr-ink: #f5f1e3;
+  --kr-muted: #b9c6d8;
+  --kr-firefly: #ffe28a;
+  --kr-sun: #e4722f;
+  --kr-sun-deep: #a94d17;
+  --kr-glass: #ffffff12;
+  --kr-line: #ffffff2e;
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #fff8ec 0%, #ffeedd 100%);
-  color: #3d2b1f;
+  background:
+    radial-gradient(120% 60% at 50% 0%, #1d3b66 0%, transparent 70%),
+    linear-gradient(180deg, var(--kr-night) 0%, #10303f 100%);
+  color: var(--kr-ink);
   font-family: Pretendard, system-ui, sans-serif;
   overflow: hidden;
   touch-action: manipulation;
   user-select: none;
+  color-scheme: dark;
 }
 
+.kr-root button { font-family: inherit; }
+.kr-root button:focus-visible { outline: 3px solid var(--kr-firefly); outline-offset: 3px; }
+
+/* 캐노피: 밤하늘을 가리는 잎 그림자. 아래 가장자리가 동글동글하다. */
 .kr-top {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  background: var(--kr-night-deep);
 }
-.kr-top h1 { flex: 1; margin: 0; font-size: 18px; font-weight: 800; }
+.kr-top::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto;
+  height: 16px;
+  background:
+    radial-gradient(circle at 50% 0, var(--kr-night-deep) 64%, transparent 66%) 0 0 / 38px 16px repeat-x,
+    radial-gradient(circle at 50% 0, #142540 64%, transparent 66%) 19px 3px / 38px 16px repeat-x;
+  pointer-events: none;
+}
+.kr-top h1 { flex: 1; margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+.kr-top-gap { flex: 1; }
 .kr-top-right { display: flex; gap: 6px; }
 
 .kr-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 2px solid #ecd9bd;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--kr-line);
   border-radius: 14px;
-  background: #fff;
-  color: #3d2b1f;
+  background: var(--kr-glass);
+  color: var(--kr-ink);
   cursor: pointer;
 }
+.kr-icon:active { transform: translateY(2px); }
 
+/* ── 처음 화면 ── */
 .kr-menu {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  padding: 16px max(16px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
-  text-align: center;
-}
-.kr-lead { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.6; }
-
-.kr-faces { display: flex; gap: 12px; }
-.kr-faces span {
   display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
-  font-size: 38px;
-  box-shadow: 0 6px 0 #00000014;
+  grid-template-columns: minmax(0, 440px);
+  align-content: center;
+  justify-content: center;
+  gap: 22px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 32px max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
+
+.kr-hero { display: grid; gap: 10px; }
+.kr-title {
+  margin: 0;
+  font-size: clamp(46px, 13vw, 64px);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  color: #fff4d6;
+  text-shadow: 0 0 22px #ffd16666, 0 3px 0 #0a1326;
+}
+.kr-lead { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.6; color: #d6e0ee; }
+
+/* 그루터기 무대: 이 화면에서 유일하게 스스로 움직이는 곳. 천천히 빠르기(84 BPM)에 맞춰 까딱인다. */
+.kr-stage {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 0 2px 12px;
+}
+.kr-stage::before {
+  content: '';
+  position: absolute;
+  inset: 10% 6% 0;
+  background: radial-gradient(closest-side, #ffe28a33, transparent);
+  pointer-events: none;
+}
+.kr-player { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
+.kr-player svg {
+  position: relative;
+  z-index: 1;
+  width: clamp(80px, 24vw, 108px);
+  height: auto;
+  transform-origin: 50% 100%;
+  animation: kr-bob 714ms ease-in-out var(--kr-delay) infinite alternate;
+}
+.kr-player::after {
+  content: '';
+  width: clamp(84px, 25vw, 112px);
+  height: 22px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(ellipse at center, #d9b47a 0 5px, #b8925a 5px 6.5px);
+  box-shadow: 0 7px 0 #6b4526;
+}
+@keyframes kr-bob { to { transform: translateY(-6px) rotate(-3deg); } }
+
+.kr-panel { display: grid; gap: 14px; }
 
 .kr-levels {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 0;
-  padding: 12px 14px;
-  border: 2px solid #ecd9bd;
-  border-radius: 20px;
-  background: #fff;
+  padding: 0;
+  border: none;
 }
-.kr-levels legend { padding: 0 8px; font-size: 13px; font-weight: 800; color: #8a7059; }
+.kr-levels legend { padding: 0 0 8px; font-size: 14px; font-weight: 800; color: var(--kr-muted); }
 .kr-levels button {
-  min-width: 96px;
-  padding: 12px 16px;
-  border: 2px solid #ecd9bd;
-  border-radius: 14px;
-  background: #fffaf2;
-  color: #3d2b1f;
-  font-size: 16px;
-  font-weight: 800;
-  font-family: inherit;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 2px solid var(--kr-line);
+  border-radius: 20px;
+  background: var(--kr-glass);
+  color: var(--kr-ink);
+  text-align: left;
   cursor: pointer;
 }
-.kr-levels button[aria-pressed='true'] { background: #e4722f; border-color: #e4722f; color: #fff; }
+.kr-level-icon { grid-row: span 2; font-size: 30px; line-height: 1; }
+.kr-levels b { font-size: 18px; font-weight: 800; }
+.kr-levels small { font-size: 13px; font-weight: 600; color: var(--kr-muted); }
+.kr-levels button[aria-pressed='true'] { border-color: var(--kr-firefly); background: #ffe28a1f; box-shadow: 0 0 18px #ffe28a33; }
+.kr-levels button[aria-pressed='true'] b { color: var(--kr-firefly); }
+
+.kr-daily {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #ffe28a55;
+  border-radius: 14px;
+  background: #ffe28a14;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
 
 .kr-primary {
-  width: min(320px, 100%);
-  padding: 18px;
+  width: 100%;
+  min-height: 62px;
+  padding: 16px;
   border: none;
   border-radius: 22px;
-  background: #e4722f;
+  background: var(--kr-sun);
   color: #fff;
   font-size: 20px;
   font-weight: 800;
-  font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 6px 0 #b85a22;
+  box-shadow: 0 6px 0 var(--kr-sun-deep), 0 0 26px #e4722f55;
 }
-.kr-primary:active { transform: translateY(3px); box-shadow: 0 3px 0 #b85a22; }
-.kr-note { margin: 0; font-size: 13px; font-weight: 600; color: #8a7059; }
+.kr-primary:active { transform: translateY(3px); box-shadow: 0 3px 0 var(--kr-sun-deep); }
+.kr-note { margin: 0; font-size: 13px; font-weight: 600; color: var(--kr-muted); text-align: center; }
 
+/* ── 노는 화면 ── */
 .kr-play {
   flex: 1;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 8px;
+  width: min(100%, 620px);
   min-height: 0;
-  padding: 0 max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+  margin: 0 auto;
+  padding: 22px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
 }
 
 .kr-hud {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
   font-size: 14px;
   font-weight: 700;
-  color: #8a7059;
+  color: var(--kr-muted);
 }
-.kr-hud b { font-size: 22px; color: #3d2b1f; }
-.kr-combo { font-size: 15px; font-weight: 800; color: #e4722f; opacity: 0; }
-.kr-combo[data-on='true'] { opacity: 1; }
-
+.kr-hud b { font-size: 22px; font-weight: 900; color: var(--kr-ink); }
 .kr-bar {
   height: 8px;
   border-radius: 999px;
-  background: #f1e2cd;
+  background: #ffffff1c;
   overflow: hidden;
 }
-.kr-bar i { display: block; height: 100%; background: #e4722f; border-radius: 999px; }
+.kr-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff8fab, #ffd166, #6fd3c7); border-radius: 999px; }
 
-.kr-canvas {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  border-radius: 18px;
-  border: 2px solid #ecd9bd;
-  background: #fffaf2;
+.kr-arena { position: relative; min-height: 0; }
+.kr-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* 트랙 먼 끝의 무대 */
+.kr-band {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  justify-content: center;
+  gap: clamp(2px, 2vw, 14px);
+  width: min(82%, 420px);
+  padding-top: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
+.kr-band::before {
+  content: '';
+  position: absolute;
+  inset: 20% 0 -10%;
+  background: radial-gradient(closest-side, #ffe28a40, transparent);
+}
+.kr-friend { position: relative; width: clamp(62px, 18vw, 100px); transform-origin: 50% 100%; }
+.kr-friend svg { display: block; width: 100%; height: auto; transform-origin: 50% 100%; }
+
+/* 박마다 쿵 하고 눌렸다 튀어 오른다. a/b 이름을 번갈아 써서 박마다 다시 튼다. */
+.kr-band[data-beat='a'] .kr-friend svg { animation: kr-beat-a 300ms ease-out; }
+.kr-band[data-beat='b'] .kr-friend svg { animation: kr-beat-b 300ms ease-out; }
+@keyframes kr-beat-a { 0% { transform: scale(1.06, 0.92); } 40% { transform: translateY(-5px) scale(0.98, 1.03); } 100% { transform: none; } }
+@keyframes kr-beat-b { 0% { transform: scale(1.06, 0.92); } 40% { transform: translateY(-5px) scale(0.98, 1.03); } 100% { transform: none; } }
+
+/* 자기 음표를 맞히면 폴짝 뛰며 팔을 든다. */
+.kr-friend[data-hit='a'] { animation: kr-jump-a 380ms cubic-bezier(.2, .8, .3, 1); }
+.kr-friend[data-hit='b'] { animation: kr-jump-b 380ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes kr-jump-a { 30% { transform: translateY(-16px) rotate(-4deg); } 100% { transform: none; } }
+@keyframes kr-jump-b { 30% { transform: translateY(-16px) rotate(4deg); } 100% { transform: none; } }
+.kr-arm { transform-box: fill-box; transform-origin: 50% 15%; }
+.kr-friend[data-hit='a'] .kr-arm-l { animation: kr-arm-l-a 380ms ease-out; }
+.kr-friend[data-hit='b'] .kr-arm-l { animation: kr-arm-l-b 380ms ease-out; }
+.kr-friend[data-hit='a'] .kr-arm-r { animation: kr-arm-r-a 380ms ease-out; }
+.kr-friend[data-hit='b'] .kr-arm-r { animation: kr-arm-r-b 380ms ease-out; }
+@keyframes kr-arm-l-a { 30% { transform: rotate(150deg); } }
+@keyframes kr-arm-l-b { 30% { transform: rotate(150deg); } }
+@keyframes kr-arm-r-a { 30% { transform: rotate(-150deg); } }
+@keyframes kr-arm-r-b { 30% { transform: rotate(-150deg); } }
+
+/* 웃는 눈은 신날 때(콤보 10 이상)만. */
+.kr-eyes-happy { display: none; }
+.kr-band[data-mood='party'] .kr-eyes-open { display: none; }
+.kr-band[data-mood='party'] .kr-eyes-happy { display: inline; }
 
 .kr-pads {
   display: grid;
@@ -141,31 +271,84 @@
   gap: 10px;
 }
 .kr-pad {
+  position: relative;
   display: grid;
   place-items: center;
-  height: clamp(84px, 16vh, 124px);
-  border: none;
+  height: clamp(86px, 15vh, 124px);
+  border: 3px solid var(--kr-lane);
   border-radius: 24px;
-  font-size: clamp(38px, 9vw, 54px);
+  background: linear-gradient(180deg, #ffffff1f, #ffffff08);
   cursor: pointer;
-  box-shadow: 0 6px 0 #00000022;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--kr-lane) 40%, transparent), inset 0 -6px 0 #0000002e;
   touch-action: none;
 }
-.kr-pad:active { transform: translateY(4px); box-shadow: 0 2px 0 #00000022; }
+.kr-pad-face { width: auto; height: 72%; pointer-events: none; }
+.kr-pad:active,
+.kr-pad[data-hit='a'] { animation: kr-pad-a 170ms ease-out; }
+.kr-pad[data-hit='b'] { animation: kr-pad-b 170ms ease-out; }
+@keyframes kr-pad-a { 35% { transform: translateY(4px) scale(0.97); background: var(--kr-lane); box-shadow: 0 0 34px var(--kr-lane); } }
+@keyframes kr-pad-b { 35% { transform: translateY(4px) scale(0.97); background: var(--kr-lane); box-shadow: 0 0 34px var(--kr-lane); } }
+.kr-pad kbd {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: none;
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #0a1326cc;
+  color: var(--kr-ink);
+  font: 800 13px/1.3 Pretendard, system-ui, sans-serif;
+}
+/* 키보드가 있는 기기에서만 어느 단추가 어느 동물인지 알려 준다. */
+@media (hover: hover) and (pointer: fine) {
+  .kr-pad kbd { display: block; }
+}
 
 .kr-help { margin: 0; padding-left: 18px; line-height: 1.8; font-size: 15px; }
 .kr-help li + li { margin-top: 6px; }
 
-/* 가로로 누운 휴대폰: 세로가 짧으니 손뼉 버튼을 낮추고 길을 넓게 쓴다. */
+/* 넓은 화면: 무대와 고르기를 나란히 둔다. */
+@media (min-width: 860px) and (min-height: 560px) {
+  .kr-menu { grid-template-columns: minmax(0, 420px) minmax(0, 380px); align-items: center; column-gap: 56px; }
+  .kr-hero, .kr-stage { grid-column: 1; }
+  .kr-panel { grid-column: 2; grid-row: 1 / span 2; }
+  .kr-title { font-size: 84px; }
+  .kr-lead { font-size: 19px; }
+  .kr-player svg { width: 124px; }
+  .kr-player::after { width: 128px; height: 26px; }
+}
+
+/* 가로로 누운 휴대폰: 세로가 짧으니 무대·패드를 낮추고 트랙을 넓게 쓴다. */
 @media (orientation: landscape) and (max-height: 500px) {
   .kr-top { padding-top: 6px; padding-bottom: 6px; }
   .kr-top h1 { font-size: 15px; }
-  .kr-pad { height: clamp(56px, 22vh, 84px); font-size: clamp(26px, 9vh, 40px); }
-  .kr-menu { flex-direction: row; flex-wrap: wrap; gap: 12px; }
-  .kr-faces span { width: 54px; height: 54px; font-size: 28px; }
+  .kr-icon { width: 38px; height: 38px; }
+  .kr-play { width: min(100%, 760px); padding-top: 16px; gap: 6px; }
+  .kr-hud b { font-size: 19px; }
+  .kr-friend { width: clamp(38px, 11vh, 52px); }
+  .kr-pad { height: clamp(52px, 18vh, 74px); }
+  .kr-menu { grid-template-columns: minmax(0, 320px) minmax(0, 340px); column-gap: 28px; align-items: center; padding-top: 22px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 8px; }
+  .kr-hero, .kr-stage { grid-column: 1; }
+  .kr-panel { grid-column: 2; grid-row: 1 / span 2; gap: 10px; }
+  .kr-title { font-size: 40px; }
+  .kr-lead { font-size: 14px; }
+  .kr-player svg { width: 62px; }
+  .kr-player::after { width: 70px; }
+  .kr-levels legend { padding-bottom: 4px; }
+  .kr-levels button { min-height: 58px; padding: 8px 12px; }
+  .kr-daily { padding: 6px 12px; }
+  .kr-primary { min-height: 52px; font-size: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kr-primary:active,
-  .kr-pad:active { transform: none; }
+  .kr-player svg,
+  .kr-band .kr-friend svg,
+  .kr-friend,
+  .kr-friend .kr-arm { animation: none !important; }
+  .kr-icon:active,
+  .kr-primary:active { transform: none; }
+  .kr-pad[data-hit='a'],
+  .kr-pad[data-hit='b'] { animation: none; }
+  .kr-pad:active { animation: none; background: var(--kr-lane); }
 }

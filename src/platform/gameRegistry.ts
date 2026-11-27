@@ -113,7 +113,7 @@ export const GAMES: GameDefinition[] = [
     thumbnail: '/art/hub/kids-rhythm.jpg',
     cover: '/art/hub/kids-rhythm-large.jpg',
     previewThumbnail: '/art/hub/kids-rhythm-small.jpg',
-    spotlightText: '동그라미가 점선에 닿을 때 동물 친구를 톡!',
+    spotlightText: '빛나는 음표가 줄에 닿을 때 동물 친구를 톡!',
     accentColor: '#e4722f',
     genres: ['키즈', '캐주얼'],
     tags: ['리듬', '박자', '동물', '손뼉', '아이'],
